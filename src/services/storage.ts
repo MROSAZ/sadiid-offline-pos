@@ -22,7 +22,7 @@ interface SadiidPOSDB extends DBSchema {
     indexes: { 'by-name': string };
   };
   sales: {
-    key: string;
+    key: number; // Changed from string to number for autoIncrement to work
     value: any;
     indexes: { 'by-date': string; 'by-sync': number };
   };
