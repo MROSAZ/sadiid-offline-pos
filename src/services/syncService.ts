@@ -1,7 +1,7 @@
-
 import { fetchProducts, fetchContacts, createSale } from './api';
 import { saveProducts, saveContacts, getUnSyncedSales, markSaleAsSynced } from './storage';
 import { toast } from 'sonner';
+import { withRetry, delay } from '../utils/apiUtils';
 
 export const syncData = async () => {
   try {
@@ -36,7 +36,11 @@ export const syncProducts = async () => {
     let hasMore = true;
     
     while (hasMore) {
-      const response = await fetchProducts(page);
+      const response = await withRetry(
+        () => fetchProducts(page),
+        3,
+        2000 // 2 second initial delay
+      );
       const { data, meta } = response;
       allProducts = [...allProducts, ...data];
       
@@ -44,6 +48,7 @@ export const syncProducts = async () => {
         hasMore = false;
       } else {
         page++;
+        await delay(1000); // 1 second delay between requests
       }
     }
     
@@ -63,7 +68,11 @@ export const syncContacts = async () => {
     let hasMore = true;
     
     while (hasMore) {
-      const response = await fetchContacts(page);
+      const response = await withRetry(
+        () => fetchContacts(page),
+        3,
+        2000 // 2 second initial delay
+      );
       const { data, meta } = response;
       allContacts = [...allContacts, ...data];
       
@@ -71,6 +80,7 @@ export const syncContacts = async () => {
         hasMore = false;
       } else {
         page++;
+        await delay(1000); // 1 second delay between requests
       }
     }
     
