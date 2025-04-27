@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -17,6 +16,9 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
+import Products from "./pages/Products";
+import Customers from "./pages/Customers";
+import POS from "./pages/POS";
 
 const queryClient = new QueryClient();
 
@@ -55,22 +57,21 @@ const App = () => {
                     </ProtectedRoute>
                   } />
                   
-                  {/* Add more protected routes here */}
                   <Route path="products" element={
                     <ProtectedRoute>
-                      <div className="p-4">Products page coming soon...</div>
+                      <Products />
                     </ProtectedRoute>
                   } />
                   
                   <Route path="customers" element={
                     <ProtectedRoute>
-                      <div className="p-4">Customers page coming soon...</div>
+                      <Customers />
                     </ProtectedRoute>
                   } />
                   
                   <Route path="pos" element={
                     <ProtectedRoute>
-                      <div className="p-4">POS page coming soon...</div>
+                      <POS />
                     </ProtectedRoute>
                   } />
                   
