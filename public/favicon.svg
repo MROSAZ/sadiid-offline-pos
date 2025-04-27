@@ -1,0 +1,17 @@
+<svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="tealGradient" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00a3a3" /> {/* Start: Mid-teal */}
+      <stop offset="100%" stop-color="#007070" /> {/* End: Darker teal */}
+    </linearGradient>
+  </defs>
+
+  {/* Simple curved path, shifted up to be vertically centered */}
+  <path d="M 10 50 Q 40 -10, 70 50"
+        fill="none"
+        stroke="url(#tealGradient)"
+        stroke-width="15"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+
+</svg>
