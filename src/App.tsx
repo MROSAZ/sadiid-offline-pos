@@ -1,27 +1,94 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
+import { NetworkProvider } from "./context/NetworkContext";
+import { useEffect } from 'react';
+import { initDB } from "./services/storage";
+
+// Components
+import Layout from "./components/Layout";
+import ProtectedRoute from "./components/ProtectedRoute";
+
+// Pages
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
+const App = () => {
+  useEffect(() => {
+    // Initialize the IndexedDB database
+    const setupDB = async () => {
+      try {
+        await initDB();
+        console.log('IndexedDB initialized successfully');
+      } catch (error) {
+        console.error('Error initializing IndexedDB:', error);
+      }
+    };
+    
+    setupDB();
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <NetworkProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <Routes>
+                <Route path="/login" element={<Login />} />
+                
+                <Route path="/" element={<Layout />}>
+                  <Route index element={<Navigate to="/dashboard" replace />} />
+                  
+                  <Route path="dashboard" element={
+                    <ProtectedRoute>
+                      <Dashboard />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Add more protected routes here */}
+                  <Route path="products" element={
+                    <ProtectedRoute>
+                      <div className="p-4">Products page coming soon...</div>
+                    </ProtectedRoute>
+                  } />
+                  
+                  <Route path="customers" element={
+                    <ProtectedRoute>
+                      <div className="p-4">Customers page coming soon...</div>
+                    </ProtectedRoute>
+                  } />
+                  
+                  <Route path="pos" element={
+                    <ProtectedRoute>
+                      <div className="p-4">POS page coming soon...</div>
+                    </ProtectedRoute>
+                  } />
+                  
+                  <Route path="settings" element={
+                    <ProtectedRoute>
+                      <div className="p-4">Settings page coming soon...</div>
+                    </ProtectedRoute>
+                  } />
+                </Route>
+                
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </TooltipProvider>
+          </NetworkProvider>
+        </AuthProvider>
       </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+    </QueryClientProvider>
+  );
+};
 
 export default App;
