@@ -14,12 +14,15 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
   useEffect(() => {
     const verifyAuth = async () => {
-      await checkAuth();
+      // Only check authentication if not already authenticated
+      if (!isAuthenticated) {
+        await checkAuth();
+      }
       setChecking(false);
     };
     
     verifyAuth();
-  }, [checkAuth]);
+  }, [checkAuth, isAuthenticated]);
 
   if (isLoading || checking) {
     // You can show a spinner or loading indicator here

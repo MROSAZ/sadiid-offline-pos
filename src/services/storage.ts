@@ -183,6 +183,11 @@ export const saveUser = async (user: any) => {
 };
 
 export const getUser = async () => {
-  const db = await getDB();
-  return db.get('user', 'current_user');
+  try {
+    const db = await getDB();
+    return db.get('user', 'current_user');
+  } catch (error) {
+    console.error('Error getting user from IndexedDB:', error);
+    return null;
+  }
 };
