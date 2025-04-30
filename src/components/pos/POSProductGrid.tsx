@@ -14,6 +14,10 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Package } from 'lucide-react';
+import { useCart } from '@/context/CartContext';
+
+// Use a placeholder SVG instead of network requests for images
+const PLACEHOLDER_SVG = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 24 24' fill='none' stroke='%23d1d5db' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='18' height='18' x='3' y='3' rx='2' ry='2'/%3E%3Cpath d='m9 9 6 6'/%3E%3Cpath d='m15 9-6 6'/%3E%3C/svg%3E`;
 
 interface Product {
   id: number;
@@ -40,6 +44,8 @@ const POSProductGrid = ({ searchTerm = '', categoryId = null }: POSProductGridPr
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20; // Adjust based on your UI needs
   
+  const { addItem } = useCart();
+
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -72,6 +78,38 @@ const POSProductGrid = ({ searchTerm = '', categoryId = null }: POSProductGridPr
     return formatCurrencySync(price, businessSettings);
   };
   
+  const handleAddToCart = (product: Product) => {
+    // Get price from first variation
+    let price = 0;
+    let variation_id = undefined;
+    
+    if (
+      product.product_variations &&
+      product.product_variations.length > 0 &&
+      product.product_variations[0].variations &&
+      product.product_variations[0].variations.length > 0
+    ) {
+      const variation = product.product_variations[0].variations[0];
+      price = parseFloat(variation.sell_price_inc_tax);
+      variation_id = variation.id;
+    }
+    
+    // Add item to cart
+    addItem({
+      product_id: product.id,
+      name: product.name,
+      sku: product.sku,
+      price: price,
+      quantity: 1,
+      discount: 0,
+      tax: 0,
+      total: price,
+      variation_id
+    });
+    
+    toast.success(`Added ${product.name} to cart`);
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -190,11 +228,12 @@ const POSProductGrid = ({ searchTerm = '', categoryId = null }: POSProductGridPr
             <Card 
               key={product.id} 
               className="cursor-pointer hover:shadow-md transition-shadow"
+              onClick={() => handleAddToCart(product)}
             >
               <CardContent className="p-3">
-                {/* Replace image with icon placeholder */}
+                {/* Replace image with SVG placeholder */}
                 <div className="w-full h-20 flex items-center justify-center bg-gray-50 rounded mb-2">
-                  <Package className="h-10 w-10 text-gray-400" />
+                  <img src={PLACEHOLDER_SVG} alt="Product" className="h-10 w-10" />
                 </div>
                 
                 <h3 className="text-sm font-medium truncate">{product.name}</h3>

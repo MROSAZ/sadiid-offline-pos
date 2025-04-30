@@ -1,10 +1,10 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
+import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { NetworkProvider } from "./context/NetworkContext";
+import { CartProvider } from "./context/CartContext"; // Add this import
 import { useEffect } from 'react';
 import { initDB } from "./services/storage";
 
@@ -19,6 +19,7 @@ import NotFound from "./pages/NotFound";
 import Products from "./pages/Products";
 import Customers from "./pages/Customers";
 import POS from "./pages/POS";
+import Sales from "./pages/Sales"; // Add Sales to the imports
 
 const queryClient = new QueryClient();
 
@@ -42,49 +43,29 @@ const App = () => {
       <BrowserRouter>
         <AuthProvider>
           <NetworkProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <Routes>
-                <Route path="/login" element={<Login />} />
-                
-                <Route path="/" element={<Layout />}>
-                  <Route index element={<Navigate to="/dashboard" replace />} />
+            <CartProvider> {/* Add CartProvider */}
+              <TooltipProvider>
+                <Toaster />
+                <Routes>
+                  <Route path="/login" element={<Login />} />
                   
-                  <Route path="dashboard" element={
+                  <Route path="/" element={
                     <ProtectedRoute>
-                      <Dashboard />
+                      <Layout />
                     </ProtectedRoute>
-                  } />
+                  }>
+                    <Route index element={<Navigate to="/dashboard" replace />} />
+                    <Route path="dashboard" element={<Dashboard />} />
+                    <Route path="products" element={<Products />} />
+                    <Route path="customers" element={<Customers />} />
+                    <Route path="pos" element={<POS />} />
+                    <Route path="sales" element={<Sales />} /> {/* Add the route */}
+                  </Route>
                   
-                  <Route path="products" element={
-                    <ProtectedRoute>
-                      <Products />
-                    </ProtectedRoute>
-                  } />
-                  
-                  <Route path="customers" element={
-                    <ProtectedRoute>
-                      <Customers />
-                    </ProtectedRoute>
-                  } />
-                  
-                  <Route path="pos" element={
-                    <ProtectedRoute>
-                      <POS />
-                    </ProtectedRoute>
-                  } />
-                  
-                  <Route path="settings" element={
-                    <ProtectedRoute>
-                      <div className="p-4">Settings page coming soon...</div>
-                    </ProtectedRoute>
-                  } />
-                </Route>
-                
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </TooltipProvider>
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </TooltipProvider>
+            </CartProvider>
           </NetworkProvider>
         </AuthProvider>
       </BrowserRouter>

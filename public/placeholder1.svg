@@ -1,0 +1,16 @@
+<svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="greyGradient" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#b3b3b3" />
+      <stop offset="100%" stop-color="#7a7a7a" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Simple curved path from your logo -->
+  <path d="M 10 50 Q 40 -10, 70 50"
+        fill="none"
+        stroke="url(#greyGradient)"
+        stroke-width="15"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+</svg>

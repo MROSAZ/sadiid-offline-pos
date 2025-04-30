@@ -39,23 +39,26 @@ const DEFAULT_SETTINGS: BusinessSettings = {
 let businessSettings: BusinessSettings | null = null;
 
 export const getBusinessSettings = async (forceRefresh = false): Promise<BusinessSettings> => {
-  // Return cached settings if available and not forcing refresh
+  // Fast path: return from memory if available
   if (businessSettings && !forceRefresh) {
     return businessSettings;
   }
   
   try {
-    // Try loading from localStorage first (for offline use)
-    const cachedSettings = localStorage.getItem('business_settings');
-    if (!forceRefresh && cachedSettings) {
-      return JSON.parse(cachedSettings);
+    // Check localStorage first to avoid network request
+    if (!forceRefresh) {
+      const cachedSettings = localStorage.getItem('business_settings');
+      if (cachedSettings) {
+        businessSettings = JSON.parse(cachedSettings);
+        return businessSettings;
+      }
     }
     
-    // Fetch from API if online
+    // Only fetch from API when needed
     const response = await api.get('/connector/api/business-details');
     const data = response.data.data;
     
-    // Extract needed settings
+    // Extract only needed settings to reduce storage size
     businessSettings = {
       name: data.name,
       currency: data.currency,
@@ -71,13 +74,12 @@ export const getBusinessSettings = async (forceRefresh = false): Promise<Busines
   } catch (error) {
     console.error('Error fetching business settings:', error);
     
-    // Try localStorage as fallback
+    // Try localStorage as fallback again in case network request failed
     const cachedSettings = localStorage.getItem('business_settings');
     if (cachedSettings) {
       return JSON.parse(cachedSettings);
     }
     
-    // Use default settings if all else fails
     return DEFAULT_SETTINGS;
   }
 };

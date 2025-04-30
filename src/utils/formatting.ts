@@ -1,29 +1,29 @@
+// Simplify formatters with memoization for performance
 import { getBusinessSettings } from '@/services/businessSettings';
 
+// Cache for formatting functions
+const formatCache = new Map<string, string>();
+const CACHE_SIZE_LIMIT = 1000;
+
 /**
- * Formats a number according to business settings
- * @param value - Number value to format
- * @param precision - Override the default precision
- * @returns Formatted number string
+ * Format number with proper separators and precision
  */
-export const formatNumber = async (
+export const formatNumber = (
   value: number | string,
+  settings: any,
   precision?: number
-): Promise<string> => {
-  if (value === null || value === undefined || value === '') {
-    return '0';
-  }
+): string => {
+  if (value === null || value === undefined || value === '') return '0';
   
-  const settings = await getBusinessSettings();
   const numValue = typeof value === 'string' ? parseFloat(value) : value;
-  
   if (isNaN(numValue)) return '0';
   
+  // Use specified precision or default from settings
   const actualPrecision = precision !== undefined ? precision : settings.currency_precision;
   
-  // Apply rounding if specified in settings
+  // Apply rounding if specified
+  const roundingMethod = settings.pos_settings?.amount_rounding_method;
   let roundedValue = numValue;
-  const roundingMethod = settings.pos_settings.amount_rounding_method;
   
   if (roundingMethod && roundingMethod !== '0') {
     const roundTo = parseFloat(roundingMethod);
@@ -32,73 +32,56 @@ export const formatNumber = async (
     }
   }
   
-  // Format the number with the correct separators
-  const formatted = roundedValue.toFixed(actualPrecision);
-  
-  // Replace with the correct separators (default separators are '.' and ',')
-  return formatted
+  // Format with proper separators
+  return roundedValue.toFixed(actualPrecision)
     .replace('.', '<DECIMAL>')
-    .replace(/,/g, settings.currency.thousand_separator)
-    .replace('<DECIMAL>', settings.currency.decimal_separator);
+    .replace(/,/g, settings.currency.thousand_separator || ',')
+    .replace('<DECIMAL>', settings.currency.decimal_separator || '.');
 };
 
 /**
- * Formats a value as currency with the correct symbol and placement
- * @param value - Number value to format as currency
- * @returns Formatted currency string
- */
-export const formatCurrency = async (value: number | string): Promise<string> => {
-  const settings = await getBusinessSettings();
-  const formattedNumber = await formatNumber(value);
-  
-  return settings.currency_symbol_placement === 'before'
-    ? `${settings.currency.symbol}${formattedNumber}`
-    : `${formattedNumber} ${settings.currency.symbol}`;
-};
-
-/**
- * Formats a quantity with the business-defined quantity precision
- * @param value - Quantity value to format
- * @returns Formatted quantity string
- */
-export const formatQuantity = async (value: number | string): Promise<string> => {
-  const settings = await getBusinessSettings();
-  return formatNumber(value, settings.quantity_precision);
-};
-
-/**
- * Synchronous version of formatCurrency for direct use in components
- * Use this when businessSettings is already available
- * @param value - Number value to format as currency
- * @param settings - Business settings object 
- * @returns Formatted currency string
+ * Format as currency with proper symbol and position
  */
 export const formatCurrencySync = (
   value: number | string, 
-  settings: { 
-    currency: { symbol: string; decimal_separator: string; thousand_separator: string },
-    currency_symbol_placement: 'before' | 'after',
-    currency_precision: number
-  }
+  settings: any
 ): string => {
+  // Generate cache key
+  const cacheKey = `currency:${value}:${settings.currency_precision}:${settings.currency_symbol_placement}`;
+  
+  // Return from cache if available
+  if (formatCache.has(cacheKey)) {
+    return formatCache.get(cacheKey)!;
+  }
+  
   if (!value || value === '') return 'N/A';
   
   try {
-    const numValue = typeof value === 'string' ? parseFloat(value) : value;
-    if (isNaN(numValue)) return 'N/A';
+    const formattedNumber = formatNumber(value, settings);
+    const result = settings.currency_symbol_placement === 'before'
+      ? `${settings.currency.symbol}${formattedNumber}`
+      : `${formattedNumber} ${settings.currency.symbol}`;
     
-    // Format with proper precision
-    const formatted = numValue.toFixed(settings.currency_precision)
-      .replace('.', '<DECIMAL>')
-      .replace(/,/g, settings.currency.thousand_separator)
-      .replace('<DECIMAL>', settings.currency.decimal_separator);
+    // Cache result if cache isn't too large
+    if (formatCache.size < CACHE_SIZE_LIMIT) {
+      formatCache.set(cacheKey, result);
+    }
     
-    // Add currency symbol in correct position
-    return settings.currency_symbol_placement === 'before' 
-      ? `${settings.currency.symbol}${formatted}`
-      : `${formatted} ${settings.currency.symbol}`;
+    return result;
   } catch (error) {
     console.error('Error formatting currency:', error);
     return String(value);
   }
+};
+
+// Async wrapper for currency formatting
+export const formatCurrency = async (value: number | string): Promise<string> => {
+  const settings = await getBusinessSettings();
+  return formatCurrencySync(value, settings);
+};
+
+// Format quantity with proper precision
+export const formatQuantity = async (value: number | string): Promise<string> => {
+  const settings = await getBusinessSettings();
+  return formatNumber(value, settings, settings.quantity_precision);
 };

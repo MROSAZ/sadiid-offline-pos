@@ -13,7 +13,7 @@ interface SadiidPOSDB extends DBSchema {
   products: {
     key: string;
     value: any;
-    indexes: { 'by-name': string };
+    indexes: { 'by-name': string; 'by-category': number };
   };
   contacts: {
     key: string;
@@ -36,28 +36,31 @@ const DB_VERSION = 1;
 
 let db: IDBPDatabase<SadiidPOSDB>;
 
+// Simplify database initialization with better error handling
 export const initDB = async () => {
   try {
+    if (db) return db; // Avoid reinitializing if already exists
+    
     db = await openDB<SadiidPOSDB>(DB_NAME, DB_VERSION, {
       upgrade(db) {
-        // Token store
-        if (!db.objectStoreNames.contains('token')) {
-          db.createObjectStore('token');
-        }
+        // Create stores only if they don't exist - Fix type error with as const
+        (["token", "user"] as const).forEach((storeName) => {
+          if (!db.objectStoreNames.contains(storeName)) {
+            db.createObjectStore(storeName);
+          }
+        });
         
-        // Products store
         if (!db.objectStoreNames.contains('products')) {
           const productStore = db.createObjectStore('products', { keyPath: 'id' });
           productStore.createIndex('by-name', 'name');
+          productStore.createIndex('by-category', 'category.id'); // Add category index
         }
         
-        // Contacts store
         if (!db.objectStoreNames.contains('contacts')) {
           const contactStore = db.createObjectStore('contacts', { keyPath: 'id' });
           contactStore.createIndex('by-name', 'name');
         }
         
-        // Sales store (for offline transactions)
         if (!db.objectStoreNames.contains('sales')) {
           const salesStore = db.createObjectStore('sales', { 
             keyPath: 'local_id',
@@ -65,11 +68,6 @@ export const initDB = async () => {
           });
           salesStore.createIndex('by-date', 'transaction_date');
           salesStore.createIndex('by-sync', 'is_synced');
-        }
-        
-        // User store
-        if (!db.objectStoreNames.contains('user')) {
-          db.createObjectStore('user');
         }
       },
     });
@@ -79,6 +77,14 @@ export const initDB = async () => {
     console.error('Error initializing database:', error);
     throw error;
   }
+};
+
+// Simplify DB access with a wrapper function
+export const withDB = async <T>(
+  callback: (db: IDBPDatabase<SadiidPOSDB>) => Promise<T>
+): Promise<T> => {
+  const database = await getDB();
+  return callback(database);
 };
 
 // Get the database instance
@@ -163,6 +169,16 @@ export const getCategories = async (): Promise<any[]> => {
   }
 };
 
+// Optimize product filtering by category
+export const getProductsByCategory = async (categoryId: number): Promise<any[]> => {
+  return withDB(async (db) => {
+    if (!categoryId) {
+      return db.getAll('products');
+    }
+    return db.getAllFromIndex('products', 'by-category', categoryId);
+  });
+};
+
 // Contact management
 export const saveContacts = async (contacts: any[]) => {
   const db = await getDB();
@@ -182,8 +198,9 @@ export const getContacts = async () => {
 // Sales management
 export const saveSale = async (sale: any) => {
   const db = await getDB();
+  // Mark as not synced if offline
   sale.is_synced = navigator.onLine ? 1 : 0;
-  sale.created_at = new Date().toISOString();
+  sale.transaction_date = new Date().toISOString();
   const id = await db.add('sales', sale);
   return id;
 };
@@ -193,13 +210,41 @@ export const getUnSyncedSales = async () => {
   return db.getAllFromIndex('sales', 'by-sync', 0);
 };
 
-export const markSaleAsSynced = async (id: number) => {
-  const db = await getDB();
-  const sale = await db.get('sales', id);
-  if (sale) {
-    sale.is_synced = 1;
-    await db.put('sales', sale);
+export const markSaleAsSynced = async (id: number): Promise<boolean> => {
+  try {
+    const db = await getDB();
+    const sale = await db.get('sales', id);
+    if (sale) {
+      sale.is_synced = 1;
+      await db.put('sales', sale);
+    }
+    return true;
+  } catch (error) {
+    console.error('Error marking sale as synced:', error);
+    return false;
   }
+};
+
+export const getSales = async (page = 1, limit = 20) => {
+  const db = await getDB();
+  const allSales = await db.getAll('sales');
+  
+  // Sort by date, newest first
+  allSales.sort((a, b) => 
+    new Date(b.transaction_date).getTime() - new Date(a.transaction_date).getTime()
+  );
+  
+  // Paginate
+  const start = (page - 1) * limit;
+  const end = start + limit;
+  
+  return {
+    data: allSales.slice(start, end),
+    total: allSales.length,
+    page,
+    limit,
+    totalPages: Math.ceil(allSales.length / limit)
+  };
 };
 
 // User management

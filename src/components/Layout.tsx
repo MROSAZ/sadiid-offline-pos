@@ -1,10 +1,18 @@
-
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import { useAuth } from '../context/AuthContext';
 import { useNetwork } from '../context/NetworkContext';
+import { Home, ShoppingCart, ShoppingBag, Package, Users } from 'lucide-react';
+
+const navItems = [
+  { to: '/dashboard', icon: <Home className="h-6 w-6" />, label: 'Dashboard' },
+  { to: '/pos', icon: <ShoppingCart className="h-6 w-6" />, label: 'POS' },
+  { to: '/sales', icon: <ShoppingBag className="h-6 w-6" />, label: 'Sales' },
+  { to: '/products', icon: <Package className="h-6 w-6" />, label: 'Products' },
+  { to: '/customers', icon: <Users className="h-6 w-6" />, label: 'Customers' },
+];
 
 const Layout: React.FC = () => {
   const { isAuthenticated } = useAuth();
