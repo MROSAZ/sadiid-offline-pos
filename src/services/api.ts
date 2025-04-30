@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 import { toast } from 'sonner';
 import { getToken, removeToken, saveToken } from './storage';
@@ -85,13 +84,83 @@ export const fetchContacts = async (page = 1, perPage = 50, type = 'customer') =
   }
 };
 
-export const createSale = async (saleData: any) => {
+export interface SaleProduct {
+  product_id: number;
+  variation_id?: number;
+  quantity: number;
+  unit_price: number;
+  tax_rate_id?: number | null;
+  tax_amount?: number;
+  discount_amount?: number;
+  note?: string;
+}
+
+export interface SalePayment {
+  amount: number;
+  method: string;
+  account_id?: number | null;
+  note?: string;
+}
+
+export interface SaleData {
+  location_id: number;
+  contact_id?: number | null;
+  transaction_date: string;
+  status: string;
+  is_quotation?: number;
+  is_suspended?: number;
+  tax_amount?: number;
+  discount_amount?: number;
+  sale_note?: string;
+  staff_note?: string;
+  shipping_details?: string | null;
+  shipping_address?: string | null;
+  shipping_status?: string | null;
+  delivered_to?: string | null;
+  shipping_charges?: number;
+  products: SaleProduct[];
+  payment: SalePayment[];
+}
+
+export const createSale = async (saleData: SaleData) => {
   try {
+    // Ensure transaction_date is in the correct format
+    if (!saleData.transaction_date) {
+      saleData.transaction_date = new Date().toISOString();
+    }
+    
+    // Set default status if not provided
+    if (!saleData.status) {
+      saleData.status = 'final';
+    }
+    
+    // Make API request
     const response = await api.post('/connector/api/sell', saleData);
-    return response.data;
-  } catch (error) {
+    
+    if (response.data && response.data.data) {
+      return {
+        success: true,
+        data: response.data.data,
+        message: 'Sale created successfully'
+      };
+    } else {
+      return {
+        success: true,
+        data: response.data,
+        message: 'Sale created but response format differs'
+      };
+    }
+  } catch (error: any) {
+    // Enhanced error handling
     console.error('Error creating sale:', error);
-    throw error;
+    
+    // Return structured error for better handling
+    return {
+      success: false,
+      error: error.response?.data?.message || 'Failed to create sale',
+      details: error.response?.data || error.message,
+      isOffline: error.isOffline || false
+    };
   }
 };
 
@@ -111,6 +180,493 @@ export const getCurrentUser = async () => {
     return response.data;
   } catch (error) {
     console.error('Error fetching current user:', error);
+    throw error;
+  }
+};
+
+// ============== ATTENDANCE MANAGEMENT ==============
+export const getAttendance = async (userId: number) => {
+  try {
+    const response = await api.get(`/connector/api/get-attendance/${userId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching attendance:', error);
+    throw error;
+  }
+};
+
+export const clockIn = async (data: {
+  user_id: number;
+  clock_in_time: string;
+  clock_in_note?: string;
+  ip_address?: string;
+  latitude?: string;
+  longitude?: string;
+}) => {
+  try {
+    const response = await api.post('/connector/api/clock-in', data);
+    return response.data;
+  } catch (error) {
+    console.error('Error clocking in:', error);
+    throw error;
+  }
+};
+
+export const clockOut = async (data: {
+  user_id: number;
+  clock_out_time: string;
+  clock_out_note?: string;
+  latitude?: string;
+  longitude?: string;
+}) => {
+  try {
+    const response = await api.post('/connector/api/clock-out', data);
+    return response.data;
+  } catch (error) {
+    console.error('Error clocking out:', error);
+    throw error;
+  }
+};
+
+export const listHolidays = async (params: {
+  location_id?: number;
+  start_date?: string;
+  end_date?: string;
+}) => {
+  try {
+    const response = await api.get('/connector/api/holidays', { params });
+    return response.data;
+  } catch (error) {
+    console.error('Error listing holidays:', error);
+    throw error;
+  }
+};
+
+// ============== BRAND MANAGEMENT ==============
+export const listBrands = async () => {
+  try {
+    const response = await api.get('/connector/api/brand');
+    return response.data;
+  } catch (error) {
+    console.error('Error listing brands:', error);
+    throw error;
+  }
+};
+
+export const getBrand = async (brandId: string | number) => {
+  try {
+    const response = await api.get(`/connector/api/brand/${brandId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching brand:', error);
+    throw error;
+  }
+};
+
+// ============== BUSINESS LOCATION MANAGEMENT ==============
+export const listBusinessLocations = async () => {
+  try {
+    const response = await api.get('/connector/api/business-location');
+    return response.data;
+  } catch (error) {
+    console.error('Error listing business locations:', error);
+    throw error;
+  }
+};
+
+export const getBusinessLocation = async (locationId: string | number) => {
+  try {
+    const response = await api.get(`/connector/api/business-location/${locationId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching business location:', error);
+    throw error;
+  }
+};
+
+// ============== CASH REGISTER MANAGEMENT ==============
+export const listCashRegisters = async (params: {
+  status?: string;
+  user_id?: number;
+  start_date?: string;
+  end_date?: string;
+  location_id?: number;
+  per_page?: number;
+} = {}) => {
+  try {
+    const response = await api.get('/connector/api/cash-register', { params });
+    return response.data;
+  } catch (error) {
+    console.error('Error listing cash registers:', error);
+    throw error;
+  }
+};
+
+export const createCashRegister = async (data: {
+  location_id: number;
+  initial_amount: number;
+  created_at?: string;
+  closed_at?: string;
+  status?: string;
+  closing_amount?: number;
+  total_card_slips?: number;
+  total_cheques?: number;
+  closing_note?: string;
+  transaction_ids?: string;
+}) => {
+  try {
+    const response = await api.post('/connector/api/cash-register', data);
+    return response.data;
+  } catch (error) {
+    console.error('Error creating cash register:', error);
+    throw error;
+  }
+};
+
+export const getCashRegister = async (registerId: string | number) => {
+  try {
+    const response = await api.get(`/connector/api/cash-register/${registerId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching cash register:', error);
+    throw error;
+  }
+};
+
+// ============== CRM MANAGEMENT ==============
+export const listFollowUps = async (params: {
+  start_date?: string;
+  end_date?: string;
+  status?: string;
+  follow_up_type?: string;
+  followup_category_id?: string | number;
+  order_by?: string;
+  direction?: string;
+  per_page?: number;
+} = {}) => {
+  try {
+    const response = await api.get('/connector/api/crm/follow-ups', { params });
+    return response.data;
+  } catch (error) {
+    console.error('Error listing follow-ups:', error);
+    throw error;
+  }
+};
+
+export const addFollowUp = async (data: {
+  title: string;
+  contact_id: number;
+  description?: string;
+  schedule_type: string;
+  user_id?: number[];
+  notify_before?: number;
+  notify_type?: string;
+  status?: string;
+  notify_via?: any;
+  start_datetime: string;
+  end_datetime: string;
+  followup_additional_info?: any;
+  allow_notification?: boolean;
+}) => {
+  try {
+    const response = await api.post('/connector/api/crm/follow-ups', data);
+    return response.data;
+  } catch (error) {
+    console.error('Error adding follow-up:', error);
+    throw error;
+  }
+};
+
+export const getFollowUp = async (followUpId: string | number) => {
+  try {
+    const response = await api.get(`/connector/api/crm/follow-ups/${followUpId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching follow-up:', error);
+    throw error;
+  }
+};
+
+export const updateFollowUp = async (followUpId: string | number, data: any) => {
+  try {
+    const response = await api.put(`/connector/api/crm/follow-ups/${followUpId}`, data);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating follow-up:', error);
+    throw error;
+  }
+};
+
+export const getFollowUpResources = async () => {
+  try {
+    const response = await api.get('/connector/api/crm/follow-up-resources');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching follow-up resources:', error);
+    throw error;
+  }
+};
+
+export const listLeads = async (params: {
+  assigned_to?: string;
+  name?: string;
+  biz_name?: string;
+  mobile_num?: string;
+  contact_id?: string;
+  order_by?: string;
+  direction?: string;
+  per_page?: number;
+} = {}) => {
+  try {
+    const response = await api.get('/connector/api/crm/leads', { params });
+    return response.data;
+  } catch (error) {
+    console.error('Error listing leads:', error);
+    throw error;
+  }
+};
+
+export const saveCallLog = async (data: any) => {
+  try {
+    const response = await api.post('/connector/api/crm/call-logs', data);
+    return response.data;
+  } catch (error) {
+    console.error('Error saving call log:', error);
+    throw error;
+  }
+};
+
+// ============== EXPENSE MANAGEMENT ==============
+export const listExpenses = async (params: {
+  location_id?: number;
+  payment_status?: string;
+  start_date?: string;
+  end_date?: string;
+  expense_for?: string;
+  per_page?: number;
+} = {}) => {
+  try {
+    const response = await api.get('/connector/api/expense', { params });
+    return response.data;
+  } catch (error) {
+    console.error('Error listing expenses:', error);
+    throw error;
+  }
+};
+
+export const createExpense = async (data: {
+  location_id: number;
+  final_total: number;
+  transaction_date?: string;
+  tax_rate_id?: number;
+  expense_for?: number;
+  contact_id?: number;
+  expense_category_id?: number;
+  expense_sub_category_id?: number;
+  additional_notes?: string;
+  is_refund?: number;
+  is_recurring?: number;
+  recur_interval?: number;
+  recur_interval_type?: string;
+  subscription_repeat_on?: number;
+  subscription_no?: string;
+  recur_repetitions?: number;
+  payment?: any[];
+}) => {
+  try {
+    const response = await api.post('/connector/api/expense', data);
+    return response.data;
+  } catch (error) {
+    console.error('Error creating expense:', error);
+    throw error;
+  }
+};
+
+export const getExpense = async (expenseId: string | number) => {
+  try {
+    const response = await api.get(`/connector/api/expense/${expenseId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching expense:', error);
+    throw error;
+  }
+};
+
+export const updateExpense = async (expenseId: string | number, data: any) => {
+  try {
+    const response = await api.put(`/connector/api/expense/${expenseId}`, data);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating expense:', error);
+    throw error;
+  }
+};
+
+export const listExpenseRefunds = async (params: {
+  location_id?: number;
+  payment_status?: string;
+  start_date?: string;
+  end_date?: string;
+  expense_for?: string;
+  per_page?: number;
+} = {}) => {
+  try {
+    const response = await api.get('/connector/api/expense-refund', { params });
+    return response.data;
+  } catch (error) {
+    console.error('Error listing expense refunds:', error);
+    throw error;
+  }
+};
+
+export const listExpenseCategories = async () => {
+  try {
+    const response = await api.get('/connector/api/expense-categories');
+    return response.data;
+  } catch (error) {
+    console.error('Error listing expense categories:', error);
+    throw error;
+  }
+};
+
+// ============== FIELD FORCE ==============
+export const listVisits = async (params: {
+  contact_id?: string;
+  assigned_to?: string;
+  status?: string;
+  start_date?: string;
+  end_date?: string;
+  per_page?: number;
+  order_by_date?: string;
+} = {}) => {
+  try {
+    const response = await api.get('/connector/api/field-force', { params });
+    return response.data;
+  } catch (error) {
+    console.error('Error listing visits:', error);
+    throw error;
+  }
+};
+
+export const createVisit = async (data: {
+  contact_id: number;
+  visit_to?: string;
+  visit_address?: string;
+  assigned_to: number;
+  visit_on: string;
+  visit_for?: string;
+}) => {
+  try {
+    const response = await api.post('/connector/api/field-force/create', data);
+    return response.data;
+  } catch (error) {
+    console.error('Error creating visit:', error);
+    throw error;
+  }
+};
+
+export const updateVisitStatus = async (visitId: string | number, data: any) => {
+  try {
+    const response = await api.post(`/connector/api/field-force/${visitId}/update-status`, data);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating visit status:', error);
+    throw error;
+  }
+};
+
+// ============== REPORTS & SYSTEM ==============
+export const getProfitLossReport = async (params: {
+  location_id?: number;
+  start_date?: string;
+  end_date?: string;
+  user_id?: number;
+} = {}) => {
+  try {
+    const response = await api.get('/connector/api/profit-loss-report', { params });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching profit/loss report:', error);
+    throw error;
+  }
+};
+
+export const getProductStockReport = async (params: any = {}) => {
+  try {
+    const response = await api.get('/connector/api/product-stock-report', { params });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching product stock report:', error);
+    throw error;
+  }
+};
+
+export const getNotifications = async () => {
+  try {
+    const response = await api.get('/connector/api/notifications');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching notifications:', error);
+    throw error;
+  }
+};
+
+export const getLocationFromCoordinates = async (data: { lat: string; lon: string }) => {
+  try {
+    const response = await api.get('/connector/api/get-location', { data });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching location from coordinates:', error);
+    throw error;
+  }
+};
+
+export const getPaymentAccounts = async () => {
+  try {
+    const response = await api.get('/connector/api/payment-accounts');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching payment accounts:', error);
+    throw error;
+  }
+};
+
+export const getPaymentMethods = async () => {
+  try {
+    const response = await api.get('/connector/api/payment-methods');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching payment methods:', error);
+    throw error;
+  }
+};
+
+// ============== CONTACT MANAGEMENT ==============
+export const contactPayment = async (data: {
+  contact_id: number;
+  amount: number;
+  method: string;
+  paid_on: string;
+  account_id?: number;
+  card_number?: string;
+  card_holder_name?: string;
+  card_transaction_number?: string;
+  card_type?: string;
+  card_month?: string;
+  card_year?: string;
+  card_security?: string;
+  transaction_no_1?: string;
+  transaction_no_2?: string;
+  transaction_no_3?: string;
+  cheque_number?: string;
+  bank_account_number?: string;
+  note?: string;
+}) => {
+  try {
+    const response = await api.post('/connector/api/contactapi-payment', data);
+    return response.data;
+  } catch (error) {
+    console.error('Error processing contact payment:', error);
     throw error;
   }
 };
