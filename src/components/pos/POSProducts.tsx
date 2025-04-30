@@ -1,3 +1,5 @@
+// Not used replaced with POSProductGrid.tsx
+// This component is not used in the current version of the code.
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';

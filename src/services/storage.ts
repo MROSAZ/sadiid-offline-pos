@@ -1,4 +1,3 @@
-
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
 
 interface SadiidPOSDB extends DBSchema {
@@ -134,6 +133,34 @@ export const saveProducts = async (products: any[]) => {
 export const getProducts = async () => {
   const db = await getDB();
   return db.getAll('products');
+};
+
+// Get product categories
+export const getCategories = async (): Promise<any[]> => {
+  try {
+    const db = await getDB();
+    const transaction = db.transaction(['products'], 'readonly');
+    const productStore = transaction.objectStore('products');
+    const products = await productStore.getAll();
+    
+    // Extract unique categories from products
+    const categoriesMap = new Map();
+    
+    products.forEach(product => {
+      if (product.category) {
+        categoriesMap.set(product.category.id, product.category);
+      }
+    });
+    
+    // Convert map values to array and sort by name
+    const categories = Array.from(categoriesMap.values())
+      .sort((a, b) => a.name.localeCompare(b.name));
+    
+    return categories;
+  } catch (error) {
+    console.error('Error getting categories:', error);
+    throw error;
+  }
 };
 
 // Contact management
