@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react'; // Remove useMemo import if not used
 import { getSales, markSaleAsSynced } from '@/services/storage';
 import { createSale } from '@/services/api';
 import { useNetwork } from '@/context/NetworkContext';
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrencySync } from '@/utils/formatting';
+import { getBusinessSettings } from '@/services/businessSettings';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 
 const Sales = () => {
@@ -25,8 +26,23 @@ const Sales = () => {
     total: 0,
     totalPages: 0
   });
+  const [businessSettings, setBusinessSettings] = useState(null);
   const { isOnline } = useNetwork();
-  const businessSettings = {}; // Placeholder for business settings
+
+  // Load business settings at component mount
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const settings = await getBusinessSettings();
+        setBusinessSettings(settings);
+      } catch (error) {
+        console.error('Error loading business settings:', error);
+      }
+    };
+    
+    fetchSettings();
+    loadSales(); // Moved loadSales here to avoid multiple useEffect hooks
+  }, []);
 
   const loadSales = async (page = 1) => {
     setLoading(true);
@@ -47,9 +63,7 @@ const Sales = () => {
     }
   };
 
-  useEffect(() => {
-    loadSales();
-  }, []);
+  // Removed second useEffect that was just calling loadSales()
 
   const handlePageChange = (page: number) => {
     loadSales(page);
@@ -78,6 +92,19 @@ const Sales = () => {
     } catch (error) {
       console.error('Error syncing sale:', error);
       toast.error('Failed to sync sale');
+    }
+  };
+
+  // Create a formatter function - regular function, not using hooks
+  const formatAmount = (payment: any) => {
+    if (!payment || !payment[0]) return 'N/A';
+    
+    // Use sync version if available or default formatting
+    if (typeof formatCurrencySync === 'function' && businessSettings) {
+      return formatCurrencySync(payment[0].amount, businessSettings);
+    } else {
+      // Fallback to simple formatting
+      return `$${parseFloat(payment[0].amount).toFixed(2)}`;
     }
   };
 
@@ -123,17 +150,7 @@ const Sales = () => {
                         {sale.customer_id || 'Walk-in Customer'}
                       </TableCell>
                       <TableCell>
-                        {React.useMemo(() => {
-                          if (!sale.payment || !sale.payment[0]) return 'N/A';
-                          
-                          // Use sync version if available or default formatting
-                          if (typeof formatCurrencySync === 'function' && businessSettings) {
-                            return formatCurrencySync(sale.payment[0].amount, businessSettings);
-                          } else {
-                            // Fallback to simple formatting
-                            return `$${parseFloat(sale.payment[0].amount).toFixed(2)}`;
-                          }
-                        }, [sale.payment])}
+                        {formatAmount(sale.payment)}
                       </TableCell>
                       <TableCell>
                         <Badge variant={sale.is_synced ? "success" : "destructive"}>

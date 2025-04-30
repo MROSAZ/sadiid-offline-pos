@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, ShoppingCart, Users, Settings } from 'lucide-react';
+import { Home, ShoppingCart, Users, Settings, ShoppingBag } from 'lucide-react';
 
 const Sidebar: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
@@ -15,6 +14,7 @@ const Sidebar: React.FC = () => {
     { to: '/products', label: 'Products', icon: <ShoppingCart size={20} /> },
     { to: '/customers', label: 'Customers', icon: <Users size={20} /> },
     { to: '/pos', label: 'Point of Sale', icon: <ShoppingCart size={20} /> },
+    { to: '/sales', label: 'Sales', icon: <ShoppingBag size={20} /> },
     { to: '/settings', label: 'Settings', icon: <Settings size={20} /> },
   ];
 
