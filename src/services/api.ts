@@ -138,45 +138,88 @@ export const createSale = async (saleData: SaleData) => {
     }
 
     // Use contact_id if provided, otherwise use customer_id, fall back to walk-in customer (1)
-    // This handles the case where POSOrderDetails might be sending customer_id instead of contact_id
     const contactId = saleData.contact_id || saleData.customer_id || 1;
     
-    // Create properly formatted request body
+    // Helper function to remove null/undefined/empty values
+    const removeEmptyValues = (obj: any): any => {
+      const result = {} as any;
+      Object.entries(obj).forEach(([key, value]) => {
+        // Skip null, undefined, empty strings
+        if (value === null || value === undefined || value === '') {
+          return;
+        }
+        
+        // For arrays, filter each item
+        if (Array.isArray(value)) {
+          const filteredArray = value.map(item => 
+            typeof item === 'object' && item !== null ? removeEmptyValues(item) : item
+          ).filter(item => item !== null && item !== undefined);
+          
+          if (filteredArray.length > 0) {
+            result[key] = filteredArray;
+          }
+        } 
+        // For objects, recurse
+        else if (typeof value === 'object' && value !== null) {
+          const cleaned = removeEmptyValues(value);
+          if (Object.keys(cleaned).length > 0) {
+            result[key] = cleaned;
+          }
+        } 
+        // For primitive values, include directly
+        else {
+          result[key] = value;
+        }
+      });
+      return result;
+    };
+
+    // Create initial request data with all required fields
+    const sellData: any = {  // Change to 'any' type or define a specific interface
+      location_id: saleData.location_id,
+      contact_id: contactId,
+      transaction_date: saleData.transaction_date,
+      status: saleData.status,
+      payments: [], // Initialize payments array to avoid TypeScript error
+      products: saleData.products.map(product => ({
+        product_id: product.product_id,
+        variation_id: product.variation_id,
+        quantity: product.quantity,
+        unit_price: product.unit_price,
+        ...(product.tax_rate_id && { tax_rate_id: product.tax_rate_id }),
+        ...(product.discount_amount && { discount_amount: product.discount_amount, discount_type: 'fixed' }),
+        ...(product.note && { note: product.note })
+      })),
+      // Only include optional fields that have values
+      ...(saleData.discount_amount && { discount_amount: saleData.discount_amount, discount_type: 'fixed' }),
+      ...(saleData.tax_amount && { tax_amount: saleData.tax_amount }),
+      ...(saleData.sale_note && { sale_note: saleData.sale_note }),
+      ...(saleData.staff_note && { staff_note: saleData.staff_note }),
+      ...(saleData.is_quotation && { is_quotation: saleData.is_quotation }),
+      ...(saleData.is_suspended && { is_suspend: saleData.is_suspended }),
+      ...(saleData.shipping_details && { shipping_details: saleData.shipping_details }),
+      ...(saleData.shipping_address && { shipping_address: saleData.shipping_address }),
+      ...(saleData.shipping_status && { shipping_status: saleData.shipping_status }),
+      ...(saleData.delivered_to && { delivered_to: saleData.delivered_to }),
+      ...(saleData.shipping_charges && { shipping_charges: saleData.shipping_charges })
+    };
+
+    // Add payments only if they exist
+    if (saleData.payment && saleData.payment.length > 0) {
+      sellData.payments = saleData.payment.map(payment => ({
+        amount: payment.amount,
+        method: payment.method,
+        ...(payment.account_id && { account_id: payment.account_id }),
+        ...(payment.note && { note: payment.note })
+      }));
+    }
+
+    // Clean the data to remove any remaining null/undefined values
+    const cleanedSellData = removeEmptyValues(sellData);
+    
+    // Wrap in sells array as required by API
     const formattedSaleData = {
-      sells: [{
-        location_id: saleData.location_id,
-        contact_id: contactId, // Use the resolved customer/contact ID
-        transaction_date: saleData.transaction_date,
-        status: saleData.status,
-        tax_rate_id: null,
-        discount_amount: saleData.discount_amount || 0,
-        discount_type: 'fixed',
-        sale_note: saleData.sale_note || '',
-        staff_note: saleData.staff_note || '',
-        is_quotation: saleData.is_quotation || 0,
-        is_suspend: saleData.is_suspended || 0,
-        shipping_details: saleData.shipping_details || null,
-        shipping_address: saleData.shipping_address || null,
-        shipping_status: saleData.shipping_status || null,
-        delivered_to: saleData.delivered_to || null,
-        shipping_charges: saleData.shipping_charges || 0,
-        products: saleData.products.map(product => ({
-          product_id: product.product_id,
-          variation_id: product.variation_id,
-          quantity: product.quantity,
-          unit_price: product.unit_price,
-          tax_rate_id: product.tax_rate_id || null,
-          discount_amount: product.discount_amount || 0,
-          discount_type: 'fixed',
-          note: product.note || ''
-        })),
-        payments: saleData.payment.map(payment => ({
-          amount: payment.amount,
-          method: payment.method,
-          account_id: payment.account_id || null,
-          note: payment.note || ''
-        }))
-      }]
+      sells: [cleanedSellData]
     };
     
     // Make API request
