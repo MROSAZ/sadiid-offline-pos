@@ -105,6 +105,7 @@ export interface SalePayment {
 export interface SaleData {
   location_id: number;
   contact_id?: number | null;
+  customer_id?: number | null; // Add this to support both formats
   transaction_date: string;
   status: string;
   is_quotation?: number;
@@ -136,15 +137,15 @@ export const createSale = async (saleData: SaleData) => {
       saleData.status = 'final';
     }
 
-    // Use walk-in customer ID (1) if no contact_id provided
-    // Most POS systems have a default "walk-in customer" with ID 1
-    const contactId = saleData.contact_id || 1;
+    // Use contact_id if provided, otherwise use customer_id, fall back to walk-in customer (1)
+    // This handles the case where POSOrderDetails might be sending customer_id instead of contact_id
+    const contactId = saleData.contact_id || saleData.customer_id || 1;
     
     // Create properly formatted request body
     const formattedSaleData = {
       sells: [{
         location_id: saleData.location_id,
-        contact_id: contactId, // Use the default or provided contact ID
+        contact_id: contactId, // Use the resolved customer/contact ID
         transaction_date: saleData.transaction_date,
         status: saleData.status,
         tax_rate_id: null,

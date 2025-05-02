@@ -48,7 +48,7 @@ const POSOrderDetails = () => {
       // Prepare sale data
       const saleData = {
         location_id: cart.location_id,
-        customer_id: cart.customer_id || null,
+        contact_id: cart.customer_id || null, // Use contact_id which is expected by the API
         products: cart.items.map(item => ({
           product_id: item.product_id,
           variation_id: item.variation_id,
