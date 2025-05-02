@@ -124,18 +124,62 @@ export interface SaleData {
 
 export const createSale = async (saleData: SaleData) => {
   try {
-    // Ensure transaction_date is in the correct format
+    // Ensure transaction_date is in the correct format (YYYY-MM-DD HH:MM:SS)
     if (!saleData.transaction_date) {
-      saleData.transaction_date = new Date().toISOString();
+      saleData.transaction_date = new Date().toISOString().replace('T', ' ').substring(0, 19);
+    } else if (saleData.transaction_date.includes('T')) {
+      saleData.transaction_date = saleData.transaction_date.replace('T', ' ').substring(0, 19);
     }
     
     // Set default status if not provided
     if (!saleData.status) {
       saleData.status = 'final';
     }
+
+    // Use walk-in customer ID (1) if no contact_id provided
+    // Most POS systems have a default "walk-in customer" with ID 1
+    const contactId = saleData.contact_id || 1;
+    
+    // Create properly formatted request body
+    const formattedSaleData = {
+      sells: [{
+        location_id: saleData.location_id,
+        contact_id: contactId, // Use the default or provided contact ID
+        transaction_date: saleData.transaction_date,
+        status: saleData.status,
+        tax_rate_id: null,
+        discount_amount: saleData.discount_amount || 0,
+        discount_type: 'fixed',
+        sale_note: saleData.sale_note || '',
+        staff_note: saleData.staff_note || '',
+        is_quotation: saleData.is_quotation || 0,
+        is_suspend: saleData.is_suspended || 0,
+        shipping_details: saleData.shipping_details || null,
+        shipping_address: saleData.shipping_address || null,
+        shipping_status: saleData.shipping_status || null,
+        delivered_to: saleData.delivered_to || null,
+        shipping_charges: saleData.shipping_charges || 0,
+        products: saleData.products.map(product => ({
+          product_id: product.product_id,
+          variation_id: product.variation_id,
+          quantity: product.quantity,
+          unit_price: product.unit_price,
+          tax_rate_id: product.tax_rate_id || null,
+          discount_amount: product.discount_amount || 0,
+          discount_type: 'fixed',
+          note: product.note || ''
+        })),
+        payments: saleData.payment.map(payment => ({
+          amount: payment.amount,
+          method: payment.method,
+          account_id: payment.account_id || null,
+          note: payment.note || ''
+        }))
+      }]
+    };
     
     // Make API request
-    const response = await api.post('/connector/api/sell', saleData);
+    const response = await api.post('/connector/api/sell', formattedSaleData);
     
     if (response.data && response.data.data) {
       return {
@@ -151,10 +195,19 @@ export const createSale = async (saleData: SaleData) => {
       };
     }
   } catch (error: any) {
-    // Enhanced error handling
+    // Special handling for contact not found error
+    if (error.response?.data?.original?.error?.message === "No query results for model [App\\Contact].") {
+      return {
+        success: false,
+        error: "The customer ID provided doesn't exist in the system. Please use a valid customer ID or provide a default walk-in customer ID.",
+        details: error.response?.data,
+        isOffline: error.isOffline || false
+      };
+    }
+    
+    // Enhanced general error handling
     console.error('Error creating sale:', error);
     
-    // Return structured error for better handling
     return {
       success: false,
       error: error.response?.data?.message || 'Failed to create sale',
