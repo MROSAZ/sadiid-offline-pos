@@ -1,15 +1,24 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Search, Menu, Table, X } from 'lucide-react';
+import { Search, Menu, Table, X, ChevronDown, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import POSProductGrid from '@/components/pos/POSProductGrid';
 import POSOrderDetails from '../components/pos/POSOrderDetails';
 import POSCategoryFilters from '../components/pos/POSCategoryFilters';
+import { useCart } from '@/context/CartContext';
+import { getContacts } from '@/services/storage';
 
 const POS = () => {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  
+  // Customer selection states
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [customerSearchTerm, setCustomerSearchTerm] = useState('');
+  const [searchingCustomer, setSearchingCustomer] = useState(false);
+  const { setCustomer } = useCart();
 
   // Focus search input when page loads and on key press
   useEffect(() => {
@@ -31,9 +40,49 @@ const POS = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // Load customers on component mount
+  useEffect(() => {
+    const loadCustomers = async () => {
+      try {
+        const data = await getContacts();
+        setCustomers(data || []);
+      } catch (error) {
+        console.error('Error loading customers:', error);
+      }
+    };
+    
+    loadCustomers();
+  }, []);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
   };
+
+  // Filter customers based on search term
+  const filteredCustomers = customers.filter(customer => 
+    !customerSearchTerm || 
+    customer.name?.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
+    customer.mobile?.toLowerCase().includes(customerSearchTerm.toLowerCase())
+  );
+
+  // Handle customer selection
+  const selectCustomer = (customer: any) => {
+    setSelectedCustomer(customer);
+    setCustomer(customer ? customer.id : 1); // Use ID 1 for Walk-In Customer
+    setSearchingCustomer(false);
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchingCustomer && !(event.target as Element).closest('.customer-dropdown')) {
+        setSearchingCustomer(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [searchingCustomer]);
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -87,6 +136,75 @@ const POS = () => {
               <Button variant="ghost" size="icon" className="text-gray-700">
                 <X className="h-6 w-6" />
               </Button>
+            </div>
+            
+            {/* Customer Selection - Add this new component */}
+            <div className="mb-4 customer-dropdown">
+              <label className="text-sm font-medium text-gray-700 mb-1 block">Customer</label>
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Button 
+                    variant="outline" 
+                    className="w-full flex justify-between items-center text-left h-10 px-3"
+                    onClick={() => setSearchingCustomer(!searchingCustomer)}
+                  >
+                    <span className="flex items-center">
+                      <User className="h-4 w-4 mr-2 text-gray-500" />
+                      <span className="truncate">
+                        {selectedCustomer ? selectedCustomer.name : "Walk-In Customer"}
+                      </span>
+                    </span>
+                    <ChevronDown className="h-4 w-4 opacity-70" />
+                  </Button>
+                  
+                  {searchingCustomer && (
+                    <div className="absolute z-50 mt-1 w-full bg-white shadow-lg rounded-md border">
+                      <div className="p-2 border-b">
+                        <Input
+                          placeholder="Search customers..."
+                          value={customerSearchTerm}
+                          onChange={(e) => setCustomerSearchTerm(e.target.value)}
+                          autoFocus
+                        />
+                      </div>
+                      <div className="max-h-60 overflow-y-auto">
+                        <div 
+                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center"
+                          onClick={() => selectCustomer(null)}
+                        >
+                          <User className="h-4 w-4 mr-2 text-gray-500" />
+                          Walk-In Customer
+                        </div>
+                        {filteredCustomers.map(customer => (
+                          <div 
+                            key={customer.id} 
+                            className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                            onClick={() => selectCustomer(customer)}
+                          >
+                            {customer.name}
+                            {customer.mobile && (
+                              <span className="text-xs text-gray-500 block">
+                                {customer.mobile}
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                {selectedCustomer && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => selectCustomer(null)}
+                    className="h-10 w-10"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
             </div>
             
             <POSOrderDetails />
