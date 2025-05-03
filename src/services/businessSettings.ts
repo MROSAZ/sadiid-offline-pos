@@ -7,6 +7,22 @@ export interface CurrencyInfo {
   decimal_separator: string;
 }
 
+export interface BusinessLocation {
+  id: number;
+  business_id: number;
+  location_id: string;
+  name: string;
+  landmark: string | null;
+  country: string;
+  state: string;
+  city: string;
+  zip_code: string;
+  is_active: number;
+  email: string | null;
+  website: string | null;
+  // Other properties as needed
+}
+
 export interface BusinessSettings {
   name: string;
   currency: CurrencyInfo;
@@ -15,7 +31,8 @@ export interface BusinessSettings {
   quantity_precision: number;
   pos_settings: {
     amount_rounding_method: string;
-  }
+  };
+  locations?: BusinessLocation[];
 }
 
 // Default settings if API fails
@@ -58,14 +75,15 @@ export const getBusinessSettings = async (forceRefresh = false): Promise<Busines
     const response = await api.get('/connector/api/business-details');
     const data = response.data.data;
     
-    // Extract only needed settings to reduce storage size
+    // Extract settings including locations
     businessSettings = {
       name: data.name,
       currency: data.currency,
       currency_symbol_placement: data.currency_symbol_placement,
       currency_precision: data.currency_precision,
       quantity_precision: data.quantity_precision,
-      pos_settings: data.pos_settings
+      pos_settings: data.pos_settings,
+      locations: data.locations // Add location data
     };
     
     // Cache for offline use

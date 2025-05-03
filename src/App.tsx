@@ -20,6 +20,8 @@ import Products from "./pages/Products";
 import Customers from "./pages/Customers";
 import POS from "./pages/POS";
 import Sales from "./pages/Sales"; // Add Sales to the imports
+import Settings from "./pages/Settings"; // Add Settings to the imports
+//import Reports from "./pages/Reports"; // Add Reports to the imports
 
 const queryClient = new QueryClient();
 
@@ -60,6 +62,7 @@ const App = () => {
                     <Route path="customers" element={<Customers />} />
                     <Route path="pos" element={<POS />} />
                     <Route path="sales" element={<Sales />} /> {/* Add the route */}
+                    <Route path="settings" element={<Settings />} /> {/* Add Settings route */}
                   </Route>
                   
                   <Route path="*" element={<NotFound />} />

@@ -48,7 +48,7 @@ const POSOrderDetails = () => {
       // Prepare sale data
       const saleData = {
         location_id: cart.location_id,
-        contact_id: cart.customer_id || null, // Use contact_id which is expected by the API
+        contact_id: cart.customer_id, // Just use the customer ID as is, without null fallback
         products: cart.items.map(item => ({
           product_id: item.product_id,
           variation_id: item.variation_id,

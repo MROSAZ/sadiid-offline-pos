@@ -137,8 +137,8 @@ export const createSale = async (saleData: SaleData) => {
       saleData.status = 'final';
     }
 
-    // Use contact_id if provided, otherwise use customer_id, fall back to walk-in customer (1)
-    const contactId = saleData.contact_id || saleData.customer_id || 1;
+    // Use contact_id if provided, otherwise use customer_id, fall back to null
+    const contactId = saleData.contact_id || saleData.customer_id || null;
     
     // Helper function to remove null/undefined/empty values
     const removeEmptyValues = (obj: any): any => {

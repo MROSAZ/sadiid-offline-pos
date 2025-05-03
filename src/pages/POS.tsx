@@ -68,7 +68,7 @@ const POS = () => {
   // Handle customer selection
   const selectCustomer = (customer: any) => {
     setSelectedCustomer(customer);
-    setCustomer(customer ? customer.id : 1); // Use ID 1 for Walk-In Customer
+    setCustomer(customer ? customer.id : null); // Set to null instead of 1 when no customer selected
     setSearchingCustomer(false);
   };
 
@@ -173,7 +173,7 @@ const POS = () => {
                           onClick={() => selectCustomer(null)}
                         >
                           <User className="h-4 w-4 mr-2 text-gray-500" />
-                          Walk-In Customer
+                          No Customer Selected
                         </div>
                         {filteredCustomers.map(customer => (
                           <div 

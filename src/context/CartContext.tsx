@@ -40,7 +40,7 @@ const initialState: CartState = {
   discount: 0,
   tax: 0,
   note: '',
-  location_id: 1 // Default location
+  location_id: parseInt(localStorage.getItem('selected_location_id') || '1', 10)
 };
 
 const cartReducer = (state: CartState, action: CartAction): CartState => {
