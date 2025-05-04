@@ -1,17 +1,14 @@
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
-import { v4 as uuidv4 } from 'uuid';
 
 export interface CartItem {
   id: number;
   product_id: number;
+  variation_id: number;
   name: string;
-  sku: string;
+  image_url?: string;
   price: number;
   quantity: number;
-  discount: number;
-  tax: number;
   total: number;
-  variation_id?: number;
 }
 
 interface CartState {
@@ -20,7 +17,7 @@ interface CartState {
   discount: number;
   tax: number;
   note: string;
-  location_id: number;
+  location_id: number | null;
 }
 
 type CartAction =
@@ -40,7 +37,7 @@ const initialState: CartState = {
   discount: 0,
   tax: 0,
   note: '',
-  location_id: parseInt(localStorage.getItem('selected_location_id') || '1', 10)
+  location_id: null
 };
 
 const cartReducer = (state: CartState, action: CartAction): CartState => {
