@@ -1,17 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { useCart } from '../../context/CartContext';
-import { getBusinessSettings, BusinessLocation } from '../../services/businessSettings';
+import { useCart } from '@/context/CartContext';
+import { getBusinessSettings, BusinessLocation } from '@/services/businessSettings';
 import { 
   Select, 
   SelectContent, 
   SelectItem, 
   SelectTrigger, 
   SelectValue 
-} from '../ui/select';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+} from '@/components/ui/select';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { MapPin } from 'lucide-react';
-import { saveSelectedLocation } from '../../services/locationService';
 
 const BusinessLocationSelector = () => {
   const [locations, setLocations] = useState<BusinessLocation[]>([]);
@@ -34,7 +33,7 @@ const BusinessLocationSelector = () => {
           if (activeLocations.length > 0 && !locationExists) {
             const firstLocation = activeLocations[0];
             setLocation(firstLocation.id);
-            saveSelectedLocation(firstLocation.id);
+            localStorage.setItem('selected_location_id', firstLocation.id.toString());
           }
         }
         setLoading(false);
@@ -52,8 +51,9 @@ const BusinessLocationSelector = () => {
     const numericId = parseInt(locationId, 10);
     if (!isNaN(numericId)) {
       setLocation(numericId);
+      
       // Also store in localStorage for persistence
-      saveSelectedLocation(numericId);
+      localStorage.setItem('selected_location_id', locationId);
       
       toast.success('Business location updated');
     }
@@ -87,11 +87,26 @@ const BusinessLocationSelector = () => {
       <Card>
         <CardHeader>
           <CardTitle>Business Location</CardTitle>
+          <CardDescription>Select your active business location</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-20">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <div className="flex items-center justify-center h-16">
+            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
           </div>
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  if (locations.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Business Location</CardTitle>
+          <CardDescription>Select your active business location</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-red-500">No active business locations found</div>
         </CardContent>
       </Card>
     );
@@ -100,22 +115,19 @@ const BusinessLocationSelector = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <MapPin className="h-5 w-5 text-sadiid-600" />
-          Business Location
-        </CardTitle>
-        <CardDescription>Select your current business location</CardDescription>
+        <CardTitle>Business Location</CardTitle>
+        <CardDescription>Select your active business location</CardDescription>
       </CardHeader>
-      <CardContent>
-        <Select
-          value={cart.location_id?.toString() || ''}
+      <CardContent className="space-y-4">
+        <Select 
+          value={cart.location_id.toString()} 
           onValueChange={handleLocationChange}
         >
-          <SelectTrigger>
-            <SelectValue placeholder="Select location" />
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Select business location" />
           </SelectTrigger>
           <SelectContent>
-            {locations.map(location => (
+            {locations.map((location) => (
               <SelectItem key={location.id} value={location.id.toString()}>
                 {location.name}
               </SelectItem>
@@ -123,12 +135,17 @@ const BusinessLocationSelector = () => {
           </SelectContent>
         </Select>
         
-        {currentLocation && (
-          <div className="mt-4 text-sm text-gray-500">
-            <div className="font-medium">{currentLocation.name}</div>
-            {formattedAddress && <div className="mt-1">{formattedAddress}</div>}
+        <div className="bg-muted p-3 rounded-md">
+          <div className="flex items-center text-sm text-muted-foreground">
+            <MapPin className="h-4 w-4 mr-2" />
+            <span>Currently using: <strong>{getCurrentLocationName()}</strong></span>
           </div>
-        )}
+          {formattedAddress && (
+            <div className="mt-1 text-xs text-muted-foreground">
+              {formattedAddress}
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

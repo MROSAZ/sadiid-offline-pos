@@ -4,10 +4,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { NetworkProvider } from "./context/NetworkContext";
-import { CartProvider } from "./context/CartContext";
+import { CartProvider } from "./context/CartContext"; // Add this import
 import { useEffect } from 'react';
 import { initDB } from "./services/storage";
-import AppInitializer from './components/AppInitializer';
 
 // Components
 import Layout from "./components/Layout";
@@ -20,8 +19,9 @@ import NotFound from "./pages/NotFound";
 import Products from "./pages/Products";
 import Customers from "./pages/Customers";
 import POS from "./pages/POS";
-import Sales from "./pages/Sales";
-import Settings from "./pages/Settings";
+import Sales from "./pages/Sales"; // Add Sales to the imports
+import Settings from "./pages/Settings"; // Add Settings to the imports
+//import Reports from "./pages/Reports"; // Add Reports to the imports
 
 const queryClient = new QueryClient();
 
@@ -45,7 +45,7 @@ const App = () => {
       <BrowserRouter>
         <AuthProvider>
           <NetworkProvider>
-            <CartProvider>
+            <CartProvider> {/* Add CartProvider */}
               <TooltipProvider>
                 <Toaster />
                 <Routes>
@@ -53,7 +53,6 @@ const App = () => {
                   
                   <Route path="/" element={
                     <ProtectedRoute>
-                      <AppInitializer />
                       <Layout />
                     </ProtectedRoute>
                   }>
@@ -62,8 +61,8 @@ const App = () => {
                     <Route path="products" element={<Products />} />
                     <Route path="customers" element={<Customers />} />
                     <Route path="pos" element={<POS />} />
-                    <Route path="sales" element={<Sales />} />
-                    <Route path="settings" element={<Settings />} />
+                    <Route path="sales" element={<Sales />} /> {/* Add the route */}
+                    <Route path="settings" element={<Settings />} /> {/* Add Settings route */}
                   </Route>
                   
                   <Route path="*" element={<NotFound />} />
