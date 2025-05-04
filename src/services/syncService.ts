@@ -1,5 +1,6 @@
+
 import { fetchProducts, fetchContacts, createSale } from './api';
-import { saveProducts, saveContacts, getUnSyncedSales, markSaleAsSynced } from './storage';
+import { saveProducts, saveContacts, getUnSyncedSales, markSaleAsSynced, getProducts, getContacts } from './storage';
 import { toast } from 'sonner';
 import { withRetry, delay } from '../utils/apiUtils';
 
@@ -17,6 +18,9 @@ export const syncData = async () => {
     
     // Sync pending sales
     const sales = await syncPendingSales();
+    
+    // Update last sync timestamp
+    localStorage.setItem('last_sync_timestamp', Date.now().toString());
 
     return {
       success: true,
@@ -29,8 +33,17 @@ export const syncData = async () => {
   }
 };
 
-export const syncProducts = async () => {
+export const syncProducts = async (forceSync = false) => {
   try {
+    // Check if we already have products locally and aren't forcing a sync
+    if (!forceSync) {
+      const localProducts = await getProducts();
+      if (localProducts && localProducts.length > 0) {
+        console.log(`Using ${localProducts.length} local products, skipping sync`);
+        return { success: true, count: localProducts.length, fromCache: true };
+      }
+    }
+    
     let allProducts: any[] = [];
     let page = 1;
     let hasMore = true;
@@ -61,8 +74,17 @@ export const syncProducts = async () => {
   }
 };
 
-export const syncContacts = async () => {
+export const syncContacts = async (forceSync = false) => {
   try {
+    // Check if we already have contacts locally and aren't forcing a sync
+    if (!forceSync) {
+      const localContacts = await getContacts();
+      if (localContacts && localContacts.length > 0) {
+        console.log(`Using ${localContacts.length} local contacts, skipping sync`);
+        return { success: true, count: localContacts.length, fromCache: true };
+      }
+    }
+    
     let allContacts: any[] = [];
     let page = 1;
     let hasMore = true;

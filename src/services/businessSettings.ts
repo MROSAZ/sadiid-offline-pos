@@ -1,3 +1,4 @@
+
 import api from './api';
 
 export interface CurrencyInfo {
@@ -71,24 +72,45 @@ export const getBusinessSettings = async (forceRefresh = false): Promise<Busines
       }
     }
     
-    // Only fetch from API when needed
-    const response = await api.get('/connector/api/business-details');
-    const data = response.data.data;
-    
-    // Extract settings including locations
-    businessSettings = {
-      name: data.name,
-      currency: data.currency,
-      currency_symbol_placement: data.currency_symbol_placement,
-      currency_precision: data.currency_precision,
-      quantity_precision: data.quantity_precision,
-      pos_settings: data.pos_settings,
-      locations: data.locations // Add location data
-    };
-    
-    // Cache for offline use
-    localStorage.setItem('business_settings', JSON.stringify(businessSettings));
-    return businessSettings;
+    // Only fetch from API when needed and we're online
+    if (navigator.onLine) {
+      const response = await api.get('/connector/api/business-details');
+      const data = response.data.data;
+      
+      // Extract settings including locations
+      businessSettings = {
+        name: data.name,
+        currency: data.currency,
+        currency_symbol_placement: data.currency_symbol_placement,
+        currency_precision: data.currency_precision,
+        quantity_precision: data.quantity_precision,
+        pos_settings: data.pos_settings,
+        locations: data.locations // Add location data
+      };
+      
+      // Cache for offline use
+      localStorage.setItem('business_settings', JSON.stringify(businessSettings));
+      
+      // If we have locations, update the selected location ID if not set
+      if (businessSettings.locations && businessSettings.locations.length > 0) {
+        const currentLocationId = localStorage.getItem('selected_location_id');
+        if (!currentLocationId) {
+          // Find first active location or use the first one
+          const activeLocation = businessSettings.locations.find(loc => loc.is_active === 1) || businessSettings.locations[0];
+          localStorage.setItem('selected_location_id', activeLocation.id.toString());
+        }
+      }
+      
+      return businessSettings;
+    } else {
+      // We're offline, try localStorage again
+      const cachedSettings = localStorage.getItem('business_settings');
+      if (cachedSettings) {
+        return JSON.parse(cachedSettings);
+      }
+      
+      return DEFAULT_SETTINGS;
+    }
   } catch (error) {
     console.error('Error fetching business settings:', error);
     
@@ -100,4 +122,21 @@ export const getBusinessSettings = async (forceRefresh = false): Promise<Busines
     
     return DEFAULT_SETTINGS;
   }
+};
+
+// Helper function to get the current selected location ID
+export const getSelectedLocationId = (): number | null => {
+  const locationId = localStorage.getItem('selected_location_id');
+  return locationId ? parseInt(locationId, 10) : null;
+};
+
+// Helper function to get the current selected location object
+export const getSelectedLocation = async (): Promise<BusinessLocation | null> => {
+  const locationId = getSelectedLocationId();
+  if (!locationId) return null;
+  
+  const settings = await getBusinessSettings();
+  if (!settings.locations) return null;
+  
+  return settings.locations.find(loc => loc.id === locationId) || null;
 };

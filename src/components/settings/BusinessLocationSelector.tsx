@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useCart } from '@/context/CartContext';
 import { getBusinessSettings, BusinessLocation } from '@/services/businessSettings';
@@ -20,20 +21,29 @@ const BusinessLocationSelector = () => {
   useEffect(() => {
     const loadLocations = async () => {
       try {
-        const settings = await getBusinessSettings(true); // Force refresh to get latest
+        // Use false to not force refresh - use cached data if available
+        const settings = await getBusinessSettings(false);
         if (settings && settings.locations) {
           // Filter only active locations
           const activeLocations = settings.locations.filter(loc => loc.is_active === 1);
           setLocations(activeLocations);
 
-          // Check if current location exists in active locations
-          const locationExists = activeLocations.some(loc => loc.id === cart.location_id);
+          // Get current location ID from localStorage first (set during login)
+          const storedLocationId = localStorage.getItem('selected_location_id');
+          const storedId = storedLocationId ? parseInt(storedLocationId, 10) : null;
 
-          // If no location selected or current location not in active list, select first one
-          if (activeLocations.length > 0 && !locationExists) {
+          // Check if current location exists in active locations
+          const locationExists = storedId && activeLocations.some(loc => loc.id === storedId);
+
+          if (locationExists) {
+            // Use the stored location
+            setLocation(storedId!);
+          } else if (activeLocations.length > 0) {
+            // Fall back to the first active location
             const firstLocation = activeLocations[0];
             setLocation(firstLocation.id);
             localStorage.setItem('selected_location_id', firstLocation.id.toString());
+            console.log('Using first available location:', firstLocation.name);
           }
         }
         setLoading(false);
