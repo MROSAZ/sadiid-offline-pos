@@ -37,6 +37,11 @@ const POSOrderDetails = () => {
   };
   
   const handleProcessSale = async () => {
+    if (!cart.location_id) {
+      toast.error('No business location selected. Please select a location in Settings.');
+      return;
+    }
+    
     if (cart.items.length === 0) {
       toast.error('Cart is empty');
       return;

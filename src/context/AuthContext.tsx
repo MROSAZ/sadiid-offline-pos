@@ -44,14 +44,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // 1. Check if we have business location data and select one if needed
       const settings = await getBusinessSettings(false); // Don't force refresh, use cached if available
       
-      // 2. Select first location from settings if available
-      if (settings?.locations?.length > 0) {
-        const firstLocation = settings.locations.find(loc => loc.is_active === 1) || settings.locations[0];
-        localStorage.setItem('selected_location_id', firstLocation.id.toString());
-        console.log('Auto-selected business location:', firstLocation.name);
-      }
-      
-      // 3. Check if we need to sync data (only if we're online)
+      // 2. Check if we need to sync data (only if we're online)
       if (navigator.onLine) {
         const syncNeeded = await checkIfSyncNeeded();
         if (syncNeeded) {

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import { getSelectedLocationId } from '@/services/locationService';
 
 export interface CartItem {
   id: number;
@@ -20,7 +21,7 @@ interface CartState {
   discount: number;
   tax: number;
   note: string;
-  location_id: number;
+  location_id: number | null;
 }
 
 type CartAction =
@@ -40,7 +41,8 @@ const initialState: CartState = {
   discount: 0,
   tax: 0,
   note: '',
-  location_id: parseInt(localStorage.getItem('selected_location_id') || '', 10)
+  // Don't default to 1 - better to show a warning in UI if no location found
+  location_id: getSelectedLocationId() || null
 };
 
 const cartReducer = (state: CartState, action: CartAction): CartState => {
