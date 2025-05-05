@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/context/CartContext';
 import { saveSale, markSaleAsSynced } from '@/services/storage';
@@ -7,7 +7,7 @@ import { useNetwork } from '@/context/NetworkContext';
 import { createSale } from '@/services/api';
 import { Package, X, Plus, Minus } from 'lucide-react';
 import { formatCurrencySync } from '@/utils/formatting';
-import { getBusinessSettings } from '@/services/businessSettings';
+import { getBusinessSettings, getLocalBusinessSettings } from '@/services/businessSettings';
 
 // For currency formatting
 const PLACEHOLDER_SVG = `data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M 20 70 Q 60 20, 100 70' fill='none' stroke='%239e9e9e' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E`;
@@ -18,11 +18,24 @@ const POSOrderDetails = () => {
   const [processing, setProcessing] = useState(false);
   const [businessSettings, setBusinessSettings] = useState(null);
   
-  React.useEffect(() => {
-    const fetchSettings = async () => {
-      const settings = await getBusinessSettings();
+  useEffect(() => {
+    // First attempt to use the synchronous function
+    const settings = getLocalBusinessSettings();
+    if (settings) {
       setBusinessSettings(settings);
+      return;
+    }
+    
+    // Fallback to asynchronous function if needed
+    const fetchSettings = async () => {
+      try {
+        const fetchedSettings = await getBusinessSettings();
+        setBusinessSettings(fetchedSettings);
+      } catch (error) {
+        console.error('Error loading business settings:', error);
+      }
     };
+    
     fetchSettings();
   }, []);
 

@@ -263,3 +263,33 @@ export const getUser = async () => {
     return null;
   }
 };
+
+// Get an item from localStorage with error handling
+export const getLocalItem = (key: string): string | null => {
+  try {
+    return localStorage.getItem(key);
+  } catch (error) {
+    console.error(`Error getting item ${key} from localStorage:`, error);
+    return null;
+  }
+};
+
+// Set an item in localStorage with error handling
+export const setLocalItem = (key: string, value: string): void => {
+  try {
+    localStorage.setItem(key, value);
+  } catch (error) {
+    console.error(`Error setting item ${key} in localStorage:`, error);
+  }
+};
+
+// Get item from localStorage and parse as JSON
+export const getLocalItemAsJson = <T>(key: string): T | null => {
+  try {
+    const item = localStorage.getItem(key);
+    return item ? JSON.parse(item) as T : null;
+  } catch (error) {
+    console.error(`Error getting/parsing item ${key} from localStorage:`, error);
+    return null;
+  }
+};

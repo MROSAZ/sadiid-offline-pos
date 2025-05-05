@@ -41,8 +41,7 @@ const initialState: CartState = {
   discount: 0,
   tax: 0,
   note: '',
-  // Don't default to 1 - better to show a warning in UI if no location found
-  location_id: getSelectedLocationId() || null
+  location_id: getSelectedLocationId() || null // Don't default to 1
 };
 
 const cartReducer = (state: CartState, action: CartAction): CartState => {

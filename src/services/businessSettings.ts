@@ -1,4 +1,3 @@
-
 import api from './api';
 
 export interface CurrencyInfo {
@@ -139,4 +138,17 @@ export const getSelectedLocation = async (): Promise<BusinessLocation | null> =>
   if (!settings.locations) return null;
   
   return settings.locations.find(loc => loc.id === locationId) || null;
+};
+
+export const getLocalBusinessSettings = (): BusinessSettings | null => {
+  try {
+    const cachedSettings = localStorage.getItem('business_settings');
+    if (cachedSettings) {
+      return JSON.parse(cachedSettings);
+    }
+    return null;
+  } catch (error) {
+    console.error('Error getting business settings from localStorage:', error);
+    return null;
+  }
 };
