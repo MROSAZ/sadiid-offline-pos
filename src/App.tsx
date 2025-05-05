@@ -7,6 +7,7 @@ import { NetworkProvider } from "./context/NetworkContext";
 import { CartProvider } from "./context/CartContext"; // Add this import
 import { useEffect } from 'react';
 import { initDB } from "./services/storage";
+import { CustomerProvider } from './context/CustomerContext';
 
 // Components
 import Layout from "./components/Layout";
@@ -46,6 +47,7 @@ const App = () => {
         <AuthProvider>
           <NetworkProvider>
             <CartProvider> {/* Add CartProvider */}
+            <CustomerProvider>
               <TooltipProvider>
                 <Toaster />
                 <Routes>
@@ -68,6 +70,7 @@ const App = () => {
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </TooltipProvider>
+              </CustomerProvider>
             </CartProvider>
           </NetworkProvider>
         </AuthProvider>
