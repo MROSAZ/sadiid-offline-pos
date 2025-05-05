@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import Navbar from './Navbar';
@@ -6,7 +5,8 @@ import Sidebar from './Sidebar';
 import { useAuth } from '../context/AuthContext';
 import { useNetwork } from '../context/NetworkContext';
 import { Home, ShoppingCart, ShoppingBag, Package, Users } from 'lucide-react';
-import AppInitializer from './AppInitializer';
+import LocationInitializer from './LocationInitializer';
+
 
 const navItems = [
   { to: '/dashboard', icon: <Home className="h-6 w-6" />, label: 'Dashboard' },
@@ -27,7 +27,7 @@ const Layout: React.FC = () => {
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar />
-      <AppInitializer />
+      <LocationInitializer />
       
       <div className="flex flex-col flex-1 overflow-hidden">
         <Navbar />
