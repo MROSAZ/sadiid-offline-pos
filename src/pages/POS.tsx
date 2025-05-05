@@ -46,13 +46,24 @@ const POS = () => {
       try {
         const data = await getContacts();
         setCustomers(data || []);
+        
+        // Automatically select the first customer if available
+        if (data && data.length > 0) {
+          // Get the first customer from the list
+          const firstCustomer = data[0];
+          // Set it as the selected customer
+          setSelectedCustomer(firstCustomer);
+          // Update the cart context with this customer's ID
+          setCustomer(firstCustomer.id);
+          console.log(`Auto-selected first customer: ${firstCustomer.name}`);
+        }
       } catch (error) {
         console.error('Error loading customers:', error);
       }
     };
     
     loadCustomers();
-  }, []);
+  }, [setCustomer]); // Add setCustomer to dependencies
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
