@@ -33,13 +33,21 @@ export const getLocations = async (
  * Get the currently selected location ID from localStorage
  */
 export const getSelectedLocationId = (): number | null => {
-  try {
-    const locationId = localStorage.getItem(LOCATION_STORAGE_KEY);
-    return locationId ? parseInt(locationId, 10) : null;
-  } catch (error) {
-    console.error('Error getting selected location ID from localStorage:', error);
-    return null;
-  }
+  const locationId = localStorage.getItem('selected_location_id');
+  return locationId ? parseInt(locationId, 10) : null;
+};
+
+/**
+ * Get the currently selected location object
+ */
+export const getSelectedLocation = async (): Promise<BusinessLocation | null> => {
+  const locationId = getSelectedLocationId();
+  if (!locationId) return null;
+
+  const settings = await getBusinessSettings();
+  if (!settings.locations) return null;
+
+  return settings.locations.find(loc => loc.id === locationId) || null;
 };
 
 /**
@@ -50,22 +58,6 @@ export const saveSelectedLocationId = (locationId: number): void => {
     localStorage.setItem(LOCATION_STORAGE_KEY, locationId.toString());
   } catch (error) {
     console.error('Error saving selected location ID to localStorage:', error);
-  }
-};
-
-/**
- * Get the currently selected location object
- */
-export const getSelectedLocation = async (): Promise<BusinessLocation | null> => {
-  const locationId = getSelectedLocationId();
-  if (!locationId) return null;
-  
-  try {
-    const locations = await getLocations(false);
-    return locations.find(loc => loc.id === locationId) || null;
-  } catch (error) {
-    console.error('Error getting selected location:', error);
-    return null;
   }
 };
 

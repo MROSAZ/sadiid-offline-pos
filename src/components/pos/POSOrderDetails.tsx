@@ -1,21 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/context/CartContext';
-import { saveSale, markSaleAsSynced } from '@/services/storage';
+import { saveSale, markSaleAsSynced, getContacts } from '@/services/storage'; // Corrected import for getContacts
 import { toast } from 'sonner';
 import { useNetwork } from '@/context/NetworkContext'; 
 import { createSale } from '@/services/api';
 import { Package, X, Plus, Minus } from 'lucide-react';
 import { formatCurrencySync } from '@/utils/formatting';
 import { getBusinessSettings, getLocalBusinessSettings } from '@/services/businessSettings';
-import { getContacts } from '@/services/contacts'; // Import getContacts
+import { useCustomer } from '@/context/CustomerContext'; // Fixed CustomerContext import
 
 // For currency formatting
 const PLACEHOLDER_SVG = `data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M 20 70 Q 60 20, 100 70' fill='none' stroke='%239e9e9e' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E`;
 
 const POSOrderDetails = () => {
-  const { cart, getSubtotal, getTotal, updateQuantity, removeItem, clearCart, setCustomer } = useCart();
+  const { cart, getSubtotal, getTotal, updateQuantity, removeItem, clearCart } = useCart();
   const { isOnline } = useNetwork();
+  const { selectedCustomer, setSelectedCustomer } = useCustomer(); // Updated to use correct CustomerContext properties
   const [processing, setProcessing] = useState(false);
   const [businessSettings, setBusinessSettings] = useState(null);
   
@@ -62,14 +63,12 @@ const POSOrderDetails = () => {
     }
     
     // Auto-select first customer if none is selected
-    if (!cart.customer_id) {
+    if (!selectedCustomer) {
       try {
         const contacts = await getContacts();
         if (contacts && contacts.length > 0) {
-          // Select the first customer for this sale
           const firstCustomer = contacts[0];
-          setCustomer(firstCustomer.id);
-          
+          setSelectedCustomer(firstCustomer);
           toast.info(`Auto-selected customer: ${firstCustomer.name}`, {
             duration: 3000
           });
@@ -85,7 +84,7 @@ const POSOrderDetails = () => {
       // Prepare sale data
       const saleData = {
         location_id: cart.location_id,
-        contact_id: cart.customer_id, // Just use the customer ID as is, without null fallback
+        contact_id: selectedCustomer?.id, // Use selectedCustomer from CustomerContext
         products: cart.items.map(item => ({
           product_id: item.product_id,
           variation_id: item.variation_id,

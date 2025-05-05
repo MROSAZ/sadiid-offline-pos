@@ -17,7 +17,6 @@ export interface CartItem {
 
 interface CartState {
   items: CartItem[];
-  customer_id: number | null;
   discount: number;
   tax: number;
   note: string;
@@ -29,7 +28,6 @@ type CartAction =
   | { type: 'UPDATE_QUANTITY'; payload: { id: number; quantity: number } }
   | { type: 'REMOVE_ITEM'; payload: { id: number } }
   | { type: 'CLEAR_CART' }
-  | { type: 'SET_CUSTOMER'; payload: number }
   | { type: 'SET_DISCOUNT'; payload: number }
   | { type: 'SET_TAX'; payload: number }
   | { type: 'SET_NOTE'; payload: string }
@@ -37,7 +35,6 @@ type CartAction =
 
 const initialState: CartState = {
   items: [],
-  customer_id: null,
   discount: 0,
   tax: 0,
   note: '',
@@ -92,9 +89,6 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
     case 'CLEAR_CART':
       return initialState;
     
-    case 'SET_CUSTOMER':
-      return { ...state, customer_id: action.payload };
-    
     case 'SET_DISCOUNT':
       return { ...state, discount: action.payload };
     
@@ -118,7 +112,6 @@ interface CartContextType {
   updateQuantity: (id: number, quantity: number) => void;
   removeItem: (id: number) => void;
   clearCart: () => void;
-  setCustomer: (id: number) => void;
   setDiscount: (amount: number) => void;
   setTax: (amount: number) => void;
   setNote: (note: string) => void;
@@ -161,10 +154,6 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     dispatch({ type: 'CLEAR_CART' });
   };
   
-  const setCustomer = (id: number) => {
-    dispatch({ type: 'SET_CUSTOMER', payload: id });
-  };
-  
   const setDiscount = (amount: number) => {
     dispatch({ type: 'SET_DISCOUNT', payload: amount });
   };
@@ -197,7 +186,6 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       updateQuantity,
       removeItem,
       clearCart,
-      setCustomer,
       setDiscount,
       setTax,
       setNote,

@@ -5,8 +5,7 @@ import { Input } from '@/components/ui/input';
 import POSProductGrid from '@/components/pos/POSProductGrid';
 import POSOrderDetails from '../components/pos/POSOrderDetails';
 import POSCategoryFilters from '../components/pos/POSCategoryFilters';
-import { useCart } from '@/context/CartContext';
-import { getContacts } from '@/services/storage';
+import { useCustomer } from '@/context/CustomerContext';
 
 const POS = () => {
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -14,11 +13,9 @@ const POS = () => {
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   
   // Customer selection states
-  const [customers, setCustomers] = useState<any[]>([]);
-  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [customerSearchTerm, setCustomerSearchTerm] = useState('');
   const [searchingCustomer, setSearchingCustomer] = useState(false);
-  const { setCustomer } = useCart();
+  const { selectedCustomer, setSelectedCustomer, customers } = useCustomer();
 
   // Focus search input when page loads and on key press
   useEffect(() => {
@@ -40,20 +37,6 @@ const POS = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Load customers on component mount
-  useEffect(() => {
-    const loadCustomers = async () => {
-      try {
-        const data = await getContacts();
-        setCustomers(data || []);
-      } catch (error) {
-        console.error('Error loading customers:', error);
-      }
-    };
-    
-    loadCustomers();
-  }, []);
-
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
   };
@@ -68,7 +51,6 @@ const POS = () => {
   // Handle customer selection
   const selectCustomer = (customer: any) => {
     setSelectedCustomer(customer);
-    setCustomer(customer ? customer.id : null); // Set to null instead of 1 when no customer selected
     setSearchingCustomer(false);
   };
 

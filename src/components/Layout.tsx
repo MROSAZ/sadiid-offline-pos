@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import Header from './Header';
+import Header from '@/components/Header';
 import AppInitializer from './AppInitializer';
 
 const Layout: React.FC = () => {

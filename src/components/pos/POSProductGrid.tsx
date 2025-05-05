@@ -13,6 +13,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import usePagination from '@/hooks/usePagination';
 
 interface POSProductGridProps {
   searchTerm?: string;
@@ -23,8 +24,6 @@ const POSProductGrid: React.FC<POSProductGridProps> = ({ searchTerm = '', catego
   const [products, setProducts] = useState<ProductData[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20; // Adjust based on your UI needs
   
   const { addItem } = useCart();
@@ -68,6 +67,8 @@ const POSProductGrid: React.FC<POSProductGridProps> = ({ searchTerm = '', catego
     toast.success(`Added ${product.name} to cart`);
   };
 
+  const { currentPage, totalPages, currentItems, setCurrentPage } = usePagination(products, itemsPerPage);
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -75,66 +76,6 @@ const POSProductGrid: React.FC<POSProductGridProps> = ({ searchTerm = '', catego
       </div>
     );
   }
-  
-  // Calculate total pages
-  const totalPages = Math.ceil(products.length / itemsPerPage);
-  
-  // Get current page items
-  const currentItems = products.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-  
-  // Handle page change
-  const handlePageChange = (page: number) => {
-    if (page > 0 && page <= totalPages) {
-      setCurrentPage(page);
-      // Scroll to top of grid
-      document.querySelector('.product-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  };
-  
-  // Generate page numbers
-  const getPageNumbers = () => {
-    // Same pagination logic as before
-    const pageNumbers = [];
-    const maxVisiblePages = 5;
-    
-    if (totalPages <= maxVisiblePages) {
-      for (let i = 1; i <= totalPages; i++) {
-        pageNumbers.push(i);
-      }
-    } else {
-      pageNumbers.push(1);
-      
-      let startPage = Math.max(2, currentPage - 1);
-      let endPage = Math.min(totalPages - 1, currentPage + 1);
-      
-      if (currentPage <= 2) {
-        endPage = Math.min(totalPages - 1, 4);
-      } else if (currentPage >= totalPages - 1) {
-        startPage = Math.max(2, totalPages - 3);
-      }
-      
-      if (startPage > 2) {
-        pageNumbers.push('ellipsis1');
-      }
-      
-      for (let i = startPage; i <= endPage; i++) {
-        pageNumbers.push(i);
-      }
-      
-      if (endPage < totalPages - 1) {
-        pageNumbers.push('ellipsis2');
-      }
-      
-      if (totalPages > 1) {
-        pageNumbers.push(totalPages);
-      }
-    }
-    
-    return pageNumbers;
-  };
     
   return (
     <>
@@ -161,29 +102,14 @@ const POSProductGrid: React.FC<POSProductGridProps> = ({ searchTerm = '', catego
           <PaginationContent>
             <PaginationItem>
               <PaginationPrevious 
-                onClick={() => handlePageChange(currentPage - 1)}
+                onClick={() => setCurrentPage(currentPage - 1)}
                 className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
               />
             </PaginationItem>
             
-            {getPageNumbers().map((page, index) => (
-              <PaginationItem key={`page-${index}`}>
-                {page === 'ellipsis1' || page === 'ellipsis2' ? (
-                  <PaginationEllipsis />
-                ) : (
-                  <PaginationLink
-                    isActive={currentPage === page}
-                    onClick={() => handlePageChange(page as number)}
-                  >
-                    {page}
-                  </PaginationLink>
-                )}
-              </PaginationItem>
-            ))}
-            
             <PaginationItem>
               <PaginationNext 
-                onClick={() => handlePageChange(currentPage + 1)}
+                onClick={() => setCurrentPage(currentPage + 1)}
                 className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
               />
             </PaginationItem>
