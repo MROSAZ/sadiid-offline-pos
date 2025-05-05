@@ -8,12 +8,13 @@ import { createSale } from '@/services/api';
 import { Package, X, Plus, Minus } from 'lucide-react';
 import { formatCurrencySync } from '@/utils/formatting';
 import { getBusinessSettings, getLocalBusinessSettings } from '@/services/businessSettings';
+import { getContacts } from '@/services/contacts'; // Import getContacts
 
 // For currency formatting
 const PLACEHOLDER_SVG = `data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M 20 70 Q 60 20, 100 70' fill='none' stroke='%239e9e9e' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E`;
 
 const POSOrderDetails = () => {
-  const { cart, getSubtotal, getTotal, updateQuantity, removeItem, clearCart } = useCart();
+  const { cart, getSubtotal, getTotal, updateQuantity, removeItem, clearCart, setCustomer } = useCart();
   const { isOnline } = useNetwork();
   const [processing, setProcessing] = useState(false);
   const [businessSettings, setBusinessSettings] = useState(null);
@@ -58,6 +59,24 @@ const POSOrderDetails = () => {
     if (cart.items.length === 0) {
       toast.error('Cart is empty');
       return;
+    }
+    
+    // Auto-select first customer if none is selected
+    if (!cart.customer_id) {
+      try {
+        const contacts = await getContacts();
+        if (contacts && contacts.length > 0) {
+          // Select the first customer for this sale
+          const firstCustomer = contacts[0];
+          setCustomer(firstCustomer.id);
+          
+          toast.info(`Auto-selected customer: ${firstCustomer.name}`, {
+            duration: 3000
+          });
+        }
+      } catch (error) {
+        console.error('Error auto-selecting customer:', error);
+      }
     }
     
     setProcessing(true);
