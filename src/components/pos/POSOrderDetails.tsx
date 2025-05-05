@@ -8,7 +8,7 @@ import { createSale } from '@/services/api';
 import { Package, X, Plus, Minus } from 'lucide-react';
 import { formatCurrencySync } from '@/utils/formatting';
 import { getBusinessSettings, getLocalBusinessSettings } from '@/services/businessSettings';
-import { useCustomer } from '@/context/CustomerContext'; // Fixed CustomerContext import
+import { useCustomer } from '@/context/CustomerContext'; // Updated to use CustomerContext for customer-related logic
 
 // For currency formatting
 const PLACEHOLDER_SVG = `data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M 20 70 Q 60 20, 100 70' fill='none' stroke='%239e9e9e' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E`;
@@ -16,7 +16,7 @@ const PLACEHOLDER_SVG = `data:image/svg+xml,%3Csvg width='120' height='120' view
 const POSOrderDetails = () => {
   const { cart, getSubtotal, getTotal, updateQuantity, removeItem, clearCart } = useCart();
   const { isOnline } = useNetwork();
-  const { selectedCustomer, setSelectedCustomer } = useCustomer(); // Updated to use correct CustomerContext properties
+  const { selectedCustomer, setSelectedCustomer } = useCustomer(); // Updated to use CustomerContext for customer-related logic
   const [processing, setProcessing] = useState(false);
   const [businessSettings, setBusinessSettings] = useState(null);
   

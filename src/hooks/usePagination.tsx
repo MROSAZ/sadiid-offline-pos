@@ -1,18 +1,19 @@
 // src/hooks/usePagination.tsx
 import { useState } from 'react';
 
-const usePagination = (totalItems, itemsPerPage) => {
+const usePagination = (items: any[], itemsPerPage: number) => {
   const [currentPage, setCurrentPage] = useState(1);
 
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const totalPages = Math.ceil(items.length / itemsPerPage);
 
-  const currentItems = (items) => {
-    const start = (currentPage - 1) * itemsPerPage;
-    const end = start + itemsPerPage;
-    return items.slice(start, end);
+  const currentItems = items.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  return {
+    currentPage,
+    totalPages,
+    currentItems, // Ensure this is an array
+    setCurrentPage,
   };
-
-  return { currentPage, totalPages, setCurrentPage, currentItems };
 };
 
 export default usePagination;
