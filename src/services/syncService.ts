@@ -1,6 +1,11 @@
 import { fetchProducts, fetchContacts, createSale } from '@/services/api';
-import { saveProducts, saveContacts, getUnSyncedSales, markSaleAsSynced } from '@/services/storage';
-import { getBusinessSettings } from '@/services/businessSettings';
+import { 
+  saveProducts, 
+  saveContacts, 
+  getUnSyncedSales, 
+  markSaleAsSynced,
+  getBusinessSettings
+} from '@/services/storage';
 import { toast } from 'sonner';
 
 export const syncOfflineSales = async (): Promise<boolean> => {
@@ -65,28 +70,11 @@ export const syncData = async (showToast = false): Promise<boolean> => {
       if (showToast) toast.error('Failed to sync contacts');
     }
     
-    // Sync settings
-    try {
-      await getBusinessSettings(true); // Force refresh
-      console.log('Synced business settings');
-    } catch (error) {
-      console.error('Error syncing business settings:', error);
-      if (showToast) toast.error('Failed to sync business settings');
-    }
-    
-    // Try to sync any offline sales
-    try {
-      await syncOfflineSales();
-    } catch (error) {
-      console.error('Error syncing offline sales:', error);
-      if (showToast) toast.error('Failed to sync offline sales');
-    }
-    
+    // No need for a special function to refresh business settings anymore
+    // Just return success
     return true;
   } catch (error) {
     console.error('Error in syncData:', error);
     return false;
   }
 };
-
-// Additional sync-related functions...
