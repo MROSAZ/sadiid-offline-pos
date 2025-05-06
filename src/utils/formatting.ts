@@ -1,4 +1,5 @@
-import { BusinessSettings, CurrencyInfo } from '@/services/businessSettings';
+import { BusinessSettings, CurrencyInfo } from '@/types/businessTypes';
+import { getBusinessSettings } from '@/services/storage';
 
 /**
  * Format a number as currency based on business settings
@@ -11,7 +12,6 @@ export const formatCurrency = async (
 ): Promise<string> => {
   if (!businessSettings) {
     // Dynamic import to avoid circular dependencies
-    const { getBusinessSettings } = await import('@/services/businessSettings');
     businessSettings = await getBusinessSettings();
   }
   
@@ -35,54 +35,55 @@ export const formatCurrencySync = (
     return 'N/A';
   }
   
-  // Extract formatting options
-  const {
-    currency,
-    currency_symbol_placement,
-    currency_precision
+  const { 
+    currency, 
+    currency_precision: precision, 
+    currency_symbol_placement: placement 
   } = settings;
   
-  // Format the number with proper decimal places
-  const formattedNumber = formatNumberWithPrecision(
+  const { 
+    symbol, 
+    thousand_separator, 
+    decimal_separator 
+  } = currency;
+  
+  // Format the number part
+  const formattedNumber = formatNumberWithSeparators(
     numericAmount,
-    currency_precision,
-    currency.decimal_separator,
-    currency.thousand_separator
+    precision,
+    thousand_separator,
+    decimal_separator
   );
   
-  // Build the formatted currency with proper symbol placement
-  if (currency_symbol_placement === 'before') {
-    return `${currency.symbol}${formattedNumber}`;
+  // Add symbol in correct position
+  if (placement === 'before') {
+    return `${symbol}${formattedNumber}`;
   } else {
-    return `${formattedNumber} ${currency.symbol}`;
+    return `${formattedNumber}${symbol}`;
   }
 };
 
 /**
- * Format a number with specified precision and separators
- * @param amount - Number to format
- * @param precision - Number of decimal places
- * @param decimalSeparator - Character to use as decimal separator
- * @param thousandSeparator - Character to use as thousand separator
- * @returns Formatted number string
+ * Format a number with separators
  */
-export const formatNumberWithPrecision = (
-  amount: number,
-  precision: number = 2,
-  decimalSeparator: string = '.',
-  thousandSeparator: string = ','
+export const formatNumberWithSeparators = (
+  value: number,
+  precision: number,
+  thousandSeparator: string,
+  decimalSeparator: string
 ): string => {
-  // Round to specified precision
-  const roundedAmount = Math.round(amount * Math.pow(10, precision)) / Math.pow(10, precision);
+  const fixed = value.toFixed(precision);
+  const [whole, decimal] = fixed.split('.');
   
-  // Convert to string with fixed precision
-  let parts = roundedAmount.toFixed(precision).split('.');
+  // Add thousand separators to the whole number part
+  const wholePart = whole.replace(/\B(?=(\d{3})+(?!\d))/g, thousandSeparator);
   
-  // Format the integer part with thousand separators
-  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, thousandSeparator);
-  
-  // Join with decimal separator
-  return parts.join(decimalSeparator);
+  // Combine with decimal part if it exists
+  if (decimal !== undefined) {
+    return `${wholePart}${decimalSeparator}${decimal}`;
+  } else {
+    return wholePart;
+  }
 };
 
 /**
@@ -167,11 +168,11 @@ export const formatQuantity = (
   const { quantity_precision } = settings;
   
   // Format the quantity with proper decimal places
-  return formatNumberWithPrecision(
+  return formatNumberWithSeparators(
     numericQuantity,
     quantity_precision,
-    '.',
-    ','
+    ',',
+    '.'
   );
 };
 

@@ -1,53 +1,64 @@
 // src/utils/productUtils.ts
-import { getBusinessSettings, BusinessSettings } from '@/services/businessSettings';
-import { getProducts, getProductsByCategory } from '@/services/storage';
+import { BusinessSettings } from '@/types/businessTypes';
+import { getBusinessSettings, getProducts, getProductsByCategory } from '@/services/storage';
 import { formatCurrencySync } from '@/utils/formatting';
 
 // Standard product image placeholder
 export const PRODUCT_PLACEHOLDER_SVG = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 24 24' fill='none' stroke='%23d1d5db' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='18' height='18' x='3' y='3' rx='2' ry='2'/%3E%3Cpath d='m9 9 6 6'/%3E%3Cpath d='m15 9-6 6'/%3E%3C/svg%3E`;
 
 export interface ProductData {
+  id: string;
+  name: string;
+  image?: string;
+  type: string;
+  category: {
+    id: number;
+    name: string;
+  };
+  sku?: string;
+  enable_stock?: number;
+  product_variations: ProductVariation[];
+  created_at: string;
+  // Add other fields as needed
+}
+
+export interface ProductVariation {
   id: number;
   name: string;
-  sku: string;
-  image_url?: string;
-  product_description?: string;
-  product_variations?: any[];
-  category?: { id: number; name: string };
-  price: number | string;
-  formatted_price: string;
-  stock: string | number;
-  variation_id?: number;
-  [key: string]: any;
+  variations: Variation[];
+}
+
+export interface Variation {
+  id: number;
+  name: string;
+  sell_price_inc_tax: string;
+  variation_location_details: VariationLocationDetail[];
+}
+
+export interface VariationLocationDetail {
+  location_id: number;
+  qty_available: string;
 }
 
 // Function to extract price from variation
-export const extractProductPrice = (product: any): { price: number, variation_id?: number } => {
-  if (
-    product.product_variations &&
-    product.product_variations.length > 0 &&
-    product.product_variations[0].variations &&
-    product.product_variations[0].variations.length > 0
-  ) {
-    const variation = product.product_variations[0].variations[0];
-    return {
-      price: parseFloat(variation.sell_price_inc_tax) || 0,
-      variation_id: variation.id
-    };
+export const getProductPrice = (product: ProductData): number => {
+  if (product.product_variations && 
+      product.product_variations.length > 0 && 
+      product.product_variations[0].variations && 
+      product.product_variations[0].variations.length > 0) {
+    return parseFloat(product.product_variations[0].variations[0].sell_price_inc_tax);
   }
-  return { price: 0 };
+  return 0;
 };
 
-// Function to extract stock from variation
-export const extractProductStock = (product: any): string => {
-  if (
-    product.product_variations &&
-    product.product_variations.length > 0 &&
-    product.product_variations[0].variations &&
-    product.product_variations[0].variations.length > 0 &&
-    product.product_variations[0].variations[0].variation_location_details &&
-    product.product_variations[0].variations[0].variation_location_details.length > 0
-  ) {
+// Function to extract stock quantity from variation
+export const getProductStock = (product: ProductData): string => {
+  if (product.product_variations && 
+      product.product_variations.length > 0 && 
+      product.product_variations[0].variations && 
+      product.product_variations[0].variations.length > 0 && 
+      product.product_variations[0].variations[0].variation_location_details && 
+      product.product_variations[0].variations[0].variation_location_details.length > 0) {
     return product.product_variations[0].variations[0].variation_location_details[0].qty_available || '0';
   }
   return '0';
@@ -81,31 +92,16 @@ export const loadProducts = async (
     
     // Filter by search term if provided
     const filteredProducts = searchTerm ? 
-      rawProducts.filter(product => 
-        product.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        product.sku.toLowerCase().includes(searchTerm.toLowerCase())
+      rawProducts.filter((product: ProductData) => 
+        product.name.toLowerCase().includes(searchTerm.toLowerCase())
       ) : rawProducts;
     
-    // Process each product to add formatted price and stock
-    const processedProducts: ProductData[] = filteredProducts.map(product => {
-      const { price, variation_id } = extractProductPrice(product);
-      const stock = extractProductStock(product);
-      
-      return {
-        ...product,
-        price,
-        variation_id,
-        formatted_price: formatProductPrice(price, settings),
-        stock
-      };
-    });
-    
     return {
-      products: processedProducts,
+      products: filteredProducts,
       businessSettings: settings
     };
   } catch (error) {
     console.error('Error loading products:', error);
-    throw error;
+    return { products: [], businessSettings: null };
   }
 };

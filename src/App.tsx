@@ -4,6 +4,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { NetworkProvider } from "./context/NetworkContext";
+import { CartProvider } from "./context/CartContext";
+import { CustomerProvider } from './context/CustomerContext';
 import { useEffect } from 'react';
 import { initDB } from "./services/storage";
 
@@ -53,7 +55,11 @@ const App = () => {
                 {/* Protected routes - wrapped with business-specific providers */}
                 <Route path="/" element={
                   <ProtectedRoute>
-                    <ProtectedLayout />
+                    <CartProvider>
+                      <CustomerProvider>
+                        <ProtectedLayout />
+                      </CustomerProvider>
+                    </CartProvider>
                   </ProtectedRoute>
                 }>
                   <Route index element={<Navigate to="/dashboard" replace />} />

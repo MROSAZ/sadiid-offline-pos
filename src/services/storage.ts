@@ -29,6 +29,10 @@ interface SadiidPOSDB extends DBSchema {
     key: string;
     value: any;
   };
+  settings: {
+    key: string;
+    value: any;
+  };
 }
 
 const DB_NAME = 'sadiid-pos';
@@ -68,6 +72,10 @@ export const initDB = async () => {
           });
           salesStore.createIndex('by-date', 'transaction_date');
           salesStore.createIndex('by-sync', 'is_synced');
+        }
+        
+        if (!db.objectStoreNames.contains('settings')) {
+          db.createObjectStore('settings');
         }
       },
     });
@@ -291,5 +299,33 @@ export const getLocalItemAsJson = <T>(key: string): T | null => {
   } catch (error) {
     console.error(`Error getting/parsing item ${key} from localStorage:`, error);
     return null;
+  }
+};
+
+/**
+ * Get business settings from IndexedDB
+ * @returns Business settings object
+ */
+export const getBusinessSettings = async () => {
+  try {
+    return await withDB(async (db) => {
+      const tx = db.transaction('settings', 'readonly');
+      const store = tx.objectStore('settings');
+      const settings = await store.get('business_settings');
+      return settings || {
+        currency: { symbol: '$', thousand_separator: ',', decimal_separator: '.' },
+        currency_precision: 2,
+        currency_symbol_placement: 'before',
+        locations: []
+      };
+    });
+  } catch (error) {
+    console.error('Error getting business settings:', error);
+    return {
+      currency: { symbol: '$', thousand_separator: ',', decimal_separator: '.' },
+      currency_precision: 2,
+      currency_symbol_placement: 'before',
+      locations: []
+    };
   }
 };
