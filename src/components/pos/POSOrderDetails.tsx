@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/context/CartContext';
-import { saveSale } from '@/services/storage';
 import { toast } from 'sonner';
 import { useNetwork } from '@/context/NetworkContext'; 
-import { createSale } from '@/services/api';
 import { Package, X, Plus, Minus } from 'lucide-react';
 import { formatCurrencySync } from '@/utils/formatting';
 import { useCustomer } from '@/context/CustomerContext';
-import { getBusinessSettings } from '@/services/storage';
+import { useBusinessSettings, useSales } from '@/hooks/repository';
 
 // For product placeholder
 const PLACEHOLDER_SVG = `data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M 20 70 Q 60 20, 100 70' fill='none' stroke='%239e9e9e' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E`;
@@ -20,22 +18,34 @@ const POSOrderDetails = () => {
   } = useCart();
   const { isOnline } = useNetwork();
   const { selectedCustomer } = useCustomer();
-  const [settings, setSettings] = useState(null);
+  const { settings, loading: settingsLoading, error: settingsError, getSettings } = useBusinessSettings();
+  const { saveSale, loading: salesLoading, error: salesError } = useSales();
   const [processing, setProcessing] = useState(false);
   
   // Load business settings
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        const businessSettings = await getBusinessSettings();
-        setSettings(businessSettings);
+        await getSettings();
       } catch (error) {
         console.error('Error loading business settings:', error);
       }
     };
     
     loadSettings();
-  }, []);
+  }, [getSettings]);
+  
+  useEffect(() => {
+    if (settingsError) {
+      toast.error(settingsError.message);
+    }
+  }, [settingsError]);
+  
+  useEffect(() => {
+    if (salesError) {
+      toast.error(salesError.message);
+    }
+  }, [salesError]);
   
   // Format price using business settings
   const formatPrice = (price: number): string => {
@@ -51,7 +61,7 @@ const POSOrderDetails = () => {
   };
   
   // Guard for items being undefined
-  if (!items) {
+  if (!items || settingsLoading) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-gray-400">
         <Package size={36} />
@@ -72,8 +82,8 @@ const POSOrderDetails = () => {
     }
     
     // Verify location still exists
-    const businessSettings = await getBusinessSettings();
-    const locationExists = businessSettings.locations && 
+    const businessSettings = await getSettings(true);
+    const locationExists = businessSettings?.locations && 
       businessSettings.locations.some(loc => loc.id === location_id);
       
     if (!locationExists) {
@@ -107,21 +117,10 @@ const POSOrderDetails = () => {
         sale_note: note || undefined,
       };
       
-      // Different process flows for online vs offline
-      if (isOnline) {
-        // Online: Create sale directly through API
-        const result = await createSale(saleData);
-        
-        if (!result.success) {
-          throw new Error(result.error || 'Failed to create sale');
-        }
-        
-        toast.success('Sale completed successfully');
-      } else {
-        // Offline: Save to IndexedDB
+     
         await saveSale(saleData);
         toast.success('Sale saved for syncing when online');
-      }
+      
       
       // Clear cart and show success
       clearCart();
@@ -214,9 +213,9 @@ const POSOrderDetails = () => {
         <Button 
           className="w-full bg-blue-500 hover:bg-blue-600 text-white py-6"
           onClick={handleProcessSale}
-          disabled={processing || items.length === 0}
+          disabled={processing || items.length === 0 || salesLoading}
         >
-          {processing ? 'Processing...' : 'Pay Now'}
+          {processing || salesLoading ? 'Processing...' : 'Pay Now'}
         </Button>
         <div className="grid grid-cols-2 gap-3">
           <Button 

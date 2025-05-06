@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { getCategories } from '@/services/storage';
 import { toast } from 'sonner';
+import { useBusinessSettings } from '@/hooks/repository';
 
 interface POSCategoryFiltersProps {
   onCategoryChange: (categoryId: number | null) => void;
@@ -19,31 +19,38 @@ const POSCategoryFilters: React.FC<POSCategoryFiltersProps> = ({
   selectedCategoryId
 }) => {
   const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { loading, error, getCategories } = useBusinessSettings();
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        setLoading(true);
+        setIsLoading(true);
         const categoriesData = await getCategories();
         setCategories(categoriesData);
       } catch (error) {
         console.error('Error loading categories:', error);
         toast.error('Failed to load product categories');
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 
     loadCategories();
-  }, []);
+  }, [getCategories]);
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error.message);
+    }
+  }, [error]);
 
   // Handle selecting a category
   const handleCategorySelect = (categoryId: number | null) => {
     onCategoryChange(categoryId);
   };
 
-  if (loading) {
+  if (isLoading || loading) {
     return (
       <div className="py-3 mb-4">
         <div className="flex space-x-2 overflow-x-auto">
@@ -79,7 +86,7 @@ const POSCategoryFilters: React.FC<POSCategoryFiltersProps> = ({
         </Button>
       ))}
     </div>
-      );
-    };
+  );
+};
 
 export default POSCategoryFilters;

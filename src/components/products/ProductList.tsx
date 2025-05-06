@@ -2,8 +2,9 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Package } from 'lucide-react';
-import { loadProducts, ProductData } from '@/utils/productUtils';
+import { ProductData } from '@/utils/productUtils';
 import ProductCard from '@/components/products/ProductCard';
+import { useProduct } from '@/hooks/repository/useProduct';
 
 interface ProductListProps {
   searchTerm?: string;
@@ -17,24 +18,27 @@ const ProductList: React.FC<ProductListProps> = ({
   onProductClick 
 }) => {
   const [products, setProducts] = useState<ProductData[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { loading, error, getFilteredProducts } = useProduct();
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        setLoading(true);
-        const { products: loadedProducts } = await loadProducts(searchTerm, categoryId);
+        const loadedProducts = await getFilteredProducts(searchTerm, categoryId);
         setProducts(loadedProducts);
       } catch (error) {
         console.error('Error loading products:', error);
         toast.error('Failed to load products');
-      } finally {
-        setLoading(false);
       }
     };
     
     fetchProducts();
-  }, [searchTerm, categoryId]);
+  }, [searchTerm, categoryId, getFilteredProducts]);
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error.message);
+    }
+  }, [error]);
 
   if (loading) {
     return (

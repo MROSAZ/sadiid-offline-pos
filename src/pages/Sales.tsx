@@ -1,6 +1,4 @@
 import React, { useEffect, useState } from 'react'; 
-import { getSales, markSaleAsSynced, getBusinessSettings } from '@/services/storage';
-import { createSale } from '@/services/api';
 import { useNetwork } from '@/context/NetworkContext';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -15,18 +13,21 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { formatCurrencySync } from '@/utils/formatting';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
+import { useSales } from '@/hooks/repository/useSales';
+import { SaleRecord } from '@/repositories/interfaces/ISaleRepository';
+import { getBusinessSettings } from '@/services/storage';
 
 const Sales = () => {
-  const [sales, setSales] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [sales, setSales] = useState<SaleRecord[]>([]);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
     total: 0,
     totalPages: 0
   });
-  const [businessSettings, setBusinessSettings] = useState(null);
+  const [businessSettings, setBusinessSettings] = useState<any>(null);
   const { isOnline } = useNetwork();
+  const { loading, error, getPaginatedSales, syncSale, syncAllUnsynced } = useSales();
 
   // Load business settings at component mount
   useEffect(() => {
@@ -43,10 +44,16 @@ const Sales = () => {
     loadSales(); // Moved loadSales here to avoid multiple useEffect hooks
   }, []);
 
+  // Show errors from the repository
+  useEffect(() => {
+    if (error) {
+      toast.error(error.message);
+    }
+  }, [error]);
+
   const loadSales = async (page = 1) => {
-    setLoading(true);
     try {
-      const result = await getSales(page, pagination.limit);
+      const result = await getPaginatedSales(page, pagination.limit);
       setSales(result.data);
       setPagination({
         ...pagination,
@@ -57,8 +64,6 @@ const Sales = () => {
     } catch (error) {
       console.error('Error loading sales:', error);
       toast.error('Failed to load sales');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -66,29 +71,48 @@ const Sales = () => {
     loadSales(page);
   };
 
-  const handleSync = async (sale: any) => {
+  const handleSync = async (saleId: number) => {
     if (!isOnline) {
       toast.error('Cannot sync while offline');
       return;
     }
 
     try {
-      // Remove local properties before sending
-      const { local_id, is_synced, ...saleData } = sale;
+      const success = await syncSale(saleId);
       
-      // Send to server
-      await createSale(saleData);
-      
-      // Mark as synced locally
-      await markSaleAsSynced(local_id);
+      if (success) {
+        // Refresh data
+        loadSales(pagination.page);
+        toast.success('Sale synced successfully');
+      } else {
+        toast.error('Failed to sync sale');
+      }
+    } catch (error) {
+      console.error('Error syncing sale:', error);
+      toast.error('Failed to sync sale');
+    }
+  };
+
+  const handleSyncAll = async () => {
+    if (!isOnline) {
+      toast.error('Cannot sync while offline');
+      return;
+    }
+
+    try {
+      const count = await syncAllUnsynced();
       
       // Refresh data
       loadSales(pagination.page);
       
-      toast.success('Sale synced successfully');
+      if (count > 0) {
+        toast.success(`${count} sales synced successfully`);
+      } else {
+        toast.info('No sales to sync');
+      }
     } catch (error) {
-      console.error('Error syncing sale:', error);
-      toast.error('Failed to sync sale');
+      console.error('Error syncing sales:', error);
+      toast.error('Failed to sync sales');
     }
   };
 
@@ -109,12 +133,22 @@ const Sales = () => {
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Sales History</h1>
-        <Button 
-          onClick={() => loadSales(pagination.page)}
-          variant="outline"
-        >
-          Refresh
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={handleSyncAll}
+            variant="outline"
+            disabled={!isOnline || loading}
+          >
+            Sync All
+          </Button>
+          <Button 
+            onClick={() => loadSales(pagination.page)}
+            variant="outline"
+            disabled={loading}
+          >
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {loading ? (
@@ -155,12 +189,12 @@ const Sales = () => {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {!sale.is_synced && (
+                        {!sale.is_synced && sale.local_id && (
                           <Button 
                             size="sm" 
                             variant="outline"
-                            disabled={!isOnline}
-                            onClick={() => handleSync(sale)}
+                            disabled={!isOnline || loading}
+                            onClick={() => handleSync(sale.local_id!)}
                           >
                             Sync
                           </Button>

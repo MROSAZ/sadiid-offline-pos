@@ -2,13 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Package } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
-import { 
-  loadProducts, 
-  ProductData, 
-  getProductPrice, 
-  getProductStock, 
-  formatProductPrice 
-} from '@/utils/productUtils';
+import { ProductData } from '@/utils/productUtils';
 import ProductCard from '@/components/products/ProductCard';
 import {
   Pagination,
@@ -20,6 +14,8 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import usePagination from '@/hooks/usePagination';
+import { useProduct } from '@/hooks/repository';
+import { useBusinessSettings } from '@/hooks/repository';
 
 interface POSProductGridProps {
   searchTerm?: string;
@@ -28,6 +24,8 @@ interface POSProductGridProps {
 
 const POSProductGrid: React.FC<POSProductGridProps> = ({ searchTerm = '', categoryId = null }) => {
   const [products, setProducts] = useState<ProductData[]>([]);
+  const { loading: productLoading, error: productError, getFilteredProducts } = useProduct();
+  const { loading: settingsLoading, getSettings } = useBusinessSettings();
   const [loading, setLoading] = useState(true);
   
   const itemsPerPage = 20; // Adjust based on your UI needs
@@ -38,7 +36,7 @@ const POSProductGrid: React.FC<POSProductGridProps> = ({ searchTerm = '', catego
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        const { products: productData } = await loadProducts(searchTerm, categoryId);
+        const productData = await getFilteredProducts(searchTerm, categoryId);
         setProducts(productData);
       } catch (error) {
         console.error('Error loading products:', error);
@@ -49,7 +47,13 @@ const POSProductGrid: React.FC<POSProductGridProps> = ({ searchTerm = '', catego
     };
     
     fetchProducts();
-  }, [searchTerm, categoryId]);
+  }, [searchTerm, categoryId, getFilteredProducts]);
+
+  useEffect(() => {
+    if (productError) {
+      toast.error(productError.message);
+    }
+  }, [productError]);
   
   const {
     currentPage,
@@ -64,8 +68,18 @@ const POSProductGrid: React.FC<POSProductGridProps> = ({ searchTerm = '', catego
     initialPage: 1
   });
 
-  const handleAddToCart = (product: ProductData) => {
-    const price = getProductPrice(product);
+  const handleAddToCart = async (product: ProductData) => {
+    const settings = await getSettings();
+    let price = 0;
+    
+    // Extract price from product variations
+    if (product.product_variations && 
+        product.product_variations.length > 0 &&
+        product.product_variations[0].variations &&
+        product.product_variations[0].variations.length > 0) {
+      price = parseFloat(product.product_variations[0].variations[0].sell_price_inc_tax) || 0;
+    }
+    
     const variationId = product.product_variations?.[0]?.variations?.[0]?.id || null;
     
     addItem({
@@ -80,7 +94,7 @@ const POSProductGrid: React.FC<POSProductGridProps> = ({ searchTerm = '', catego
     toast.success(`Added ${product.name} to cart`);
   };
 
-  if (loading) {
+  if (loading || productLoading || settingsLoading) {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sadiid-600"></div>

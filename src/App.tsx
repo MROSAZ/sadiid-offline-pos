@@ -6,6 +6,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { NetworkProvider } from "./context/NetworkContext";
 import { CartProvider } from "./context/CartContext";
 import { CustomerProvider } from './context/CustomerContext';
+import { RepositoryProvider } from './context/RepositoryContext';
 import { useEffect } from 'react';
 import { initDB } from "./services/storage";
 
@@ -46,34 +47,36 @@ const App = () => {
       <BrowserRouter>
         <AuthProvider>
           <NetworkProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Routes>
-                {/* Public routes */}
-                <Route path="/login" element={<Login />} />
-                
-                {/* Protected routes - wrapped with business-specific providers */}
-                <Route path="/" element={
-                  <ProtectedRoute>
-                    <CartProvider>
-                      <CustomerProvider>
-                        <ProtectedLayout />
-                      </CustomerProvider>
-                    </CartProvider>
-                  </ProtectedRoute>
-                }>
-                  <Route index element={<Navigate to="/dashboard" replace />} />
-                  <Route path="dashboard" element={<Dashboard />} />
-                  <Route path="products" element={<Products />} />
-                  <Route path="customers" element={<Customers />} />
-                  <Route path="pos" element={<POS />} />
-                  <Route path="sales" element={<Sales />} />
-                  <Route path="settings" element={<Settings />} />
-                </Route>
-                
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </TooltipProvider>
+            <RepositoryProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Routes>
+                  {/* Public routes */}
+                  <Route path="/login" element={<Login />} />
+                  
+                  {/* Protected routes - wrapped with business-specific providers */}
+                  <Route path="/" element={
+                    <ProtectedRoute>
+                      <CartProvider>
+                        <CustomerProvider>
+                          <ProtectedLayout />
+                        </CustomerProvider>
+                      </CartProvider>
+                    </ProtectedRoute>
+                  }>
+                    <Route index element={<Navigate to="/dashboard" replace />} />
+                    <Route path="dashboard" element={<Dashboard />} />
+                    <Route path="products" element={<Products />} />
+                    <Route path="customers" element={<Customers />} />
+                    <Route path="pos" element={<POS />} />
+                    <Route path="sales" element={<Sales />} />
+                    <Route path="settings" element={<Settings />} />
+                  </Route>
+                  
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </TooltipProvider>
+            </RepositoryProvider>
           </NetworkProvider>
         </AuthProvider>
       </BrowserRouter>
