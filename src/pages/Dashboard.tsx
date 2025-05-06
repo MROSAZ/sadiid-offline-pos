@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -44,12 +43,12 @@ const Dashboard = () => {
     
     setSyncing(true);
     try {
-      const result = await syncData();
-      if (result.success) {
+      const result = await syncData(true); // Pass true to show toasts
+      if (result) {
         toast.success('Data synced successfully');
         await loadStats();
       } else {
-        toast.error(result.message);
+        toast.error('Sync failed');
       }
     } catch (error) {
       console.error('Sync error:', error);
