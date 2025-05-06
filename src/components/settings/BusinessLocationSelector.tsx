@@ -21,7 +21,7 @@ interface BusinessLocation {
 }
 
 const BusinessLocationSelector = () => {
-  const { cart, setLocation } = useCart();
+  const { location_id, setLocation } = useCart();
   const [locations, setLocations] = useState<BusinessLocation[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -61,7 +61,7 @@ const BusinessLocationSelector = () => {
     loadLocations();
   }, []);
   
-  const currentLocation = locations.find(loc => loc.id === cart.location_id);
+  const currentLocation = locations.find(loc => loc.id === location_id);
   const formattedAddress = formatLocationAddress(currentLocation || null);
   
   const handleLocationChange = (locationId: string) => {
@@ -118,7 +118,7 @@ const BusinessLocationSelector = () => {
       </CardHeader>
       <CardContent className="space-y-4">
         <Select 
-          value={cart.location_id?.toString() || ''}
+          value={location_id?.toString() || ''}
           onValueChange={handleLocationChange}
         >
           <SelectTrigger>

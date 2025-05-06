@@ -14,7 +14,10 @@ import { getBusinessSettings } from '@/services/storage';
 const PLACEHOLDER_SVG = `data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M 20 70 Q 60 20, 100 70' fill='none' stroke='%239e9e9e' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E`;
 
 const POSOrderDetails = () => {
-  const { cart, getSubtotal, getTotal, updateQuantity, removeItem, clearCart } = useCart();
+  const { 
+    items, location_id, discount, tax, note,
+    getSubtotal, getTotal, updateQuantity, removeItem, clearCart 
+  } = useCart();
   const { isOnline } = useNetwork();
   const { selectedCustomer } = useCustomer();
   const [settings, setSettings] = useState(null);
@@ -47,13 +50,23 @@ const POSOrderDetails = () => {
     updateQuantity(id, newQuantity);
   };
   
+  // Guard for items being undefined
+  if (!items) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-gray-400">
+        <Package size={36} />
+        <p className="mt-2">Loading cart...</p>
+      </div>
+    );
+  }
+  
   const handleProcessSale = async () => {
-    if (cart.items.length === 0) {
+    if (items.length === 0) {
       toast.error('Cannot create sale with no items');
       return;
     }
     
-    if (!cart.location_id) {
+    if (!location_id) {
       toast.error('Please select a business location first');
       return;
     }
@@ -61,7 +74,7 @@ const POSOrderDetails = () => {
     // Verify location still exists
     const businessSettings = await getBusinessSettings();
     const locationExists = businessSettings.locations && 
-      businessSettings.locations.some(loc => loc.id === cart.location_id);
+      businessSettings.locations.some(loc => loc.id === location_id);
       
     if (!locationExists) {
       toast.error('Selected business location is no longer valid. Please select another location.');
@@ -73,11 +86,11 @@ const POSOrderDetails = () => {
     try {
       // Prepare sale data
       const saleData = {
-        location_id: cart.location_id,
+        location_id,
         contact_id: selectedCustomer?.id || null,
         transaction_date: new Date().toISOString(),
         status: 'final',
-        products: cart.items.map(item => ({
+        products: items.map(item => ({
           product_id: item.product_id,
           variation_id: item.variation_id || undefined,
           quantity: item.quantity,
@@ -89,9 +102,9 @@ const POSOrderDetails = () => {
           amount: getTotal(),
           method: 'cash',
         }],
-        discount_amount: cart.discount,
-        tax_amount: cart.tax,
-        sale_note: cart.note || undefined,
+        discount_amount: discount,
+        tax_amount: tax,
+        sale_note: note || undefined,
       };
       
       // Different process flows for online vs offline
@@ -120,18 +133,16 @@ const POSOrderDetails = () => {
     }
   };
   
-  // Calculate totals
+  // Calculate totals - now we're safe because we've already checked that items exist
   const subtotal = getSubtotal();
-  const discount = cart.discount;
-  const tax = cart.tax;
   const total = getTotal();
 
   return (
     <div className="flex flex-col h-full">
       {/* Order Items */}
       <div className="flex-1 overflow-y-auto mb-4">
-        {cart.items.length > 0 ? (
-          cart.items.map((item) => (
+        {items.length > 0 ? (
+          items.map((item) => (
             <div key={item.id} className="flex items-center gap-3 mb-4">
               <div className="w-16 h-16 bg-gray-100 rounded flex-shrink-0 flex justify-center items-center">
                 <img src={PLACEHOLDER_SVG} alt={item.name} className="w-10 h-10" />
@@ -203,7 +214,7 @@ const POSOrderDetails = () => {
         <Button 
           className="w-full bg-blue-500 hover:bg-blue-600 text-white py-6"
           onClick={handleProcessSale}
-          disabled={processing || cart.items.length === 0}
+          disabled={processing || items.length === 0}
         >
           {processing ? 'Processing...' : 'Pay Now'}
         </Button>
@@ -212,7 +223,7 @@ const POSOrderDetails = () => {
             variant="outline" 
             className="w-full border-gray-300"
             onClick={() => clearCart()}
-            disabled={cart.items.length === 0}
+            disabled={items.length === 0}
           >
             Clear
           </Button>

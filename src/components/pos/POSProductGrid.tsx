@@ -2,7 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Package } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
-import { loadProducts, ProductData } from '@/utils/productUtils';
+import { 
+  loadProducts, 
+  ProductData, 
+  getProductPrice, 
+  getProductStock, 
+  formatProductPrice 
+} from '@/utils/productUtils';
 import ProductCard from '@/components/products/ProductCard';
 import {
   Pagination,
@@ -59,22 +65,19 @@ const POSProductGrid: React.FC<POSProductGridProps> = ({ searchTerm = '', catego
   });
 
   const handleAddToCart = (product: ProductData) => {
-    if (product.price) {
-      addItem({
-        product_id: product.id,
-        name: product.name,
-        sku: product.sku,
-        price: typeof product.price === 'string' ? parseFloat(product.price) : product.price,
-        quantity: 1,
-        discount: 0,
-        tax: 0,
-        total: typeof product.price === 'string' ? parseFloat(product.price) : product.price,
-        variation_id: product.variation_id
-      });
-      toast.success(`Added ${product.name} to cart`);
-    } else {
-      toast.error(`Cannot add ${product.name} - no price available`);
-    }
+    const price = getProductPrice(product);
+    const variationId = product.product_variations?.[0]?.variations?.[0]?.id || null;
+    
+    addItem({
+      product_id: parseInt(product.id),
+      variation_id: variationId,
+      name: product.name,
+      price: price,
+      quantity: 1,
+      tax: 0,
+      discount: 0
+    });
+    toast.success(`Added ${product.name} to cart`);
   };
 
   if (loading) {

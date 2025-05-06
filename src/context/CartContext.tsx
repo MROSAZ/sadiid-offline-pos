@@ -91,7 +91,14 @@ function cartReducer(state: CartState, action: CartAction): CartState {
   }
 }
 
-interface CartContextValue extends CartState {
+interface CartContextValue {
+  // State properties
+  items: CartItem[];
+  discount: number;
+  tax: number;
+  note: string | null;
+  location_id: number | null;
+  // Methods
   addItem: (item: Omit<CartItem, 'id'>) => void;
   updateQuantity: (id: number, quantity: number) => void;
   removeItem: (id: number) => void;
