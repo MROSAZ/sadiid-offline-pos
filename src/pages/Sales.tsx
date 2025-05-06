@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react'; // Remove useMemo import if not used
-import { getSales, markSaleAsSynced } from '@/services/storage';
+import React, { useEffect, useState } from 'react'; 
+import { getSales, markSaleAsSynced, getBusinessSettings } from '@/services/storage';
 import { createSale } from '@/services/api';
 import { useNetwork } from '@/context/NetworkContext';
 import { toast } from 'sonner';
@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrencySync } from '@/utils/formatting';
-import { getBusinessSettings } from '@/services/businessSettings';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 
 const Sales = () => {
@@ -62,8 +61,6 @@ const Sales = () => {
       setLoading(false);
     }
   };
-
-  // Removed second useEffect that was just calling loadSales()
 
   const handlePageChange = (page: number) => {
     loadSales(page);

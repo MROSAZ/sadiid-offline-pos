@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/context/CartContext';
 import { saveSale } from '@/services/storage';
@@ -7,8 +7,8 @@ import { useNetwork } from '@/context/NetworkContext';
 import { createSale } from '@/services/api';
 import { Package, X, Plus, Minus } from 'lucide-react';
 import { formatCurrencySync } from '@/utils/formatting';
-import { useBusinessSettings } from '@/context/BusinessSettingsContext';
 import { useCustomer } from '@/context/CustomerContext';
+import { getBusinessSettings } from '@/services/storage';
 
 // For product placeholder
 const PLACEHOLDER_SVG = `data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M 20 70 Q 60 20, 100 70' fill='none' stroke='%239e9e9e' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E`;
@@ -17,8 +17,22 @@ const POSOrderDetails = () => {
   const { cart, getSubtotal, getTotal, updateQuantity, removeItem, clearCart } = useCart();
   const { isOnline } = useNetwork();
   const { selectedCustomer } = useCustomer();
-  const { settings } = useBusinessSettings();
+  const [settings, setSettings] = useState(null);
   const [processing, setProcessing] = useState(false);
+  
+  // Load business settings
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const businessSettings = await getBusinessSettings();
+        setSettings(businessSettings);
+      } catch (error) {
+        console.error('Error loading business settings:', error);
+      }
+    };
+    
+    loadSettings();
+  }, []);
   
   // Format price using business settings
   const formatPrice = (price: number): string => {
@@ -41,6 +55,16 @@ const POSOrderDetails = () => {
     
     if (!cart.location_id) {
       toast.error('Please select a business location first');
+      return;
+    }
+    
+    // Verify location still exists
+    const businessSettings = await getBusinessSettings();
+    const locationExists = businessSettings.locations && 
+      businessSettings.locations.some(loc => loc.id === cart.location_id);
+      
+    if (!locationExists) {
+      toast.error('Selected business location is no longer valid. Please select another location.');
       return;
     }
     
@@ -88,7 +112,6 @@ const POSOrderDetails = () => {
       
       // Clear cart and show success
       clearCart();
-      toast.success('Sale completed successfully');
     } catch (error) {
       console.error('Error processing sale:', error);
       toast.error('Failed to process sale');

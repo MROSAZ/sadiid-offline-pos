@@ -1,42 +1,84 @@
 import React, { useState, useEffect } from 'react';
 import { useCart } from '@/context/CartContext';
-import { saveSelectedLocationId, formatLocationAddress } from '@/services/locationService';
-import { BusinessLocation } from '@/services/businessSettings';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
-import { useBusinessSettings } from '@/context/BusinessSettingsContext';
 import { toast } from 'sonner';
+import { getBusinessSettings } from '@/services/storage';
+
+// Constants
+const LOCATION_STORAGE_KEY = 'selected_location_id';
+
+interface BusinessLocation {
+  id: number;
+  name: string;
+  landmark?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  zip_code?: string;
+  is_active: number;
+}
 
 const BusinessLocationSelector = () => {
-  const [locations, setLocations] = useState<BusinessLocation[]>([]);
   const { cart, setLocation } = useCart();
-  const { settings, loading } = useBusinessSettings();
+  const [locations, setLocations] = useState<BusinessLocation[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Format location address from individual fields
+  const formatLocationAddress = (location: BusinessLocation | null): string => {
+    if (!location) return '';
+    
+    const addressParts = [
+      location.landmark,
+      location.city,
+      location.state,
+      location.country,
+      location.zip_code
+    ].filter(Boolean); // Filter out null/undefined/empty values
+    
+    return addressParts.join(', ');
+  };
   
+  // Load locations from storage
   useEffect(() => {
-    if (settings?.locations) {
-      // Filter to only active locations
-      const activeLocations = settings.locations.filter(loc => loc.is_active === 1);
-      setLocations(activeLocations);
-    }
-  }, [settings]);
+    const loadLocations = async () => {
+      try {
+        setLoading(true);
+        const settings = await getBusinessSettings();
+        if (settings.locations) {
+          const activeLocations = settings.locations.filter(loc => loc.is_active === 1);
+          setLocations(activeLocations);
+        }
+      } catch (error) {
+        console.error('Error loading locations:', error);
+        toast.error('Failed to load business locations');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadLocations();
+  }, []);
+  
+  const currentLocation = locations.find(loc => loc.id === cart.location_id);
+  const formattedAddress = formatLocationAddress(currentLocation || null);
   
   const handleLocationChange = (locationId: string) => {
     const numericId = parseInt(locationId, 10);
     if (!isNaN(numericId)) {
+      // Update cart context
       setLocation(numericId);
-      saveSelectedLocationId(numericId);
-      toast.success(`Business location set to ${getCurrentLocationName()}`);
+      
+      // Save to localStorage
+      localStorage.setItem(LOCATION_STORAGE_KEY, numericId.toString());
+      
+      const newLocation = locations.find(loc => loc.id === numericId);
+      if (newLocation) {
+        toast.success(`Business location set to ${newLocation.name}`);
+      }
     }
   };
-  
-  const getCurrentLocationName = () => {
-    const currentLocation = locations.find(loc => loc.id === cart.location_id);
-    return currentLocation?.name || 'Default Location';
-  };
-  
-  const currentLocation = locations.find(loc => loc.id === cart.location_id);
-  const formattedAddress = formatLocationAddress(currentLocation || null);
   
   if (loading) {
     return (
@@ -81,7 +123,7 @@ const BusinessLocationSelector = () => {
         >
           <SelectTrigger>
             <SelectValue placeholder="Select location">
-              {getCurrentLocationName()}
+              {currentLocation?.name || 'Select location'}
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
