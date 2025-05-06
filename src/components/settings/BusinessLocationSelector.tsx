@@ -1,60 +1,38 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCart } from '@/context/CartContext';
+import { saveSelectedLocationId, formatLocationAddress } from '@/services/locationService';
 import { BusinessLocation } from '@/services/businessSettings';
-import { 
-  getLocations, 
-  saveSelectedLocationId, 
-  formatLocationAddress 
-} from '@/services/locationService';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Loader2 } from 'lucide-react';
+import { useBusinessSettings } from '@/context/BusinessSettingsContext';
 import { toast } from 'sonner';
-import { MapPin } from 'lucide-react';
 
 const BusinessLocationSelector = () => {
   const [locations, setLocations] = useState<BusinessLocation[]>([]);
-  const [loading, setLoading] = useState(true);
   const { cart, setLocation } = useCart();
+  const { settings, loading } = useBusinessSettings();
   
   useEffect(() => {
-    const loadLocations = async () => {
-      try {
-        // Get active locations only
-        const activeLocations = await getLocations(true);
-        setLocations(activeLocations);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error loading business locations:', error);
-        toast.error('Failed to load business locations');
-        setLoading(false);
-      }
-    };
-    
-    loadLocations();
-  }, []);
+    if (settings?.locations) {
+      // Filter to only active locations
+      const activeLocations = settings.locations.filter(loc => loc.is_active === 1);
+      setLocations(activeLocations);
+    }
+  }, [settings]);
   
   const handleLocationChange = (locationId: string) => {
     const numericId = parseInt(locationId, 10);
     if (!isNaN(numericId)) {
-      // Update cart context
       setLocation(numericId);
-      
-      // Store in localStorage via the service
       saveSelectedLocationId(numericId);
-      
-      toast.success('Business location updated');
+      toast.success(`Business location set to ${getCurrentLocationName()}`);
     }
   };
   
   const getCurrentLocationName = () => {
-    const location = locations.find(loc => loc.id === cart.location_id);
-    return location ? location.name : 'Unknown location';
+    const currentLocation = locations.find(loc => loc.id === cart.location_id);
+    return currentLocation?.name || 'Default Location';
   };
   
   const currentLocation = locations.find(loc => loc.id === cart.location_id);
@@ -65,12 +43,10 @@ const BusinessLocationSelector = () => {
       <Card>
         <CardHeader>
           <CardTitle>Business Location</CardTitle>
-          <CardDescription>Select your active business location</CardDescription>
+          <CardDescription>Select your primary business location</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center h-16">
-            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
-          </div>
+        <CardContent className="flex justify-center items-center py-6">
+          <Loader2 className="h-6 w-6 animate-spin text-sadiid-600" />
         </CardContent>
       </Card>
     );
@@ -81,10 +57,12 @@ const BusinessLocationSelector = () => {
       <Card>
         <CardHeader>
           <CardTitle>Business Location</CardTitle>
-          <CardDescription>Select your active business location</CardDescription>
+          <CardDescription>No business locations available</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="text-red-500">No active business locations found</div>
+          <p className="text-sm text-gray-500">
+            No business locations were found. Please make sure you have at least one location configured in your business settings.
+          </p>
         </CardContent>
       </Card>
     );
@@ -94,15 +72,17 @@ const BusinessLocationSelector = () => {
     <Card>
       <CardHeader>
         <CardTitle>Business Location</CardTitle>
-        <CardDescription>Select your active business location</CardDescription>
+        <CardDescription>Select your primary business location</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <Select 
-          value={cart.location_id?.toString() || ''} 
+          value={cart.location_id?.toString() || ''}
           onValueChange={handleLocationChange}
         >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select business location" />
+          <SelectTrigger>
+            <SelectValue placeholder="Select location">
+              {getCurrentLocationName()}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {locations.map((location) => (
@@ -113,17 +93,14 @@ const BusinessLocationSelector = () => {
           </SelectContent>
         </Select>
         
-        <div className="bg-muted p-3 rounded-md">
-          <div className="flex items-center text-sm text-muted-foreground">
-            <MapPin className="h-4 w-4 mr-2" />
-            <span>Currently using: <strong>{getCurrentLocationName()}</strong></span>
+        {currentLocation && (
+          <div className="bg-gray-50 p-3 rounded-md text-sm">
+            <p className="font-medium text-gray-700">{currentLocation.name}</p>
+            {formattedAddress && (
+              <p className="text-gray-500 mt-1">{formattedAddress}</p>
+            )}
           </div>
-          {formattedAddress && (
-            <div className="mt-1 text-xs text-muted-foreground">
-              {formattedAddress}
-            </div>
-          )}
-        </div>
+        )}
       </CardContent>
     </Card>
   );

@@ -10,14 +10,20 @@ interface ProductCardProps {
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, compact = false }) => {
+  const handleClick = () => {
+    if (onClick) {
+      onClick(product);
+    }
+  };
+
   return (
     <Card 
-      className={`cursor-pointer hover:shadow-md transition-shadow ${compact ? 'h-full' : ''}`}
-      onClick={() => onClick && onClick(product)}
+      className={`${compact ? 'p-2' : 'p-3'} h-full cursor-pointer hover:shadow-md transition-shadow card-hover`}
+      onClick={handleClick}
     >
-      <CardContent className={compact ? "p-3" : "p-4"}>
+      <CardContent className="p-0 flex flex-col">
         {/* Product Image */}
-        <div className={`w-full ${compact ? 'h-20' : 'h-32'} flex items-center justify-center bg-gray-50 rounded mb-2`}>
+        <div className="flex justify-center items-center bg-gray-50 rounded mb-3">
           <img 
             src={product.image_url || PRODUCT_PLACEHOLDER_SVG} 
             alt={product.name} 
@@ -41,9 +47,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onClick, compact = f
         
         {/* Additional description for non-compact view */}
         {!compact && product.product_description && (
-          <div className="mt-2 text-xs text-gray-500 line-clamp-2">
-            {product.product_description}
-          </div>
+          <p className="text-xs text-gray-500 mt-2 line-clamp-2">{product.product_description}</p>
         )}
       </CardContent>
     </Card>

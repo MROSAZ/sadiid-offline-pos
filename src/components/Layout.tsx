@@ -1,10 +1,13 @@
-import React from 'react';
-import { Outlet } from 'react-router-dom';
+import React, { ReactNode } from 'react';
 import Sidebar from './Sidebar';
 import Header from '@/components/Header';
 import AppInitializer from './AppInitializer';
 
-const Layout: React.FC = () => {
+interface LayoutProps {
+  children: ReactNode;
+}
+
+const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <div className="flex h-screen bg-gray-100">
       <AppInitializer />
@@ -12,7 +15,7 @@ const Layout: React.FC = () => {
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
         <main className="flex-1 overflow-auto p-4">
-          <Outlet />
+          {children}
         </main>
       </div>
     </div>

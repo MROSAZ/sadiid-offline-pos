@@ -32,8 +32,8 @@ const POSProductGrid: React.FC<POSProductGridProps> = ({ searchTerm = '', catego
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        const { products: loadedProducts } = await loadProducts(searchTerm, categoryId);
-        setProducts(loadedProducts);
+        const { products: productData } = await loadProducts(searchTerm, categoryId);
+        setProducts(productData);
       } catch (error) {
         console.error('Error loading products:', error);
         toast.error('Failed to load products');
@@ -45,29 +45,37 @@ const POSProductGrid: React.FC<POSProductGridProps> = ({ searchTerm = '', catego
     fetchProducts();
   }, [searchTerm, categoryId]);
   
-  // Reset pagination when search term or category changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, categoryId]);
-  
-  const handleAddToCart = (product: ProductData) => {
-    // Add item to cart using processed product data
-    addItem({
-      product_id: product.id,
-      name: product.name,
-      sku: product.sku,
-      price: product.price as number,
-      quantity: 1,
-      discount: 0,
-      tax: 0,
-      total: product.price as number,
-      variation_id: product.variation_id
-    });
-    
-    toast.success(`Added ${product.name} to cart`);
-  };
+  const {
+    currentPage,
+    totalPages,
+    currentItems,
+    handlePageChange,
+    nextPage,
+    prevPage
+  } = usePagination<ProductData>({
+    items: products,
+    itemsPerPage,
+    initialPage: 1
+  });
 
-  const { currentPage, totalPages, currentItems, setCurrentPage } = usePagination(products, itemsPerPage);
+  const handleAddToCart = (product: ProductData) => {
+    if (product.price) {
+      addItem({
+        product_id: product.id,
+        name: product.name,
+        sku: product.sku,
+        price: typeof product.price === 'string' ? parseFloat(product.price) : product.price,
+        quantity: 1,
+        discount: 0,
+        tax: 0,
+        total: typeof product.price === 'string' ? parseFloat(product.price) : product.price,
+        variation_id: product.variation_id
+      });
+      toast.success(`Added ${product.name} to cart`);
+    } else {
+      toast.error(`Cannot add ${product.name} - no price available`);
+    }
+  };
 
   if (loading) {
     return (
@@ -76,55 +84,87 @@ const POSProductGrid: React.FC<POSProductGridProps> = ({ searchTerm = '', catego
       </div>
     );
   }
-    
+
+  if (products.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+        <Package size={48} />
+        <p className="mt-2">No products found</p>
+      </div>
+    );
+  }
+
   return (
-    <>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 product-grid">
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
         {currentItems.map((product) => (
           <ProductCard 
             key={product.id}
             product={product}
-            onClick={handleAddToCart}
-            compact={true}
+            onClick={() => handleAddToCart(product)}
+            compact={true} // Use compact view for POS
           />
         ))}
-        
-        {products.length === 0 && (
-          <div className="col-span-full flex justify-center items-center h-64 text-gray-500">
-            {searchTerm ? 'No products found' : 'No products available'}
-          </div>
-        )}
       </div>
       
-      {/* Pagination Component - Same as before */}
-      {products.length > 0 && (
+      {totalPages > 1 && (
         <Pagination className="mt-6">
           <PaginationContent>
             <PaginationItem>
               <PaginationPrevious 
-                onClick={() => setCurrentPage(currentPage - 1)}
-                className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                onClick={prevPage} 
+                className={`cursor-pointer ${currentPage === 1 ? 'opacity-50 pointer-events-none' : ''}`}
               />
             </PaginationItem>
             
+            {/* Page links */}
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              // Show first page, last page, current page, and pages around current
+              const pageNum = i + 1;
+              
+              if (
+                pageNum === 1 || 
+                pageNum === totalPages ||
+                (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+              ) {
+                return (
+                  <PaginationItem key={pageNum}>
+                    <PaginationLink
+                      isActive={currentPage === pageNum}
+                      onClick={() => handlePageChange(pageNum)}
+                      className="cursor-pointer"
+                    >
+                      {pageNum}
+                    </PaginationLink>
+                  </PaginationItem>
+                );
+              }
+              
+              // Show ellipsis if there's a gap
+              if (
+                (pageNum === 2 && currentPage > 3) ||
+                (pageNum === totalPages - 1 && currentPage < totalPages - 2)
+              ) {
+                return (
+                  <PaginationItem key={`ellipsis-${pageNum}`}>
+                    <PaginationEllipsis />
+                  </PaginationItem>
+                );
+              }
+              
+              return null;
+            }).filter(Boolean)}
+            
             <PaginationItem>
               <PaginationNext 
-                onClick={() => setCurrentPage(currentPage + 1)}
-                className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                onClick={nextPage} 
+                className={`cursor-pointer ${currentPage === totalPages ? 'opacity-50 pointer-events-none' : ''}`}
               />
             </PaginationItem>
           </PaginationContent>
         </Pagination>
       )}
-      
-      {/* Page info */}
-      {products.length > 0 && (
-        <div className="text-center text-sm text-gray-500 mt-2">
-          Showing {(currentPage - 1) * itemsPerPage + 1}-
-          {Math.min(currentPage * itemsPerPage, products.length)} of {products.length} products
-        </div>
-      )}
-    </>
+    </div>
   );
 };
 
