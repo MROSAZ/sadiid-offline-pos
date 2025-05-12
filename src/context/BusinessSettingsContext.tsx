@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import { 
   getBusinessSettings, 
   getLocalBusinessSettings,
@@ -29,12 +29,13 @@ export const BusinessSettingsProvider: React.FC<BusinessSettingsProviderProps> =
   const [settings, setSettings] = useState<BusinessSettingsType | null>(getLocalBusinessSettings());
   const [loading, setLoading] = useState(!settings);
   const { isOnline } = useNetwork();
+  const initialized = useRef(false);
 
   const loadSettings = async (showToast = false) => {
     try {
       setLoading(true);
-      // Force refresh if we're online, otherwise use cached settings
-      const businessSettings = await getBusinessSettings(isOnline);
+      // Only force refresh when explicitly requested via the UI
+      const businessSettings = await getBusinessSettings(showToast);
       setSettings(businessSettings);
       if (showToast) toast.success('Business settings updated');
     } catch (error) {
@@ -51,12 +52,16 @@ export const BusinessSettingsProvider: React.FC<BusinessSettingsProviderProps> =
       loadSettings();
     }
   }, []);
-
-  // Refresh settings when coming back online
+  // Refresh settings when coming back online, but avoid unnecessary refreshes
   useEffect(() => {
-    if (isOnline) {
-      loadSettings();
+    // Only refresh when coming back online from offline state
+    if (isOnline && initialized.current === true) {
+      // Don't block UI, refresh in background
+      loadSettings().catch(err => {
+        console.error('Background settings refresh failed:', err);
+      });
     }
+    initialized.current = true;
   }, [isOnline]);
 
   const refreshSettings = async () => {

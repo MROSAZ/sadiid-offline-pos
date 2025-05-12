@@ -1,5 +1,8 @@
-import api from './api';
+import { getBusinessDetails } from './api';
 
+/**
+ * Interface definitions for business settings data structures
+ */
 export interface CurrencyInfo {
   symbol: string;
   code: string;
@@ -52,31 +55,72 @@ const DEFAULT_SETTINGS: BusinessSettings = {
   }
 };
 
-// Cache the settings
-let businessSettings: BusinessSettings | null = null;
+// Cache management
+const BUSINESS_SETTINGS_KEY = 'business_settings';
+const SETTINGS_TIMESTAMP_KEY = 'business_settings_timestamp';
+const CACHE_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours
 
-export const getBusinessSettings = async (forceRefresh = false): Promise<BusinessSettings> => {
-  // Fast path: return from memory if available
-  if (businessSettings && !forceRefresh) {
+// In-memory cache
+let businessSettings: BusinessSettings | null = null;
+let fetchInProgress: Promise<BusinessSettings> | null = null;
+
+/**
+ * Initialize business settings - called once during app startup
+ * Prioritizes: 1) In-memory cache 2) LocalStorage 3) API
+ */
+export const initBusinessSettings = async (): Promise<BusinessSettings> => {
+  // Check in-memory cache first (fastest)
+  if (businessSettings) {
     return businessSettings;
   }
   
   try {
-    // Check localStorage first to avoid network request
-    if (!forceRefresh) {
-      const cachedSettings = localStorage.getItem('business_settings');
-      if (cachedSettings) {
-        businessSettings = JSON.parse(cachedSettings);
-        return businessSettings;
+    // Then check localStorage (no network required)
+    const cachedSettings = localStorage.getItem(BUSINESS_SETTINGS_KEY);
+    const timestamp = localStorage.getItem(SETTINGS_TIMESTAMP_KEY);
+    
+    if (cachedSettings) {
+      businessSettings = JSON.parse(cachedSettings);
+      
+      // If online and cache is old, refresh in background but return cached data immediately
+      if (navigator.onLine && timestamp && (Date.now() - Number(timestamp)) > CACHE_MAX_AGE) {
+        // Don't await - refresh in background but don't block UI
+        refreshBusinessSettings().catch(err => 
+          console.error('Background refresh of business settings failed:', err)
+        );
       }
+      
+      return businessSettings;
+    }
+
+    // If no cached data and online, fetch from API
+    if (navigator.onLine) {
+      return await refreshBusinessSettings();
     }
     
-    // Only fetch from API when needed and we're online
-    if (navigator.onLine) {
-      const response = await api.get('/connector/api/business-details');
-      const data = response.data.data;
+    // Offline without cache - use defaults
+    return DEFAULT_SETTINGS;
+  } catch (error) {
+    console.error('Error initializing business settings:', error);
+    return DEFAULT_SETTINGS;
+  }
+};
+
+/**
+ * Fetch fresh data from API and update cache
+ */
+const refreshBusinessSettings = async (): Promise<BusinessSettings> => {
+  // Only one fetch at a time
+  if (fetchInProgress) {
+    return fetchInProgress;
+  }
+
+  try {
+    fetchInProgress = (async () => {
+      console.log('Fetching business details from API...');
+      const data = await getBusinessDetails();
       
-      // Extract settings including locations
+      // Process and store settings
       businessSettings = {
         name: data.name,
         currency: data.currency,
@@ -84,29 +128,61 @@ export const getBusinessSettings = async (forceRefresh = false): Promise<Busines
         currency_precision: data.currency_precision,
         quantity_precision: data.quantity_precision,
         pos_settings: data.pos_settings,
-        locations: data.locations // Add location data
+        locations: data.locations
       };
       
-      // Cache for offline use
-      localStorage.setItem('business_settings', JSON.stringify(businessSettings));
+      // Update cache with timestamp
+      localStorage.setItem(BUSINESS_SETTINGS_KEY, JSON.stringify(businessSettings));
+      localStorage.setItem(SETTINGS_TIMESTAMP_KEY, Date.now().toString());
       
       return businessSettings;
-    } else {
-      // We're offline, try localStorage again
-      const cachedSettings = localStorage.getItem('business_settings');
-      if (cachedSettings) {
-        return JSON.parse(cachedSettings);
-      }
-      
-      return DEFAULT_SETTINGS;
-    }
-  } catch (error) {
-    console.error('Error fetching business settings:', error);
+    })();
     
-    // Try localStorage as fallback again in case network request failed
-    const cachedSettings = localStorage.getItem('business_settings');
+    const result = await fetchInProgress;
+    fetchInProgress = null;
+    return result;
+  } catch (error) {
+    console.error('Error fetching business details:', error);
+    fetchInProgress = null;
+    throw error;
+  }
+};
+
+/**
+ * Get business settings - first from memory cache, then localStorage,
+ * only fetch from API when forcing refresh
+ */
+export const getBusinessSettings = async (forceRefresh = false): Promise<BusinessSettings> => {
+  // Fast path: return from memory if available and not forcing refresh
+  if (businessSettings && !forceRefresh) {
+    return businessSettings;
+  }
+  
+  try {
+    // If not forcing refresh, check localStorage before fetching
+    if (!forceRefresh) {
+      const cachedSettings = localStorage.getItem(BUSINESS_SETTINGS_KEY);
+      if (cachedSettings) {
+        businessSettings = JSON.parse(cachedSettings);
+        return businessSettings;
+      }
+    }
+    
+    // Only fetch from API when forcing refresh and we're online
+    if (navigator.onLine && forceRefresh) {
+      return await refreshBusinessSettings();
+    }
+    
+    // Return the current settings or defaults
+    return businessSettings || DEFAULT_SETTINGS;
+  } catch (error) {
+    console.error('Error in getBusinessSettings:', error);
+    
+    // Try localStorage as fallback
+    const cachedSettings = localStorage.getItem(BUSINESS_SETTINGS_KEY);
     if (cachedSettings) {
-      return JSON.parse(cachedSettings);
+      businessSettings = JSON.parse(cachedSettings);
+      return businessSettings;
     }
     
     return DEFAULT_SETTINGS;
@@ -115,7 +191,13 @@ export const getBusinessSettings = async (forceRefresh = false): Promise<Busines
 
 export const getLocalBusinessSettings = (): BusinessSettings | null => {
   try {
-    const cachedSettings = localStorage.getItem('business_settings');
+    // First try from memory cache
+    if (businessSettings) {
+      return businessSettings;
+    }
+    
+    // Then try from localStorage
+    const cachedSettings = localStorage.getItem(BUSINESS_SETTINGS_KEY);
     if (cachedSettings) {
       return JSON.parse(cachedSettings);
     }

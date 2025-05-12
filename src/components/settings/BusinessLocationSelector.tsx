@@ -51,8 +51,7 @@ const BusinessLocationSelector = () => {
       </Card>
     );
   }
-  
-  if (locations.length === 0) {
+    if (locations.length === 0) {
     return (
       <Card>
         <CardHeader>
@@ -61,7 +60,10 @@ const BusinessLocationSelector = () => {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-gray-500">
-            No business locations were found. Please make sure you have at least one location configured in your business settings.
+            {!navigator.onLine 
+              ? "You're offline. Business location data will be available when you reconnect."
+              : "No business locations were found. Please make sure you have at least one location configured in your business settings."
+            }
           </p>
         </CardContent>
       </Card>

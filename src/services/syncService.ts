@@ -1,6 +1,6 @@
-import { fetchProducts, fetchContacts, createSale } from '@/services/api';
+import { fetchProducts, fetchContacts, createSale, getBusinessDetails } from '@/services/api';
 import { saveProducts, saveContacts, getUnSyncedSales, markSaleAsSynced } from '@/services/storage';
-import { getBusinessSettings } from '@/services/businessSettings';
+import { getBusinessSettings } from './businessSettings';
 import { toast } from 'sonner';
 
 export const syncOfflineSales = async (): Promise<boolean> => {
@@ -43,10 +43,10 @@ export const syncData = async (showToast = false): Promise<boolean> => {
   try {
     // Start with products
     try {
-      const productsResponse = await fetchProducts(1, 1000); // Adjust limits as needed
+      const productsResponse = await fetchProducts(1, 1000);
       if (productsResponse.data) {
         await saveProducts(productsResponse.data);
-        console.log(`Synced ${productsResponse.data.length} products`);
+        console.log('Synced products');
       }
     } catch (error) {
       console.error('Error syncing products:', error);
@@ -55,20 +55,23 @@ export const syncData = async (showToast = false): Promise<boolean> => {
     
     // Then sync contacts
     try {
-      const contactsResponse = await fetchContacts(1, 1000); // Adjust limits as needed
+      const contactsResponse = await fetchContacts(1, 1000);
       if (contactsResponse.data) {
         await saveContacts(contactsResponse.data);
-        console.log(`Synced ${contactsResponse.data.length} contacts`);
+        console.log('Synced contacts');
       }
     } catch (error) {
       console.error('Error syncing contacts:', error);
       if (showToast) toast.error('Failed to sync contacts');
     }
-    
-    // Sync settings
+      // Sync settings - only when online and explicitly syncing
     try {
-      await getBusinessSettings(true); // Force refresh
-      console.log('Synced business settings');
+      if (navigator.onLine) {
+        // Use the getBusinessSettings function with forceRefresh to update settings
+        // This ensures proper caching and prevents duplicate API calls
+        await getBusinessSettings(true);
+        console.log('Synced business settings');
+      }
     } catch (error) {
       console.error('Error syncing business settings:', error);
       if (showToast) toast.error('Failed to sync business settings');
@@ -88,5 +91,3 @@ export const syncData = async (showToast = false): Promise<boolean> => {
     return false;
   }
 };
-
-// Additional sync-related functions...

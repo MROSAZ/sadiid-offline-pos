@@ -768,4 +768,16 @@ export const contactPayment = async (data: {
   }
 };
 
+// ============== BUSINESS SETTINGS ==============
+export const getBusinessDetails = async () => {
+  try {
+    console.log('Fetching business details from API...');
+    const response = await api.get('/connector/api/business-details');
+    return response.data.data;
+  } catch (error) {
+    console.error('Error fetching business details:', error);
+    throw error;
+  }
+};
+
 export default api;

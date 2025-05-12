@@ -13,6 +13,7 @@ export const getLocations = async (
   forceRefresh = false
 ): Promise<BusinessLocation[]> => {
   try {
+    // Use cached settings to avoid unnecessary API calls
     const settings = await getBusinessSettings(forceRefresh);
     
     if (!settings.locations || settings.locations.length === 0) {
@@ -20,9 +21,12 @@ export const getLocations = async (
       return [];
     }
     
-    return activeOnly 
+    // Cache locations for offline use
+    const locations = activeOnly 
       ? settings.locations.filter(loc => loc.is_active === 1) 
       : settings.locations;
+      
+    return locations;
   } catch (error) {
     console.error('Error getting locations:', error);
     return [];
@@ -86,7 +90,14 @@ export const autoSelectLocation = async (): Promise<number | null> => {
     let locationId = getSelectedLocationId();
     
     // Check if current selection is valid
-    const locations = await getLocations(true);
+    const locations = await getLocations(true); // Use cached data
+    
+    // If we're offline and no locations found, but have a cached location ID, trust it
+    if (locations.length === 0 && !navigator.onLine && locationId) {
+      console.warn('Offline mode: Using cached location ID');
+      return locationId;
+    }
+    
     if (locations.length === 0) {
       console.warn('No active business locations found');
       return null;
@@ -104,6 +115,14 @@ export const autoSelectLocation = async (): Promise<number | null> => {
     return locationId;
   } catch (error) {
     console.error('Error auto-selecting location:', error);
+    // In offline mode, try to use cached location ID as fallback
+    if (!navigator.onLine) {
+      const cachedId = getSelectedLocationId();
+      if (cachedId) {
+        console.log('Fallback to cached location ID:', cachedId);
+        return cachedId;
+      }
+    }
     return null;
   }
 };

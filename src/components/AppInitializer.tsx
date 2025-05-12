@@ -6,6 +6,8 @@ import { useCustomer } from '@/context/CustomerContext';
 import { syncData } from '@/services/syncService';
 import { getContacts } from '@/services/storage';
 import { autoSelectLocation } from '@/services/locationService';
+import { initBusinessSettings } from '@/services/businessSettings';
+import { startBackgroundSync, stopBackgroundSync } from '@/services/backgroundSync';
 
 /**
  * Component that handles application initialization tasks
@@ -22,19 +24,24 @@ const AppInitializer: React.FC = () => {
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        // Only sync with server if online
-        if (isOnline) {
-          await syncData();
-        }
-
+        // Initialize business settings first (this will use cached data if available)
+        await initBusinessSettings();
+        
         // Auto-select business location if none selected
         await autoSelectLocation();
 
-        // Load customer data into context
+        // Load customer data into context (from local storage)
         const contacts = await getContacts();
         setCustomers(contacts || []);
+        
+        // Only sync data with server if online (in background)
+        if (isOnline) {
+          syncData().catch(error => {
+            console.error('Background sync failed:', error);
+          });
+        }
 
-        // Mark initialization as complete
+        // Mark initialization as complete - don't block UI on sync
         setInitialized(true);
       } catch (error) {
         console.error('Error initializing application:', error);
@@ -46,10 +53,10 @@ const AppInitializer: React.FC = () => {
       initializeApp();
     }
   }, [isOnline, setCustomers, initialized]);
-
-  // Sync data when coming back online
+  // Sync data when coming back online and start background sync
   useEffect(() => {
     if (isOnline && initialized) {
+      // Immediate sync when coming back online
       syncData()
         .then(() => {
           // Refresh customer data after sync
@@ -61,7 +68,18 @@ const AppInitializer: React.FC = () => {
         .catch((error) => {
           console.error('Error syncing data:', error);
         });
+      
+      // Start background sync for periodic updates
+      startBackgroundSync();
+    } else if (!isOnline) {
+      // Stop background sync when offline
+      stopBackgroundSync();
     }
+    
+    // Clean up on unmount
+    return () => {
+      stopBackgroundSync();
+    };
   }, [isOnline, initialized, setCustomers]);
 
   // This component doesn't render anything

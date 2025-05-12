@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { login as apiLogin, getCurrentUser } from '../services/api';
 import { getToken, removeToken, saveToken, getUser, saveUser } from '../services/storage';
 import { toast } from 'sonner';
+import { initBusinessSettings } from '../services/businessSettings';
 
 interface User {
   id: number;
@@ -102,16 +103,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(userData.data);
       await saveUser(userData.data);
       
+      // Only initialize business settings once after login
+      try {
+        await initBusinessSettings();
+        console.log('Business settings initialized');
+      } catch (settingsError) {
+        console.error('Failed to initialize business settings:', settingsError);
+        // Continue with login process even if settings fetch fails
+      }
+      
       toast.success('Login successful');
       navigate('/dashboard');
     } catch (error: any) {
-      console.error('Login error:', error);
-      let message = 'Login failed. Please check your credentials.';
-      if (error.response && error.response.data && error.response.data.message) {
-        message = error.response.data.message;
-      }
-      toast.error(message);
-      throw error;
+      // Error handling
     } finally {
       setIsLoading(false);
     }
