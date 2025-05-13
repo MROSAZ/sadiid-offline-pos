@@ -22,7 +22,7 @@ const NetworkContext = createContext<NetworkContextType>({
 export const useNetwork = () => useContext(NetworkContext);
 
 // URL to ping for connectivity check
-const PING_URL = 'https://erp.sadiid.net/';
+const PING_URL = 'erp.sadiid.net';
 const PING_INTERVAL_MS = 30000; // 30 seconds
 const MAX_DEFAULT_RETRIES = 3;
 const RETRY_DELAY_MS = 1000; // Base delay between retries
