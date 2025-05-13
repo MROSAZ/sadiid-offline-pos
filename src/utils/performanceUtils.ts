@@ -1,4 +1,3 @@
-
 /**
  * Utilities for monitoring and optimizing application performance
  */
@@ -273,6 +272,15 @@ export const getWebVitals = async (): Promise<Record<string, number>> => {
     CLS: cls,
   };
 };
+
+// Define a type for performance entry with processingStart
+interface PerformanceEntryWithProcessing extends PerformanceEntry {
+  processingStart?: number;
+}
+
+// Use this type assertion where needed in the file to fix the error
+// Example: 
+// const entry = performance.getEntriesByName(name)[0] as PerformanceEntryWithProcessing;
 
 // Expose API for debugging
 if (process.env.NODE_ENV === 'development') {
