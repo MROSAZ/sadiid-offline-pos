@@ -216,7 +216,10 @@ export const getWebVitals = async (): Promise<Record<string, number>> => {
         const entries = list.getEntries();
         const firstInput = entries[0];
         if (firstInput) {
-          fidValue = firstInput.processingStart - firstInput.startTime;
+          // Fix the error: use type assertion to access processingStart
+          // First Input Delay entries have this property, but it's not in the base type
+          const entry = firstInput as PerformanceEventTiming;
+          fidValue = entry.processingStart - entry.startTime;
         }
       });
       

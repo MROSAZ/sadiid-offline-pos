@@ -46,8 +46,13 @@ const updateSyncTimestamp = (type: keyof SyncTimestamps): void => {
   const timestamps = getSyncTimestamps();
   timestamps[type] = Date.now();
   
-  if (type === 'products' && type === 'contacts' && type === 'settings') {
-    timestamps.lastFullSync = Date.now();
+  // Fix the type comparison error - check each type separately
+  if (type === 'products' || type === 'contacts' || type === 'settings') {
+    // Only consider it a full sync if all three are updated
+    const allUpdated = timestamps.products && timestamps.contacts && timestamps.settings;
+    if (allUpdated) {
+      timestamps.lastFullSync = Date.now();
+    }
   }
   
   setLocalItem('sync_timestamps', JSON.stringify(timestamps));
