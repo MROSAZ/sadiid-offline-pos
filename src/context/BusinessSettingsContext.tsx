@@ -1,9 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   getBusinessSettings, 
   getLocalBusinessSettings,
   BusinessSettings as BusinessSettingsType 
-} from '@/services/businessSettings';
+} from '@/lib/businessSettings';
 import { useNetwork } from './NetworkContext';
 import { toast } from 'sonner';
 
@@ -22,7 +23,7 @@ const BusinessSettingsContext = createContext<BusinessSettingsContextType>({
 export const useBusinessSettings = () => useContext(BusinessSettingsContext);
 
 interface BusinessSettingsProviderProps {
-  children: ReactNode;
+  children: React.ReactNode;
 }
 
 export const BusinessSettingsProvider: React.FC<BusinessSettingsProviderProps> = ({ children }) => {

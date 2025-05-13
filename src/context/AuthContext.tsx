@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { login as apiLogin, getCurrentUser } from '../services/api';
-import { getToken, removeToken, saveToken, getUser, saveUser } from '../services/storage';
 import { toast } from 'sonner';
+import { login as apiLogin, getCurrentUser } from '@/lib/api';
+import { getToken, removeToken, saveToken, getUser, saveUser } from '@/lib/storage';
 
 interface User {
   id: number;
@@ -62,7 +62,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return true;
       } else {
         // Offline and no local user data
-        toast.error('You are offline and we could not find your user data');
+        toast.error("You are offline and we could not find your user data");
         removeToken();
         setUser(null);
         setIsLoading(false);
@@ -70,6 +70,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (error) {
       console.error('Authentication check failed:', error);
+      
       // Keep user logged in if we have a token but API failed
       const localUser = await getUser();
       if (localUser) {
@@ -95,7 +96,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const tokenData = await apiLogin(username, password);
       
       // Save token to localStorage for quick access
-      localStorage.setItem('auth_token', JSON.stringify(tokenData));
+      saveToken(tokenData);
       
       // Get user data
       const userData = await getCurrentUser();

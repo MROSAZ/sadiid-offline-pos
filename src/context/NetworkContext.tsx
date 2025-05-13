@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { toast } from 'sonner';
-import { startBackgroundSync, stopBackgroundSync } from '@/services/syncService';
+import { startBackgroundSync, stopBackgroundSync } from '@/lib/sync';
 
 interface NetworkContextType {
   isOnline: boolean;
@@ -22,7 +22,7 @@ const NetworkContext = createContext<NetworkContextType>({
 export const useNetwork = () => useContext(NetworkContext);
 
 // URL to ping for connectivity check
-const PING_URL = '';
+const PING_URL = 'https://erp.sadiid.net/connector/api/get-attendance/1';
 const PING_INTERVAL_MS = 30000; // 30 seconds
 const MAX_DEFAULT_RETRIES = 3;
 const RETRY_DELAY_MS = 1000; // Base delay between retries

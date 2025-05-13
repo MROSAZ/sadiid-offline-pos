@@ -1,11 +1,13 @@
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Wifi, WifiOff } from 'lucide-react';
+import { useNetwork } from '@/context/NetworkContext';
 
 const Login = () => {
   const [username, setUsername] = useState('');
@@ -13,6 +15,7 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const { login } = useAuth();
+  const { isOnline } = useNetwork();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -39,6 +42,19 @@ const Login = () => {
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold text-sadiid-700">Sadiid POS</CardTitle>
             <CardDescription>Enter your credentials to access the point of sale system</CardDescription>
+            <div className="mt-2 flex items-center justify-center gap-2">
+              {isOnline ? (
+                <div className="flex items-center text-green-600 text-sm">
+                  <Wifi className="h-4 w-4 mr-1" />
+                  <span>Online</span>
+                </div>
+              ) : (
+                <div className="flex items-center text-amber-600 text-sm">
+                  <WifiOff className="h-4 w-4 mr-1" />
+                  <span>Offline</span>
+                </div>
+              )}
+            </div>
           </CardHeader>
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4">
@@ -74,7 +90,7 @@ const Login = () => {
               <Button
                 type="submit"
                 className="w-full bg-sadiid-600 hover:bg-sadiid-700 text-white"
-                disabled={isLoading}
+                disabled={isLoading || (!isOnline && !localStorage.getItem('auth_token'))}
               >
                 {isLoading ? 'Logging in...' : 'Sign In'}
               </Button>

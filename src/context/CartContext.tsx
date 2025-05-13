@@ -1,6 +1,5 @@
+
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
-import { v4 as uuidv4 } from 'uuid';
-import { getSelectedLocationId } from '@/services/locationService';
 
 export interface CartItem {
   id: number;
@@ -38,7 +37,7 @@ const initialState: CartState = {
   discount: 0,
   tax: 0,
   note: '',
-  location_id: getSelectedLocationId() || null // Don't default to 1
+  location_id: parseInt(localStorage.getItem('selected_location_id') || '0') || null
 };
 
 const cartReducer = (state: CartState, action: CartAction): CartState => {

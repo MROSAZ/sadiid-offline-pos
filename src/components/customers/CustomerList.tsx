@@ -1,24 +1,10 @@
 
-import React, { useEffect, useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { toast } from 'sonner';
-import { getContacts } from '@/services/storage';
+import { useEffect, useState } from 'react';
+import { useCustomer, Customer } from '@/context/CustomerContext';
+import { Button } from '@/components/ui/button';
+import { Loader, Search, RefreshCw, User } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { useNetwork } from '@/context/NetworkContext';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Phone, Mail, ExternalLink } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
-import { AspectRatio } from '@/components/ui/aspect-ratio';
-
-interface Customer {
-  id: number;
-  name: string;
-  email?: string;
-  mobile?: string;
-  type: string;
-  contact_status?: string;
-  [key: string]: any;
-}
 
 interface CustomerListProps {
   searchQuery?: string;
@@ -26,162 +12,147 @@ interface CustomerListProps {
 }
 
 const CustomerList = ({ searchQuery = '', status }: CustomerListProps) => {
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
+  const { customers, isLoading, refreshCustomers } = useCustomer();
   const { isOnline } = useNetwork();
+  const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
+  const [localSearch, setLocalSearch] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
 
+  // Handle search and filtering
   useEffect(() => {
-    loadCustomers();
-  }, []);
-
-  useEffect(() => {
-    filterCustomers(searchQuery, status);
-  }, [searchQuery, status, customers]);
-
-  const loadCustomers = async () => {
-    try {
-      setLoading(true);
-      const data = await getContacts();
-      setCustomers(data || []);
-      filterCustomers(searchQuery, status);
-    } catch (error) {
-      console.error('Error loading customers:', error);
-      toast.error('Failed to load customers');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const filterCustomers = (query: string, statusFilter?: string) => {
-    if (!customers.length) {
-      setFilteredCustomers([]);
-      return;
-    }
-
+    const query = localSearch || searchQuery;
     let filtered = [...customers];
     
-    // Apply status filter if provided
-    if (statusFilter) {
-      filtered = filtered.filter(customer => customer.contact_status === statusFilter);
-    }
-
-    // Apply search query if provided
+    // Filter by search query
     if (query) {
-      const lowerCaseQuery = query.toLowerCase();
-      filtered = filtered.filter(customer => 
-        customer.name?.toLowerCase().includes(lowerCaseQuery) ||
-        customer.email?.toLowerCase().includes(lowerCaseQuery) ||
-        customer.mobile?.toLowerCase().includes(lowerCaseQuery)
+      filtered = filtered.filter((customer) => 
+        customer.name?.toLowerCase().includes(query.toLowerCase()) || 
+        customer.mobile?.includes(query) ||
+        customer.email?.toLowerCase().includes(query.toLowerCase()) ||
+        customer.contact_id?.toLowerCase().includes(query.toLowerCase())
       );
     }
-
+    
+    // Filter by status
+    if (status) {
+      filtered = filtered.filter((customer) => 
+        customer.contact_status === status
+      );
+    }
+    
     setFilteredCustomers(filtered);
+  }, [customers, localSearch, searchQuery, status]);
+
+  // Handle refresh
+  const handleRefresh = async () => {
+    if (!isOnline) return;
+    
+    setRefreshing(true);
+    await refreshCustomers();
+    setRefreshing(false);
   };
 
-  const getInitials = (name: string): string => {
-    return name
-      .split(' ')
-      .map(word => word[0])
-      .join('')
-      .toUpperCase()
-      .substring(0, 2);
-  };
-
-  if (loading) {
+  // If global loading state is active
+  if (isLoading && !refreshing) {
     return (
-      <div className="space-y-4 p-4">
-        {Array(3).fill(0).map((_, index) => (
-          <Card key={index} className="overflow-hidden">
-            <CardContent className="p-0">
-              <div className="p-6">
-                <div className="flex items-center space-x-4">
-                  <Skeleton className="h-12 w-12 rounded-full" />
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-[250px]" />
-                    <Skeleton className="h-4 w-[200px]" />
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    );
-  }
-
-  if (filteredCustomers.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <Users className="h-16 w-16 mb-4 text-gray-300" />
-        <h3 className="text-lg font-medium text-gray-900">No customers found</h3>
-        <p className="text-gray-500 mt-1">
-          {searchQuery ? `No customers match "${searchQuery}"` : 'No customers available yet'}
-        </p>
+      <div className="flex justify-center items-center p-8">
+        <Loader className="h-8 w-8 animate-spin text-sadiid-600" />
+        <span className="ml-2">Loading customers...</span>
       </div>
     );
   }
 
   return (
-    <div className="overflow-x-auto">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[250px]">Customer</TableHead>
-            <TableHead>Contact</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Status</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {filteredCustomers.map((customer) => (
-            <TableRow key={customer.id} className="hover:bg-gray-50">
-              <TableCell className="font-medium">
-                <div className="flex items-center gap-3">
-                  <Avatar>
-                    <AvatarFallback>{getInitials(customer.name)}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-medium">{customer.name}</p>
-                    {customer.business_name && (
-                      <p className="text-sm text-gray-500">{customer.business_name}</p>
-                    )}
-                  </div>
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="space-y-1">
-                  {customer.mobile && (
-                    <div className="flex items-center text-sm">
-                      <Phone className="h-3.5 w-3.5 mr-2 text-gray-500" />
-                      <span>{customer.mobile}</span>
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 p-4">
+        <div className="relative w-full sm:w-64">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+          <Input
+            type="search"
+            placeholder="Search customers..."
+            className="pl-8 w-full"
+            value={localSearch}
+            onChange={(e) => setLocalSearch(e.target.value)}
+          />
+        </div>
+        <Button 
+          onClick={handleRefresh} 
+          disabled={!isOnline || refreshing}
+          variant="outline"
+          className="w-full sm:w-auto"
+        >
+          <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
+      </div>
+
+      {filteredCustomers.length === 0 ? (
+        <div className="text-center p-8 bg-white rounded-md">
+          <User className="mx-auto h-12 w-12 text-gray-400" />
+          <h3 className="mt-2 text-sm font-medium text-gray-900">No customers found</h3>
+          <p className="mt-1 text-sm text-gray-500">
+            {searchQuery 
+              ? 'Try adjusting your search or filter to find what you are looking for.' 
+              : 'Get started by adding a new customer.'}
+          </p>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse bg-white">
+            <thead>
+              <tr className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 border-b border-gray-200">Name</th>
+                <th className="px-6 py-3 border-b border-gray-200">Contact</th>
+                <th className="px-6 py-3 border-b border-gray-200">Address</th>
+                <th className="px-6 py-3 border-b border-gray-200">Status</th>
+                <th className="px-6 py-3 border-b border-gray-200">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredCustomers.map((customer) => (
+                <tr key={customer.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <div className="h-10 w-10 rounded-full bg-sadiid-100 flex items-center justify-center">
+                        <User className="h-5 w-5 text-sadiid-600" />
+                      </div>
+                      <div className="ml-4">
+                        <div className="text-sm font-medium text-gray-900">{customer.name}</div>
+                        <div className="text-sm text-gray-500">{customer.contact_id}</div>
+                      </div>
                     </div>
-                  )}
-                  {customer.email && (
-                    <div className="flex items-center text-sm">
-                      <Mail className="h-3.5 w-3.5 mr-2 text-gray-500" />
-                      <span>{customer.email}</span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-gray-900">{customer.mobile || 'N/A'}</div>
+                    <div className="text-sm text-gray-500">{customer.email || 'No email'}</div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-gray-900">
+                      {customer.address_line_1 ? `${customer.address_line_1}` : 'No address'}
                     </div>
-                  )}
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary/10 text-primary hover:bg-primary/20">
-                  {customer.type || 'Customer'}
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none
-                  ${customer.contact_status === 'active' 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-gray-100 text-gray-800'}`}>
-                  {customer.contact_status || 'Unknown'}
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+                    <div className="text-sm text-gray-500">
+                      {customer.city && customer.state ? `${customer.city}, ${customer.state}` : ''}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      customer.contact_status === 'active' 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-red-100 text-red-800'
+                    }`}>
+                      {customer.contact_status || 'unknown'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <Button variant="ghost" size="sm">View</Button>
+                    <Button variant="ghost" size="sm">Edit</Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 };
