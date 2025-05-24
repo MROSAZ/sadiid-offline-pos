@@ -10,11 +10,7 @@ import { autoSelectLocation } from '@/services/locationService';
 import { getBusinessSettings } from '@/services/businessSettings';
 
 /**
- * Enhanced AppInitializer component that handles application initialization tasks:
- * - Data synchronization when coming online
- * - Loading customer data
- * - Auto-selecting business location
- * - Initializing offline data
+ * Enhanced AppInitializer component that handles application initialization tasks
  */
 const AppInitializer: React.FC = () => {
   const { isOnline, retryOperation } = useNetwork();
@@ -75,7 +71,7 @@ const AppInitializer: React.FC = () => {
               console.warn('Initial sync failed or was skipped');
             }
             return syncResult;
-          }, 2); // Retry up to 2 times
+          }, 2);
           
           // Refresh customer data after sync
           const updatedContacts = await getContacts();
@@ -84,23 +80,19 @@ const AppInitializer: React.FC = () => {
           console.log('Offline, skipping initial sync');
         }
 
-        // Mark initialization as complete
         setInitialized(true);
       } catch (error) {
         console.error('Error initializing application:', error);
         
-        // If we failed, increment attempts counter
         setInitializationAttempts(prev => prev + 1);
         
         if (initializationAttempts < 3) {
-          // Try again after a delay
           setTimeout(() => {
-            setInitialized(false); // Reset to trigger another attempt
+            setInitialized(false);
           }, 5000);
           
           toast.error('App initialization issue. Retrying...');
         } else {
-          // After 3 attempts, give up but mark as initialized to avoid blocking app
           setInitialized(true);
           toast.error('Failed to initialize some app features. Some functionality may be limited.');
         }
@@ -119,7 +111,6 @@ const AppInitializer: React.FC = () => {
         try {
           await syncData(true);
           
-          // Refresh customer data after sync
           const contacts = await getContacts();
           setCustomers(contacts || []);
         } catch (error) {
@@ -131,7 +122,6 @@ const AppInitializer: React.FC = () => {
     }
   }, [isOnline, initialized, setCustomers]);
 
-  // This component doesn't render anything
   return null;
 };
 

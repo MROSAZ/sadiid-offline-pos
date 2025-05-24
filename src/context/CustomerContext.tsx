@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { getContacts, saveContacts } from '@/lib/storage';
+import { getContacts, saveContacts } from '@/services/storage';
 import { fetchContacts } from '@/lib/api';
 import { useNetwork } from '@/context/NetworkContext';
 import { toast } from 'sonner';
@@ -30,6 +30,7 @@ interface CustomerContextType {
   selectedCustomer: Customer | null;
   setSelectedCustomer: (customer: Customer | null) => void;
   customers: Customer[];
+  setCustomers: (customers: Customer[]) => void;
   isLoading: boolean;
   error: Error | null;
   refreshCustomers: () => Promise<void>;
@@ -66,7 +67,6 @@ export const CustomerProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (storedCustomers && storedCustomers.length > 0) {
         setCustomers(storedCustomers);
       } else if (isOnline) {
-        // If no stored customers and online, fetch from API
         await refreshCustomers();
       }
     } catch (err) {
@@ -89,13 +89,11 @@ export const CustomerProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setIsLoading(true);
       setError(null);
       
-      // Use retry operation for network resilience
       const response = await retryOperation(async () => {
         return await fetchContacts(1, 500, 'customer');
       });
       
       if (response?.data) {
-        // Store contacts in IndexedDB
         await saveContacts(response.data);
         setCustomers(response.data);
         toast.success('Customers refreshed successfully');
@@ -113,7 +111,8 @@ export const CustomerProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     <CustomerContext.Provider value={{ 
       selectedCustomer, 
       setSelectedCustomer, 
-      customers, 
+      customers,
+      setCustomers,
       isLoading,
       error,
       refreshCustomers

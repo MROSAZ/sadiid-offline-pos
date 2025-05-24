@@ -4,7 +4,7 @@ import {
   getBusinessSettings, 
   getLocalBusinessSettings,
   BusinessSettings as BusinessSettingsType 
-} from '@/lib/businessSettings';
+} from '@/services/businessSettings';
 import { useNetwork } from './NetworkContext';
 import { toast } from 'sonner';
 
@@ -34,7 +34,6 @@ export const BusinessSettingsProvider: React.FC<BusinessSettingsProviderProps> =
   const loadSettings = async (showToast = false) => {
     try {
       setLoading(true);
-      // Force refresh if we're online, otherwise use cached settings
       const businessSettings = await getBusinessSettings(isOnline);
       setSettings(businessSettings);
       if (showToast) toast.success('Business settings updated');
@@ -46,14 +45,12 @@ export const BusinessSettingsProvider: React.FC<BusinessSettingsProviderProps> =
     }
   };
 
-  // Load settings on initial mount
   useEffect(() => {
     if (!settings) {
       loadSettings();
     }
   }, []);
 
-  // Refresh settings when coming back online
   useEffect(() => {
     if (isOnline) {
       loadSettings();
