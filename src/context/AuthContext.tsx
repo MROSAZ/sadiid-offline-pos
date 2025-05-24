@@ -1,8 +1,9 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { login as apiLogin, getCurrentUser } from '@/lib/api';
-import { getToken, removeToken, saveToken, getUser, saveUser } from '@/lib/storage';
+import { login as apiLogin, getCurrentUser } from '@/services/api';
+import { getToken, removeToken, saveToken, getUser, saveUser } from '@/services/storage';
 
 interface User {
   id: number;
