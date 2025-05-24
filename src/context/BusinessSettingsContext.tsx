@@ -30,17 +30,26 @@ export const BusinessSettingsProvider: React.FC<BusinessSettingsProviderProps> =
   const [settings, setSettings] = useState<BusinessSettingsType | null>(getLocalBusinessSettings());
   const [loading, setLoading] = useState(!settings);
   const { isOnline } = useNetwork();
-
   const loadSettings = async (showToast = false) => {
     try {
       setLoading(true);
-      // Force refresh if we're online, otherwise use cached settings
+      // Force refresh if we're online to get latest data
       const businessSettings = await getBusinessSettings(isOnline);
       setSettings(businessSettings);
       if (showToast) toast.success('Business settings updated');
     } catch (error) {
       console.error('Failed to load business settings:', error);
       if (showToast) toast.error('Failed to update business settings');
+      
+      // If we failed and don't have any settings, try to get cached ones
+      if (!settings) {
+        try {
+          const cachedSettings = await getBusinessSettings(false);
+          setSettings(cachedSettings);
+        } catch (cacheError) {
+          console.error('Failed to load cached settings too:', cacheError);
+        }
+      }
     } finally {
       setLoading(false);
     }

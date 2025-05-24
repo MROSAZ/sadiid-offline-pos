@@ -314,9 +314,28 @@ export const fetchBusinessDetails = async () => {
   try {
     console.log('Fetching business details from API...');
     const response = await api.get('/connector/api/business-details');
+    
+    console.log('API Response status:', response.status);
+    console.log('API Response data structure:', {
+      hasData: !!response.data,
+      hasDataProperty: !!response.data?.data,
+      dataKeys: response.data ? Object.keys(response.data) : [],
+      dataDataKeys: response.data?.data ? Object.keys(response.data.data) : []
+    });
+    
+    // Check if response has the expected structure
+    if (!response.data || !response.data.data) {
+      console.error('Unexpected API response structure:', response.data);
+      throw new Error('Invalid response structure from business details API');
+    }
+    
     return response.data.data;
   } catch (error) {
     console.error('Error fetching business details:', error);
+    if (error.response) {
+      console.error('Response status:', error.response.status);
+      console.error('Response data:', error.response.data);
+    }
     throw error;
   }
 };

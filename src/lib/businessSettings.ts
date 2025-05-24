@@ -60,81 +60,105 @@ let businessSettingsCache: BusinessSettings | null = null;
  */
 export const getBusinessSettings = async (forceRefresh = false): Promise<BusinessSettings> => {
   try {
+    console.log('getBusinessSettings called with forceRefresh:', forceRefresh);
+    
     // Return cached settings if available and not forcing refresh
     if (businessSettingsCache && !forceRefresh) {
+      console.log('Returning cached business settings');
       return businessSettingsCache;
     }
 
-    // Check localStorage for cached settings
+    // Check localStorage for cached settings first (unless forcing refresh)
     if (!forceRefresh) {
       const localSettings = getBusinessSettingsFromStorage();
       if (localSettings) {
+        console.log('Returning stored business settings');
         businessSettingsCache = localSettings;
         return localSettings;
       }
-    }
-
-    // If we're online, fetch from API
+    }// If we're online, fetch from API
     if (navigator.onLine) {
-      // Mocked API call - in a real application, replace with actual API call
-      // const response = await fetch('https://erp.sadiid.net/connector/api/business-details');
-      // const data = await response.json();
-      
-      // For now, return mock data
-      const mockSettings: BusinessSettings = {
-        name: "Sadiid POS",
-        currency: {
-          symbol: "$",
-          thousand_separator: ",",
-          decimal_separator: ".",
-          code: "USD"
-        },
-        locations: [
-          {
-            id: 1,
-            name: "Main Store",
-            landmark: "123 Main Street",
-            country: "USA",
-            state: "NY",
-            city: "New York",
-            zip_code: "10001",
-            is_active: 1
+      try {
+        const { fetchBusinessDetails } = await import('@/services/api');
+        const apiData = await fetchBusinessDetails();
+        
+        console.log('API Response received:', apiData);
+        
+        // Validate required fields exist
+        if (!apiData || !apiData.name || !apiData.currency) {
+          console.error('Invalid API response structure:', apiData);
+          throw new Error('Invalid business details response from API');
+        }
+        
+        // Transform API response to BusinessSettings format
+        const settings: BusinessSettings = {
+          name: apiData.name,
+          currency: {
+            symbol: apiData.currency.symbol || '$',
+            code: apiData.currency.code || 'USD',
+            thousand_separator: apiData.currency.thousand_separator || ',',
+            decimal_separator: apiData.currency.decimal_separator || '.'
           },
-          {
-            id: 2,
-            name: "Branch Store",
-            landmark: "456 Second Ave",
-            country: "USA",
-            state: "CA",
-            city: "Los Angeles",
-            zip_code: "90001",
-            is_active: 1
-          }
-        ]
-      };
-      
-      // Cache the settings
-      businessSettingsCache = mockSettings;
-      
-      // Save to storage for offline use
-      await saveBusinessSettings(mockSettings);
-      
-      return mockSettings;
+          currency_symbol_placement: apiData.currency_symbol_placement || 'before',
+          currency_precision: apiData.currency_precision || 2,
+          quantity_precision: apiData.quantity_precision || 2,
+          pos_settings: apiData.pos_settings || {
+            amount_rounding_method: null
+          },
+          locations: Array.isArray(apiData.locations) ? apiData.locations : []
+        };
+
+        console.log('Transformed business settings:', settings);
+
+        // Cache the settings
+        businessSettingsCache = settings;
+        saveSettingsToStorage(settings);
+        
+        return settings;
+      } catch (apiError) {
+        console.error('API Error details:', apiError);
+        
+        // Fallback to local storage on API error
+        const localSettings = getBusinessSettingsFromStorage();
+        if (localSettings) {
+          console.log('Using cached business settings due to API error');
+          businessSettingsCache = localSettings;
+          return localSettings;
+        }
+        
+        throw apiError;      }
     } else {
       // Offline: Try to get from localStorage
+      console.log('Device is offline, checking for cached settings');
       const localSettings = getBusinessSettingsFromStorage();
       if (localSettings) {
+        console.log('Using cached business settings (offline)');
         businessSettingsCache = localSettings;
         return localSettings;
       }
       
-      // If no cached settings, return empty settings object
-      toast.error('No business settings available offline');
-      throw new Error('No business settings available offline');
+      // If no cached settings available offline, return default settings
+      console.warn('No cached settings available offline, using defaults');
+      const defaultSettings = createMockBusinessSettings();
+      businessSettingsCache = defaultSettings;
+      return defaultSettings;
     }
   } catch (error) {
     console.error('Error fetching business settings:', error);
-    throw error;
+    
+    // Final fallback: try to get any cached settings
+    const localSettings = getBusinessSettingsFromStorage();
+    if (localSettings) {
+      console.log('Using cached settings as final fallback');
+      businessSettingsCache = localSettings;
+      return localSettings;
+    }
+    
+    // Ultimate fallback: return default settings
+    console.warn('All sources failed, using default settings');
+    const defaultSettings = createMockBusinessSettings();
+    businessSettingsCache = defaultSettings;
+    return defaultSettings;
   }
 };
 
@@ -262,4 +286,26 @@ export const getActiveLocations = async (): Promise<BusinessLocation[]> => {
 export const getDefaultLocation = async (): Promise<BusinessLocation | null> => {
   const activeLocations = await getActiveLocations();
   return activeLocations.length > 0 ? activeLocations[0] : null;
+};
+
+// Mock business settings for testing/debugging
+export const createMockBusinessSettings = (): BusinessSettings => ({
+  name: "Test Business",
+  currency: {
+    symbol: "$",
+    code: "USD",
+    thousand_separator: ",",
+    decimal_separator: "."
+  },
+  currency_symbol_placement: "before",
+  currency_precision: 2,
+  quantity_precision: 2,
+  pos_settings: {
+    amount_rounding_method: null
+  },
+  locations: []
+});
+
+export const getDefaultBusinessSettings = (): BusinessSettings => {
+  return createMockBusinessSettings();
 };
