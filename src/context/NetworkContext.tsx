@@ -1,7 +1,6 @@
-
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { toast } from 'sonner';
-import { startBackgroundSync, stopBackgroundSync } from '@/lib/sync';
+import { startBackgroundSync, stopBackgroundSync } from '@/services/syncService';
 
 interface NetworkContextType {
   isOnline: boolean;
