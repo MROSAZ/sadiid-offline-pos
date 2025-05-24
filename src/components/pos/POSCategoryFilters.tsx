@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { getCategories } from '@/services/storage';
+import { getCategories } from '@/lib/storage';
 import { toast } from 'sonner';
 
 interface POSCategoryFiltersProps {

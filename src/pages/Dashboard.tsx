@@ -3,10 +3,10 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { syncData, startBackgroundSync } from '../services/syncService';
-import { getQueueStats } from '../services/syncQueue';
+import { getQueueStats } from '@/services/syncQueue';
 import { toast } from 'sonner';
 import { useNetwork } from '../context/NetworkContext';
-import { getProducts, getContacts, getUnSyncedSales } from '../services/storage';
+import { getProducts, getContacts, getUnSyncedSales } from '@/lib/storage';
 import { CheckCircle, AlertCircle, WifiOff, RefreshCcw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 

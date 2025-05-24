@@ -2,7 +2,7 @@
 /**
  * Enhanced sync service with retry logic and queue management
  */
-import { fetchProducts, fetchContacts, createSale } from '@/lib/api';
+import { fetchProducts, fetchContacts, createSale } from '@/services/api';
 import { 
   saveProducts, 
   saveContacts, 
@@ -20,7 +20,7 @@ import {
   updateLastSyncTimestamp,
   isSyncNeeded,
   cleanupCompletedOperations
-} from './syncQueue';
+} from '@/services/syncQueue';
 
 // Constants for sync operation
 const SYNC_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes

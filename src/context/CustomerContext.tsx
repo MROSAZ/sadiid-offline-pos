@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { getContacts, saveContacts } from '@/lib/storage';
-import { fetchContacts } from '@/lib/api';
+import { fetchContacts } from '@/services/api';
 import { useNetwork } from '@/context/NetworkContext';
 import { toast } from 'sonner';
 

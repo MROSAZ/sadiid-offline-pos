@@ -5,7 +5,7 @@
  */
 import { openDB } from 'idb';
 import { toast } from 'sonner';
-import { getLocalItemAsJson, setLocalItem } from './storage';
+import { getLocalItemAsJson, setLocalItem } from '@/lib/storage';
 
 // Define operation types that can be queued
 export type QueueableOperationType = 'sale' | 'customer' | 'attendance';

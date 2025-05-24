@@ -1,4 +1,4 @@
-import { getBusinessSettings, BusinessLocation } from '@/services/businessSettings';
+import { getBusinessSettings, BusinessLocation } from '@/lib/businessSettings';
 
 // Constants
 const LOCATION_STORAGE_KEY = 'selected_location_id';

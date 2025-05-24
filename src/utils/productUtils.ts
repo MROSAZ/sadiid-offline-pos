@@ -1,6 +1,6 @@
 // src/utils/productUtils.ts
-import { getBusinessSettings, BusinessSettings } from '@/services/businessSettings';
-import { getProducts, getProductsByCategory } from '@/services/storage';
+import { getBusinessSettings, BusinessSettings } from '@/lib/businessSettings';
+import { getProducts, getProductsByCategory } from '@/lib/storage';
 import { formatCurrencySync } from '@/utils/formatting';
 
 // Standard product image placeholder

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useCart } from '@/context/CartContext';
 import { saveSelectedLocationId, formatLocationAddress } from '@/services/locationService';
-import { BusinessLocation } from '@/services/businessSettings';
+import { BusinessLocation } from '@/lib/businessSettings';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';

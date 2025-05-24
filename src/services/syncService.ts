@@ -10,8 +10,8 @@ import {
   markSaleAsSynced, 
   getLocalItemAsJson,
   setLocalItem
-} from '@/services/storage';
-import { getBusinessSettings } from '@/services/businessSettings';
+} from '@/lib/storage';
+import { getBusinessSettings } from '@/lib/businessSettings';
 import { toast } from 'sonner';
 import { 
   queueOperation, 

@@ -5,9 +5,9 @@ import { useNetwork } from '@/context/NetworkContext';
 import { useCustomer } from '@/context/CustomerContext';
 import { useCart } from '@/context/CartContext';
 import { syncData } from '@/services/syncService';
-import { getContacts, getProducts } from '@/services/storage';
+import { getContacts, getProducts } from '@/lib/storage';
 import { autoSelectLocation } from '@/services/locationService';
-import { getBusinessSettings } from '@/services/businessSettings';
+import { getBusinessSettings } from '@/lib/businessSettings';
 
 /**
  * Enhanced AppInitializer component that handles application initialization tasks:
@@ -18,7 +18,7 @@ import { getBusinessSettings } from '@/services/businessSettings';
  */
 const AppInitializer: React.FC = () => {
   const { isOnline, retryOperation } = useNetwork();
-  const { setCustomers } = useCustomer();
+  const { refreshCustomers } = useCustomer();
   const { setLocation } = useCart();
   const [initialized, setInitialized] = useState(false);
   const [initializationAttempts, setInitializationAttempts] = useState(0);
@@ -44,16 +44,13 @@ const AppInitializer: React.FC = () => {
           console.log('Business settings loaded from cache');
         } catch (error) {
           console.warn('Failed to load business settings from cache', error);
-        }
-
-        // Step 3: Load existing customer data into context
+        }        // Step 3: Load existing customer data into context
         try {
           const contacts = await getContacts();
-          setCustomers(contacts || []);
+          await refreshCustomers();
           console.log(`Loaded ${contacts?.length || 0} contacts from storage`);
         } catch (error) {
           console.warn('Failed to load contacts from storage', error);
-          setCustomers([]);
         }
 
         // Step 4: Check if we have products cached
@@ -76,10 +73,8 @@ const AppInitializer: React.FC = () => {
             }
             return syncResult;
           }, 2); // Retry up to 2 times
-          
-          // Refresh customer data after sync
-          const updatedContacts = await getContacts();
-          setCustomers(updatedContacts || []);
+            // Refresh customer data after sync
+          await refreshCustomers();
         } else {
           console.log('Offline, skipping initial sync');
         }
@@ -110,7 +105,7 @@ const AppInitializer: React.FC = () => {
     if (!initialized) {
       initializeApp();
     }
-  }, [isOnline, setCustomers, initialized, setLocation, retryOperation, initializationAttempts]);
+  }, [isOnline, refreshCustomers, initialized, setLocation, retryOperation, initializationAttempts]);
 
   // Sync data when coming back online
   useEffect(() => {
@@ -118,10 +113,8 @@ const AppInitializer: React.FC = () => {
       const refreshData = async () => {
         try {
           await syncData(true);
-          
-          // Refresh customer data after sync
-          const contacts = await getContacts();
-          setCustomers(contacts || []);
+            // Refresh customer data after sync
+          await refreshCustomers();
         } catch (error) {
           console.error('Error syncing data after coming online:', error);
         }
@@ -129,7 +122,7 @@ const AppInitializer: React.FC = () => {
       
       refreshData();
     }
-  }, [isOnline, initialized, setCustomers]);
+  }, [isOnline, initialized, refreshCustomers]);
 
   // This component doesn't render anything
   return null;

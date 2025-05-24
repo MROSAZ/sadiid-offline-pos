@@ -1,4 +1,4 @@
-import { BusinessSettings, CurrencyInfo } from '@/services/businessSettings';
+import { BusinessSettings, CurrencyInfo } from '@/lib/businessSettings';
 
 /**
  * Format a number as currency based on business settings
@@ -11,7 +11,7 @@ export const formatCurrency = async (
 ): Promise<string> => {
   if (!businessSettings) {
     // Dynamic import to avoid circular dependencies
-    const { getBusinessSettings } = await import('@/services/businessSettings');
+    const { getBusinessSettings } = await import('@/lib/businessSettings');
     businessSettings = await getBusinessSettings();
   }
   

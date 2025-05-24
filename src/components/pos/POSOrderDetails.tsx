@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/context/CartContext';
-import { saveSale } from '@/services/storage';
+import { saveSale } from '@/lib/storage';
 import { toast } from 'sonner';
 import { useNetwork } from '@/context/NetworkContext'; 
 import { createSale } from '@/services/api';
