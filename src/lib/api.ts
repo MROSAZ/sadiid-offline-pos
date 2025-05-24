@@ -112,20 +112,6 @@ export const fetchSales = async (page = 1, perPage = 50, params = {}) => {
   return response.data;
 };
 
-// For testing network connectivity
-export const pingServer = async () => {
-  try {
-    const response = await api.get('/get-attendance/1', { 
-      timeout: 5000,
-      headers: { 'Cache-Control': 'no-cache' }
-    });
-    return response.status === 200;
-  } catch (error) {
-    console.error('Ping failed:', error);
-    return false;
-  }
-};
-
 // Add more API functions as needed
 
 export default api;
