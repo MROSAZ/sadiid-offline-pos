@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { syncData, startBackgroundSync } from '../services/syncService';
+import { syncDataOnLogin, startBackgroundSync } from '../services/syncService';
 import { getQueueStats } from '@/services/syncQueue';
 import { toast } from 'sonner';
 import { useNetwork } from '../context/NetworkContext';
@@ -80,10 +80,9 @@ const Dashboard = () => {
       toast.error('Cannot sync while offline');
       return;
     }
-    
-    setSyncing(true);
+      setSyncing(true);
     try {
-      const result = await syncData(true); // Pass true to show toasts
+      const result = await syncDataOnLogin(true); // Force sync with toasts
       if (result) {
         toast.success('Data synced successfully');
         await loadStats();

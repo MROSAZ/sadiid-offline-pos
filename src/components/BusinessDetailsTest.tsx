@@ -4,6 +4,8 @@ import { fetchBusinessDetails } from '@/services/api';
 import { getBusinessSettings, getDefaultBusinessSettings } from '@/lib/businessSettings';
 import { getToken } from '@/lib/storage';
 import { useAuth } from '@/context/AuthContext';
+import { useNetwork } from '@/context/NetworkContext';
+import { syncData, syncDataOnLogin } from '@/services/syncService';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,9 +13,11 @@ import { Badge } from '@/components/ui/badge';
 const BusinessDetailsTest: React.FC = () => {
   const [apiResult, setApiResult] = useState<any>(null);
   const [settingsResult, setSettingsResult] = useState<any>(null);
+  const [syncResult, setSyncResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [authStatus, setAuthStatus] = useState<any>(null);
   const { user, isAuthenticated } = useAuth();
+  const { isOnline } = useNetwork();
 
   useEffect(() => {
     // Check authentication status
@@ -68,9 +72,69 @@ const BusinessDetailsTest: React.FC = () => {
     console.log('Default settings:', defaultSettings);
   };
 
+  const testRegularSync = async () => {
+    try {
+      setLoading(true);
+      console.log('Testing regular sync...');
+      const result = await syncData(true, false); // Show toasts, no force
+      setSyncResult({ 
+        type: 'regular', 
+        success: result, 
+        timestamp: new Date().toISOString() 
+      });      if (result) {
+        toast.success('Regular sync completed successfully');
+      } else {
+        toast.error('Regular sync completed but may have been skipped due to timing');
+      }
+      console.log('Regular sync result:', result);
+    } catch (error) {
+      console.error('Regular sync failed:', error);
+      toast.error('Regular sync failed: ' + (error as Error).message);
+      setSyncResult({ 
+        type: 'regular', 
+        success: false, 
+        error: (error as Error).message, 
+        timestamp: new Date().toISOString() 
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const testLoginSync = async () => {
+    try {
+      setLoading(true);
+      console.log('Testing login sync (forced)...');
+      const result = await syncDataOnLogin(true); // Show toasts, always force
+      setSyncResult({ 
+        type: 'login', 
+        success: result, 
+        timestamp: new Date().toISOString() 
+      });
+      if (result) {
+        toast.success('Login sync completed successfully');
+      } else {
+        toast.error('Login sync failed');
+      }
+      console.log('Login sync result:', result);
+    } catch (error) {
+      console.error('Login sync failed:', error);
+      toast.error('Login sync failed: ' + (error as Error).message);
+      setSyncResult({ 
+        type: 'login', 
+        success: false, 
+        error: (error as Error).message, 
+        timestamp: new Date().toISOString() 
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const clearResults = () => {
     setApiResult(null);
     setSettingsResult(null);
+    setSyncResult(null);
   };
 
   return (
@@ -128,6 +192,12 @@ const BusinessDetailsTest: React.FC = () => {
             <Button onClick={testDefaultSettings} disabled={loading} variant="outline">
               Get Default Settings
             </Button>
+            <Button onClick={testRegularSync} disabled={loading || !isAuthenticated} variant="default">
+              Test Regular Sync
+            </Button>
+            <Button onClick={testLoginSync} disabled={loading || !isAuthenticated} variant="default">
+              Test Login Sync
+            </Button>
             <Button onClick={clearResults} disabled={loading} variant="outline">
               Clear Results
             </Button>
@@ -154,6 +224,31 @@ const BusinessDetailsTest: React.FC = () => {
               <pre className="bg-gray-100 p-4 rounded text-sm overflow-auto max-h-60">
                 {JSON.stringify(settingsResult, null, 2)}
               </pre>
+            </div>
+          )}
+
+          {syncResult && (
+            <div>
+              <h3 className="font-semibold mb-2">Sync Test Result:</h3>
+              <div className="bg-gray-100 p-4 rounded text-sm space-y-2">
+                <div><strong>Type:</strong> {syncResult.type} sync</div>
+                <div><strong>Success:</strong> 
+                  <Badge variant={syncResult.success ? 'default' : 'destructive'} className="ml-2">
+                    {syncResult.success ? 'Yes' : 'No'}
+                  </Badge>
+                </div>
+                <div><strong>Timestamp:</strong> {syncResult.timestamp}</div>
+                {syncResult.error && (
+                  <div><strong>Error:</strong> <span className="text-red-600">{syncResult.error}</span></div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Network Status Warning */}
+          {!isOnline && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+              🔴 Currently offline - sync tests will fail
             </div>
           )}
         </CardContent>

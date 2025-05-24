@@ -4,24 +4,40 @@ import { toast } from 'sonner';
 import { useNetwork } from '@/context/NetworkContext';
 import { useCustomer } from '@/context/CustomerContext';
 import { useCart } from '@/context/CartContext';
-import { syncData } from '@/services/syncService';
+import { useAuth } from '@/context/AuthContext';
+import { syncDataOnLogin } from '@/services/syncService';
 import { getContacts, getProducts } from '@/lib/storage';
 import { autoSelectLocation } from '@/services/locationService';
 import { getBusinessSettings } from '@/lib/businessSettings';
 
 /**
  * Enhanced AppInitializer component that handles application initialization tasks:
- * - Data synchronization when coming online
+ * - Data synchronization when coming online and after login
  * - Loading customer data
  * - Auto-selecting business location
  * - Initializing offline data
+ * - Authentication-aware re-initialization
  */
 const AppInitializer: React.FC = () => {
   const { isOnline, retryOperation } = useNetwork();
   const { refreshCustomers } = useCustomer();
   const { setLocation } = useCart();
+  const { user } = useAuth();
   const [initialized, setInitialized] = useState(false);
   const [initializationAttempts, setInitializationAttempts] = useState(0);
+  const [lastUserId, setLastUserId] = useState<string | null>(null);
+
+  // Re-initialize when user changes (login/logout/switch user)
+  useEffect(() => {
+    const currentUserId = user?.id?.toString() || null;
+    
+    if (currentUserId !== lastUserId) {
+      console.log(`👤 User changed from ${lastUserId} to ${currentUserId} - re-initializing...`);
+      setInitialized(false);
+      setInitializationAttempts(0);
+      setLastUserId(currentUserId);
+    }
+  }, [user?.id, lastUserId]);
 
   // Initial data loading and synchronization
   useEffect(() => {
@@ -59,24 +75,25 @@ const AppInitializer: React.FC = () => {
           console.log(`Found ${products?.length || 0} products in storage`);
         } catch (error) {
           console.warn('Failed to check products in storage', error);
-        }
-
-        // Step 5: Only sync with server if online
-        if (isOnline) {
-          console.log('Online, syncing with server...');
+        }        // Step 5: Only sync with server if online and user is authenticated
+        if (isOnline && user) {
+          console.log('🔄 Online and authenticated, performing login sync...');
           await retryOperation(async () => {
-            const syncResult = await syncData(false, initializationAttempts > 0);
+            const syncResult = await syncDataOnLogin(initializationAttempts > 0);
             if (syncResult) {
-              console.log('Initial sync completed successfully');
+              console.log('✅ Login sync completed successfully');
             } else {
-              console.warn('Initial sync failed or was skipped');
+              console.warn('⚠️ Login sync failed or was skipped');
             }
             return syncResult;
           }, 2); // Retry up to 2 times
-            // Refresh customer data after sync
+          
+          // Refresh customer data after sync
           await refreshCustomers();
+        } else if (!isOnline) {
+          console.log('📴 Offline, skipping login sync');
         } else {
-          console.log('Offline, skipping initial sync');
+          console.log('🔐 Not authenticated, skipping login sync');
         }
 
         // Mark initialization as complete
@@ -106,23 +123,21 @@ const AppInitializer: React.FC = () => {
       initializeApp();
     }
   }, [isOnline, refreshCustomers, initialized, setLocation, retryOperation, initializationAttempts]);
-
   // Sync data when coming back online
   useEffect(() => {
-    if (isOnline && initialized) {
+    if (isOnline && initialized && user) {
       const refreshData = async () => {
         try {
-          await syncData(true);
-            // Refresh customer data after sync
+          await syncDataOnLogin(true);
+          // Refresh customer data after sync
           await refreshCustomers();
         } catch (error) {
           console.error('Error syncing data after coming online:', error);
         }
       };
-      
-      refreshData();
+        refreshData();
     }
-  }, [isOnline, initialized, refreshCustomers]);
+  }, [isOnline, initialized, refreshCustomers, user]);
 
   // This component doesn't render anything
   return null;

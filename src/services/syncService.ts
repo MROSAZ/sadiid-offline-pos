@@ -1,4 +1,3 @@
-
 /**
  * Enhanced sync service with retry logic and queue management
  */
@@ -255,6 +254,90 @@ export const syncData = async (showToast = false, forceSync = false): Promise<bo
     return true;
   } catch (error) {
     console.error('Error in syncData:', error);
+    if (showToast) toast.error('Sync failed. Will retry later.');
+    return false;
+  }
+};
+
+/**
+ * Force sync all data on login - ignores timing thresholds
+ * This ensures both products and contacts are always fresh after login
+ */
+export const syncDataOnLogin = async (showToast = false): Promise<boolean> => {
+  console.log('🔄 Starting login sync - forcing all data refresh...');
+  
+  try {
+    const isOnline = navigator.onLine;
+    if (!isOnline) {
+      if (showToast) toast.error("You're offline. Can't sync data.");
+      return false;
+    }
+    
+    // Clean up old completed operations
+    await cleanupCompletedOperations();
+    
+    // First try to sync any offline sales
+    try {
+      await syncOfflineSales(showToast);
+    } catch (error) {
+      console.error('Error syncing offline sales:', error);
+      if (showToast) toast.error('Failed to sync offline sales');
+    }
+    
+    // Process any failed operations from previous attempts
+    try {
+      await processFailedOperations();
+    } catch (error) {
+      console.error('Error processing failed operations:', error);
+    }
+    
+    // Force sync products (ignore timing threshold)
+    console.log('🛍️ Force syncing products...');
+    try {
+      const productsResponse = await fetchProducts(1, 1000);
+      if (productsResponse.data) {
+        await saveProducts(productsResponse.data);
+        updateSyncTimestamp('products');
+        console.log(`✅ Synced ${productsResponse.data.length} products`);
+      }
+    } catch (error) {
+      console.error('❌ Error syncing products:', error);
+      if (showToast) toast.error('Failed to sync products');
+    }
+    
+    // Force sync contacts (ignore timing threshold)
+    console.log('👥 Force syncing contacts...');
+    try {
+      const contactsResponse = await fetchContacts(1, 1000);
+      if (contactsResponse.data) {
+        await saveContacts(contactsResponse.data);
+        updateSyncTimestamp('contacts');
+        console.log(`✅ Synced ${contactsResponse.data.length} contacts`);
+      }
+    } catch (error) {
+      console.error('❌ Error syncing contacts:', error);
+      if (showToast) toast.error('Failed to sync contacts');
+    }
+    
+    // Sync settings
+    console.log('⚙️ Syncing business settings...');
+    try {
+      await getBusinessSettings(true); // Force refresh
+      updateSyncTimestamp('settings');
+      console.log('✅ Synced business settings');
+    } catch (error) {
+      console.error('❌ Error syncing business settings:', error);
+      if (showToast) toast.error('Failed to sync business settings');
+    }
+    
+    // Update last sync timestamp
+    updateLastSyncTimestamp();
+    
+    console.log('🎉 Login sync completed successfully');
+    if (showToast) toast.success('Data synchronized successfully');
+    return true;
+  } catch (error) {
+    console.error('❌ Error in syncDataOnLogin:', error);
     if (showToast) toast.error('Sync failed. Will retry later.');
     return false;
   }
