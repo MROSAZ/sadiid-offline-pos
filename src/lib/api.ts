@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 import { getToken } from './storage';
 
@@ -7,6 +6,14 @@ const api = axios.create({
   baseURL: 'https://erp.sadiid.net/connector/api',
   headers: {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
+  }
+});
+
+// Create a separate instance for authentication
+const authApi = axios.create({
+  baseURL: 'https://erp.sadiid.net',
+  headers: {
     'Accept': 'application/json',
   }
 });
@@ -40,10 +47,26 @@ api.interceptors.response.use(
   }
 );
 
-// Authentication
+// Authentication with correct OAuth2 implementation
 export const login = async (username: string, password: string) => {
-  const response = await api.post('/login', { username, password });
-  return response.data;
+  const formData = new FormData();
+  formData.append('grant_type', 'password');
+  formData.append('client_id', '48');
+  formData.append('client_secret', 'cEM0njAX1oCo9OK4NDdwjEyWr1KKmjt6545j6zSf');
+  formData.append('username', username);
+  formData.append('password', password);
+
+  try {
+    const response = await authApi.post('/oauth/token', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Login error:', error);
+    throw error;
+  }
 };
 
 export const getCurrentUser = async () => {
@@ -63,6 +86,18 @@ export const fetchContacts = async (page = 1, perPage = 50, type?: string) => {
   const params = { page, per_page: perPage, type };
   const response = await api.get('/contactapi', { params });
   return response.data;
+};
+
+// Business details
+export const fetchBusinessDetails = async () => {
+  try {
+    console.log('Fetching business details from API...');
+    const response = await api.get('/business-details');
+    return response.data.data;
+  } catch (error) {
+    console.error('Error fetching business details:', error);
+    throw error;
+  }
 };
 
 // Sales
