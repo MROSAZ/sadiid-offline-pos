@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { getContacts, saveContacts } from '@/lib/storage';
-import { fetchContacts } from '@/lib/api';
+import { getContacts, saveContacts } from '@/services/storage';
+import { fetchContacts } from '@/services/api';
 import { useNetwork } from '@/context/NetworkContext';
 import { toast } from 'sonner';
 
@@ -30,9 +30,10 @@ interface CustomerContextType {
   selectedCustomer: Customer | null;
   setSelectedCustomer: (customer: Customer | null) => void;
   customers: Customer[];
+  setCustomers: (customers: Customer[]) => void;
+  refreshCustomers: () => Promise<void>;
   isLoading: boolean;
   error: Error | null;
-  refreshCustomers: () => Promise<void>;
 }
 
 const CustomerContext = createContext<CustomerContextType | undefined>(undefined);
@@ -114,9 +115,10 @@ export const CustomerProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       selectedCustomer, 
       setSelectedCustomer, 
       customers, 
+      setCustomers,
+      refreshCustomers,
       isLoading,
-      error,
-      refreshCustomers
+      error
     }}>
       {children}
     </CustomerContext.Provider>
