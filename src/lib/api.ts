@@ -1,6 +1,5 @@
-
 import axios from 'axios';
-import { getToken } from '@/services/storage';
+import { getToken } from './storage';
 
 // Create axios instance with default config
 const api = axios.create({
@@ -112,5 +111,7 @@ export const fetchSales = async (page = 1, perPage = 50, params = {}) => {
   const response = await api.get('/sell', { params: queryParams });
   return response.data;
 };
+
+// Add more API functions as needed
 
 export default api;
