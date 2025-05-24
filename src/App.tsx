@@ -5,7 +5,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { NetworkProvider } from "./context/NetworkContext";
 import { useEffect } from 'react';
-import { initDB } from "./services/storage";
+import { initDB } from "./lib/storage";
 
 // Components
 import ProtectedLayout from "./components/layouts/ProtectedLayout";
