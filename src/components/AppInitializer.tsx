@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useNetwork } from '@/context/NetworkContext';
 import { useCustomer } from '@/context/CustomerContext';
+import { useCart } from '@/context/CartContext';
 import { syncData } from '@/services/syncService';
 import { getContacts } from '@/services/storage';
 import { autoSelectLocation } from '@/services/locationService';
@@ -18,6 +19,7 @@ import { startBackgroundSync, stopBackgroundSync } from '@/services/backgroundSy
 const AppInitializer: React.FC = () => {
   const { isOnline } = useNetwork();
   const { setCustomers } = useCustomer();
+  const { setLocation } = useCart(); // Add this
   const [initialized, setInitialized] = useState(false);
 
   // Initial data loading and synchronization
@@ -28,7 +30,12 @@ const AppInitializer: React.FC = () => {
         await initBusinessSettings();
         
         // Auto-select business location if none selected
-        await autoSelectLocation();
+        const selectedLocationId = await autoSelectLocation();
+        
+        // Update cart context with the auto-selected location
+        if (selectedLocationId) {
+          setLocation(selectedLocationId);
+        }
 
         // Load customer data into context (from local storage)
         const contacts = await getContacts();
@@ -52,7 +59,7 @@ const AppInitializer: React.FC = () => {
     if (!initialized) {
       initializeApp();
     }
-  }, [isOnline, setCustomers, initialized]);
+  }, [isOnline, setCustomers, setLocation, initialized]); // Add setLocation to dependencies
   // Sync data when coming back online and start background sync
   useEffect(() => {
     if (isOnline && initialized) {

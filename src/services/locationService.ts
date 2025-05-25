@@ -110,6 +110,10 @@ export const autoSelectLocation = async (): Promise<number | null> => {
       locationId = firstLocation.id;
       saveSelectedLocationId(firstLocation.id);
       console.log(`Auto-selected business location: ${firstLocation.name} (ID: ${firstLocation.id})`);
+    } else {
+      // Even if valid, ensure it's saved to localStorage (in case it was cleared)
+      saveSelectedLocationId(locationId);
+      console.log(`Confirmed existing business location: ${locations.find(loc => loc.id === locationId)?.name} (ID: ${locationId})`);
     }
     
     return locationId;
@@ -120,6 +124,8 @@ export const autoSelectLocation = async (): Promise<number | null> => {
       const cachedId = getSelectedLocationId();
       if (cachedId) {
         console.log('Fallback to cached location ID:', cachedId);
+        // Ensure it's saved even in fallback scenario
+        saveSelectedLocationId(cachedId);
         return cachedId;
       }
     }
