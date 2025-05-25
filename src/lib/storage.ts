@@ -33,30 +33,10 @@ interface SadiidPOSDB extends DBSchema {
     key: string;
     value: any;
   };
-  categories: {
-    key: number;
-    value: any;
-    indexes: { 'by-name': string };
-  };
-  taxes: {
-    key: number;
-    value: any;
-    indexes: { 'by-name': string };
-  };
-  brands: {
-    key: number;
-    value: any;
-    indexes: { 'by-name': string };
-  };
-  units: {
-    key: number;
-    value: any;
-    indexes: { 'by-name': string };
-  };
 }
 
 const DB_NAME = 'sadiid-pos';
-const DB_VERSION = 2; // Increment version to trigger upgrade
+const DB_VERSION = 1;
 
 let db: IDBPDatabase<SadiidPOSDB>;
 
