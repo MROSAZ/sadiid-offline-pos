@@ -1,4 +1,3 @@
-
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
 
 interface SadiidPOSDB extends DBSchema {
@@ -79,6 +78,26 @@ export const initDB = async () => {
           });
           salesStore.createIndex('by-date', 'transaction_date');
           salesStore.createIndex('by-sync', 'is_synced');
+        }
+        
+        if (!db.objectStoreNames.contains('categories')) {
+          const categoryStore = db.createObjectStore('categories', { keyPath: 'id' });
+          categoryStore.createIndex('by-name', 'name');
+        }
+        
+        if (!db.objectStoreNames.contains('taxes')) {
+          const taxStore = db.createObjectStore('taxes', { keyPath: 'id' });
+          taxStore.createIndex('by-name', 'name');
+        }
+        
+        if (!db.objectStoreNames.contains('brands')) {
+          const brandStore = db.createObjectStore('brands', { keyPath: 'id' });
+          brandStore.createIndex('by-name', 'name');
+        }
+        
+        if (!db.objectStoreNames.contains('units')) {
+          const unitStore = db.createObjectStore('units', { keyPath: 'id' });
+          unitStore.createIndex('by-name', 'name');
         }
       },
     });
@@ -283,30 +302,60 @@ export const getBusinessSettingsFromStorage = () => {
   }
 };
 
-// LocalStorage helpers
-export const getLocalItem = (key: string): string | null => {
+// Categories management
+export const saveCategories = async (categories: any[]) => {
+  const db = await getDB();
+  const tx = db.transaction('categories', 'readwrite');
+  for (const category of categories) {
+    await tx.store.put(category);
+  }
+  await tx.done;
+  return true;
+};
+
+// Taxes management
+export const saveTaxes = async (taxes: any[]) => {
+  const db = await getDB();
+  const tx = db.transaction('taxes', 'readwrite');
+  for (const tax of taxes) {
+    await tx.store.put(tax);
+  }
+  await tx.done;
+  return true;
+};
+
+// Brands management
+export const saveBrands = async (brands: any[]) => {
+  const db = await getDB();
+  const tx = db.transaction('brands', 'readwrite');
+  for (const brand of brands) {
+    await tx.store.put(brand);
+  }
+  await tx.done;
+  return true;
+};
+
+// Units management
+export const saveUnits = async (units: any[]) => {
+  const db = await getDB();
+  const tx = db.transaction('units', 'readwrite');
+  for (const unit of units) {
+    await tx.store.put(unit);
+  }
+  await tx.done;
+  return true;
+};
+
+// Helper functions for sync timestamps
+export const getLocalItemAsJson = <T>(key: string): T | null => {
   try {
-    return localStorage.getItem(key);
-  } catch (error) {
-    console.error(`Error getting item ${key} from localStorage:`, error);
+    const item = localStorage.getItem(key);
+    return item ? JSON.parse(item) : null;
+  } catch {
     return null;
   }
 };
 
 export const setLocalItem = (key: string, value: string): void => {
-  try {
-    localStorage.setItem(key, value);
-  } catch (error) {
-    console.error(`Error setting item ${key} in localStorage:`, error);
-  }
-};
-
-export const getLocalItemAsJson = <T>(key: string): T | null => {
-  try {
-    const item = localStorage.getItem(key);
-    return item ? JSON.parse(item) as T : null;
-  } catch (error) {
-    console.error(`Error getting/parsing item ${key} from localStorage:`, error);
-    return null;
-  }
+  localStorage.setItem(key, value);
 };

@@ -1,4 +1,3 @@
-
 /**
  * Queue management system for offline operations that need to be synchronized
  * when the connection is restored.
@@ -26,6 +25,8 @@ const QUEUE_DB_NAME = 'sadiid-sync-queue';
 const QUEUE_STORE_NAME = 'operations';
 const LAST_SYNC_KEY = 'last_sync_timestamp';
 const MAX_RETRY_ATTEMPTS = 5;
+const QUEUE_KEY = 'sync_queue';
+const MAX_OPERATIONS = 1000; // Limit queue size
 
 // Initialize IndexedDB for sync queue
 export const initSyncQueueDB = async () => {
@@ -41,22 +42,53 @@ export const initSyncQueueDB = async () => {
   });
 };
 
+// Get operations from localStorage
+const getQueue = (): QueuedOperation[] => {
+  try {
+    const queue = localStorage.getItem(QUEUE_KEY);
+    return queue ? JSON.parse(queue) : [];
+  } catch {
+    return [];
+  }
+};
+
+// Save operations to localStorage
+const saveQueue = (operations: QueuedOperation[]): void => {
+  try {
+    // Keep only the most recent operations
+    const trimmed = operations.slice(-MAX_OPERATIONS);
+    localStorage.setItem(QUEUE_KEY, JSON.stringify(trimmed));
+  } catch (error) {
+    console.error('Failed to save queue:', error);
+  }
+};
+
+// Generate unique ID
+const generateId = (): string => {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2);
+};
+
 // Add an operation to the queue
 export const queueOperation = async (type: QueueableOperationType, data: any): Promise<string> => {
-  const db = await initSyncQueueDB();
-  const id = `${type}_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-  
   const operation: QueuedOperation = {
-    id,
+    id: generateId(),
     type,
     data,
-    createdAt: new Date().toISOString(),
-    attempts: 0,
     status: 'pending',
+    attempts: 0,
+    createdAt: Date.now().toString(),
+    lastAttempt: undefined,
+    error: undefined,
   };
-  
+
+  const db = await initSyncQueueDB();
   await db.put(QUEUE_STORE_NAME, operation);
-  return id;
+
+  const queue = getQueue();
+  queue.push(operation);
+  saveQueue(queue);
+
+  return operation.id;
 };
 
 // Get operations by status
@@ -73,13 +105,13 @@ export const getOperationsByType = async (type: QueueableOperationType): Promise
 
 // Update operation status
 export const updateOperationStatus = async (
-  id: string, 
+  id: string,
   status: QueuedOperation['status'],
   error?: string
 ): Promise<void> => {
   const db = await initSyncQueueDB();
   const operation = await db.get(QUEUE_STORE_NAME, id);
-  
+
   if (operation) {
     operation.status = status;
     if (status === 'processing') {
@@ -90,6 +122,18 @@ export const updateOperationStatus = async (
       operation.error = error;
     }
     await db.put(QUEUE_STORE_NAME, operation);
+
+    const queue = getQueue();
+    const queuedOperation = queue.find((op) => op.id === id);
+    if (queuedOperation) {
+      queuedOperation.status = status;
+      queuedOperation.lastAttempt = operation.lastAttempt;
+      queuedOperation.attempts = operation.attempts;
+      if (error) {
+        queuedOperation.error = error;
+      }
+      saveQueue(queue);
+    }
   }
 };
 
@@ -99,7 +143,7 @@ export const cleanupCompletedOperations = async (olderThanDays = 7): Promise<num
   const completed = await getOperationsByStatus('completed');
   const cutoffDate = new Date();
   cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
-  
+
   let deleted = 0;
   for (const operation of completed) {
     const createdAt = new Date(operation.createdAt);
@@ -108,7 +152,11 @@ export const cleanupCompletedOperations = async (olderThanDays = 7): Promise<num
       deleted++;
     }
   }
-  
+
+  const queue = getQueue();
+  const cleaned = queue.filter((op) => op.status !== 'completed' || new Date(op.createdAt) > cutoffDate);
+  saveQueue(cleaned);
+
   return deleted;
 };
 
@@ -126,7 +174,7 @@ export const updateLastSyncTimestamp = (): void => {
 export const isSyncNeeded = (thresholdMinutes = 30): boolean => {
   const lastSync = getLastSyncTimestamp();
   if (!lastSync) return true;
-  
+
   const thresholdMs = thresholdMinutes * 60 * 1000;
   return Date.now() - lastSync > thresholdMs;
 };
@@ -135,6 +183,10 @@ export const isSyncNeeded = (thresholdMinutes = 30): boolean => {
 export const deleteOperation = async (id: string): Promise<void> => {
   const db = await initSyncQueueDB();
   await db.delete(QUEUE_STORE_NAME, id);
+
+  const queue = getQueue();
+  const filtered = queue.filter((op) => op.id !== id);
+  saveQueue(filtered);
 };
 
 // Get queue stats
@@ -147,7 +199,7 @@ export const getQueueStats = async (): Promise<{
 }> => {
   const db = await initSyncQueueDB();
   const operations = await db.getAll(QUEUE_STORE_NAME);
-  
+
   const stats = {
     pending: 0,
     processing: 0,
@@ -155,10 +207,10 @@ export const getQueueStats = async (): Promise<{
     completed: 0,
     total: operations.length,
   };
-  
+
   operations.forEach((op) => {
     stats[op.status as keyof typeof stats]++;
   });
-  
+
   return stats;
 };
