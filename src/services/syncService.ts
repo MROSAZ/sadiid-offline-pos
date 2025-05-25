@@ -74,6 +74,122 @@ const isDataSyncNeeded = (type: keyof SyncTimestamps, thresholdHours: number): b
   return (Date.now() - timestamp) > thresholdMs;
 };
 
+// MAIN SYNC FUNCTION - This is what should be called after login
+export const syncAllData = async (showToast = true): Promise<boolean> => {
+  if (isCurrentlySyncing) {
+    console.log('⏳ Sync already in progress, skipping...');
+    return false;
+  }
+
+  if (!navigator.onLine) {
+    console.log('❌ Offline, skipping sync');
+    if (showToast) toast.error("You're offline. Can't sync data.");
+    return false;
+  }
+
+  const token = localStorage.getItem('token');
+  if (!token) {
+    console.log('❌ No auth token, skipping sync');
+    return false;
+  }
+
+  isCurrentlySyncing = true;
+  
+  try {
+    console.log('🔄 Starting comprehensive data sync...');
+
+    // Sync products
+    console.log('📦 Syncing products...');
+    try {
+      const productsResponse = await api.get('/connector/api/product?per_page=100&page=1');
+      if (productsResponse.data?.data) {
+        await saveProducts(productsResponse.data.data);
+        console.log(`✅ Synced ${productsResponse.data.data.length} products`);
+      }
+    } catch (error) {
+      console.warn('⚠️ Products sync failed:', error);
+    }
+
+    // Sync customers
+    console.log('👥 Syncing customers...');
+    try {
+      const customersResponse = await api.get('/connector/api/contactapi?type=customer&per_page=100&page=1');
+      if (customersResponse.data?.data) {
+        await saveContacts(customersResponse.data.data);
+        console.log(`✅ Synced ${customersResponse.data.data.length} customers`);
+      }
+    } catch (error) {
+      console.warn('⚠️ Customers sync failed:', error);
+    }
+
+    // Sync categories
+    console.log('🏷️ Syncing categories...');
+    try {
+      const categoriesResponse = await api.get('/connector/api/taxonomy?type=product');
+      if (categoriesResponse.data?.data) {
+        await saveCategories(categoriesResponse.data.data);
+        console.log(`✅ Synced ${categoriesResponse.data.data.length} categories`);
+      }
+    } catch (error) {
+      console.warn('⚠️ Categories sync failed:', error);
+    }
+
+    // Sync taxes
+    console.log('💰 Syncing taxes...');
+    try {
+      const taxesResponse = await api.get('/connector/api/taxrate');
+      if (taxesResponse.data?.data) {
+        await saveTaxes(taxesResponse.data.data);
+        console.log(`✅ Synced ${taxesResponse.data.data.length} taxes`);
+      }
+    } catch (error) {
+      console.warn('⚠️ Taxes sync failed:', error);
+    }
+
+    // Sync brands
+    console.log('📊 Syncing brands...');
+    try {
+      const brandsResponse = await api.get('/connector/api/brands');
+      if (brandsResponse.data?.data) {
+        await saveBrands(brandsResponse.data.data);
+        console.log(`✅ Synced ${brandsResponse.data.data.length} brands`);
+      }
+    } catch (error) {
+      console.warn('⚠️ Brands sync failed:', error);
+    }
+
+    // Sync units
+    console.log('📈 Syncing units...');
+    try {
+      const unitsResponse = await api.get('/connector/api/units');
+      if (unitsResponse.data?.data) {
+        await saveUnits(unitsResponse.data.data);
+        console.log(`✅ Synced ${unitsResponse.data.data.length} units`);
+      }
+    } catch (error) {
+      console.warn('⚠️ Units sync failed:', error);
+    }
+
+    lastSyncTime = Date.now();
+    console.log('🎉 Data sync completed successfully!');
+    
+    if (showToast) {
+      toast.success('Data synchronized successfully');
+    }
+    
+    return true;
+
+  } catch (error) {
+    console.error('❌ Sync failed:', error);
+    if (showToast) {
+      toast.error('Failed to sync data');
+    }
+    return false;
+  } finally {
+    isCurrentlySyncing = false;
+  }
+};
+
 // Process offline sales and upload them to server
 export const syncOfflineSales = async (showNotifications = false): Promise<boolean> => {
   try {
