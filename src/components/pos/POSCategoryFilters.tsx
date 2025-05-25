@@ -64,9 +64,23 @@ const POSCategoryFilters: React.FC<POSCategoryFiltersProps> = ({
 
   return (
     <div className="flex gap-2 overflow-x-auto pb-2 mb-4">
+      {/* All Products Button */}
+      <Button
+        variant={selectedCategoryId === null ? 'default' : 'outline'}
+        className={
+          selectedCategoryId === null
+            ? 'bg-blue-500 hover:bg-blue-600 text-white whitespace-nowrap'
+            : 'bg-white text-gray-700 whitespace-nowrap'
+        }
+        onClick={() => onCategoryChange(null)}
+      >
+        All Products
+      </Button>
+      
+      {/* Category Buttons */}
       {categories.map((category) => (
         <Button
-          key={category.id ?? 'all'}
+          key={category.id}
           variant={category.id === selectedCategoryId ? 'default' : 'outline'}
           className={
             category.id === selectedCategoryId

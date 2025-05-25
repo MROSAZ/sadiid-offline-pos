@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Package } from 'lucide-react';
 import ProductList from '@/components/products/ProductList';
+import POSCategoryFilters from '@/components/pos/POSCategoryFilters';
 import { ProductData } from '@/utils/productUtils';
 import { toast } from 'sonner';
 
@@ -29,6 +30,12 @@ const Products = () => {
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
+
+      {/* Add Category Filters */}
+      <POSCategoryFilters 
+        onCategoryChange={setSelectedCategoryId}
+        selectedCategoryId={selectedCategoryId}
+      />
 
       <ProductList 
         searchTerm={searchTerm}
