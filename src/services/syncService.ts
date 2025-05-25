@@ -5,30 +5,21 @@ import { fetchProducts, fetchContacts, createSale } from '@/services/api';
 import { 
   saveProducts, 
   saveContacts, 
-  saveCategories,
-  saveTaxes,
-  saveBrands,
-  saveUnits,
-  getUnSyncedSales,
-  markSaleAsSynced,
+  getUnSyncedSales, 
+  markSaleAsSynced, 
   getLocalItemAsJson,
   setLocalItem
 } from '@/lib/storage';
-import { 
-  queueOperation,
-  getOperationsByStatus,
-  updateOperationStatus,
-  cleanupCompletedOperations,
-  updateLastSyncTimestamp,
-  isSyncNeeded as queueIsSyncNeeded
-} from '@/services/syncQueue';
 import { getBusinessSettings } from '@/lib/businessSettings';
 import { toast } from 'sonner';
-import api from './api';
-
-// Simple sync status tracking
-let isCurrentlySyncing = false;
-let lastSyncTime: number | null = null;
+import { 
+  queueOperation, 
+  getOperationsByStatus,
+  updateOperationStatus, 
+  updateLastSyncTimestamp,
+  isSyncNeeded,
+  cleanupCompletedOperations
+} from './syncQueue';
 
 // Constants for sync operation
 const SYNC_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
@@ -386,16 +377,4 @@ export const stopBackgroundSync = (): void => {
   }
 };
 
-// Simple function to check if sync is needed (every 30 minutes)
-export const isSyncNeeded = (): boolean => {
-  if (!lastSyncTime) return true;
-  const thirtyMinutes = 30 * 60 * 1000;
-  return (Date.now() - lastSyncTime) > thirtyMinutes;
-};
-
-// Background sync - only run if needed
-export const backgroundSync = async (): Promise<void> => {
-  if (isSyncNeeded() && navigator.onLine && localStorage.getItem('token')) {
-    await syncAllData(false); // No toast for background sync
-  }
-};
+// Additional sync-related functions...

@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { login as apiLogin, getCurrentUser } from '@/services/api';
 import { getToken, removeToken, saveToken, getUser, saveUser } from '@/lib/storage';
-import { syncAllData } from '@/services/syncService';
 
 interface User {
   id: number;
@@ -91,10 +90,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     checkAuth();
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (username: string, password: string) => {
     try {
       setIsLoading(true);
-      const tokenData = await apiLogin(email, password);
+      const tokenData = await apiLogin(username, password);
       
       // Save token to localStorage for quick access
       saveToken(tokenData);
