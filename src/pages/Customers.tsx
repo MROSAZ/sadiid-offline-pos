@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Users, Plus, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -43,25 +42,28 @@ const Customers = () => {
 
       <div className="bg-white rounded-lg shadow">
         <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-          <Tabs defaultValue="all" className="w-full">
+          <NetworkStatusIndicator />
+        </div>
+
+        <Tabs defaultValue="all" className="w-full">
+          <div className="px-4 pt-4">
             <TabsList>
               <TabsTrigger value="all">All Customers</TabsTrigger>
               <TabsTrigger value="active">Active</TabsTrigger>
               <TabsTrigger value="inactive">Inactive</TabsTrigger>
             </TabsList>
-          </Tabs>
-          <NetworkStatusIndicator />
-        </div>
+          </div>
 
-        <TabsContent value="all" className="p-0 mt-0">
-          <CustomerList searchQuery={searchQuery} />
-        </TabsContent>
-        <TabsContent value="active" className="p-0 mt-0">
-          <CustomerList searchQuery={searchQuery} status="active" />
-        </TabsContent>
-        <TabsContent value="inactive" className="p-0 mt-0">
-          <CustomerList searchQuery={searchQuery} status="inactive" />
-        </TabsContent>
+          <TabsContent value="all" className="p-0 mt-0">
+            <CustomerList searchQuery={searchQuery} />
+          </TabsContent>
+          <TabsContent value="active" className="p-0 mt-0">
+            <CustomerList searchQuery={searchQuery} status="active" />
+          </TabsContent>
+          <TabsContent value="inactive" className="p-0 mt-0">
+            <CustomerList searchQuery={searchQuery} status="inactive" />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
