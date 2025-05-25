@@ -86,7 +86,14 @@ export const autoSelectLocation = async (): Promise<number | null> => {
     let locationId = getSelectedLocationId();
     
     // Check if current selection is valid
-    const locations = await getLocations(true);
+    const locations = await getLocations(true); // Use cached data
+    
+    // If we're offline and no locations found, but have a cached location ID, trust it
+    if (locations.length === 0 && !navigator.onLine && locationId) {
+      console.warn('Offline mode: Using cached location ID');
+      return locationId;
+    }
+    
     if (locations.length === 0) {
       console.warn('No active business locations found');
       return null;
@@ -99,11 +106,25 @@ export const autoSelectLocation = async (): Promise<number | null> => {
       locationId = firstLocation.id;
       saveSelectedLocationId(firstLocation.id);
       console.log(`Auto-selected business location: ${firstLocation.name} (ID: ${firstLocation.id})`);
+    } else {
+      // Even if valid, ensure it's saved to localStorage (in case it was cleared)
+      saveSelectedLocationId(locationId);
+      console.log(`Confirmed existing business location: ${locations.find(loc => loc.id === locationId)?.name} (ID: ${locationId})`);
     }
     
     return locationId;
   } catch (error) {
     console.error('Error auto-selecting location:', error);
+    // In offline mode, try to use cached location ID as fallback
+    if (!navigator.onLine) {
+      const cachedId = getSelectedLocationId();
+      if (cachedId) {
+        console.log('Fallback to cached location ID:', cachedId);
+        // Ensure it's saved even in fallback scenario
+        saveSelectedLocationId(cachedId);
+        return cachedId;
+      }
+    }
     return null;
   }
 };
