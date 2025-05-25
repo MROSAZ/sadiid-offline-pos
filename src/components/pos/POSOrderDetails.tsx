@@ -16,9 +16,12 @@ const PLACEHOLDER_SVG = `data:image/svg+xml,%3Csvg width='120' height='120' view
 const POSOrderDetails = () => {
   const { cart, getSubtotal, getTotal, updateQuantity, removeItem, clearCart } = useCart();
   const { isOnline } = useNetwork();
-  const { selectedCustomer } = useCustomer();
+  const { selectedCustomer, customers } = useCustomer();
   const { settings } = useBusinessSettings();
   const [processing, setProcessing] = useState(false);
+  
+  // Get Walk-In Customer ID
+  const walkInCustomer = customers.find(customer => customer.name === "Walk-In Customer");
   
   // Format price using business settings
   const formatPrice = (price: number): string => {
@@ -50,7 +53,7 @@ const POSOrderDetails = () => {
       // Prepare sale data
       const saleData = {
         location_id: cart.location_id,
-        contact_id: selectedCustomer?.id || null,
+        contact_id: selectedCustomer?.id || walkInCustomer?.id || null,
         transaction_date: new Date().toISOString(),
         status: 'final',
         products: cart.items.map(item => ({
