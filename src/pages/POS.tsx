@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Search, Menu, Table, X, ChevronDown, User } from 'lucide-react';
+import { Search, Table, X, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import POSProductGrid from '@/components/pos/POSProductGrid';
@@ -12,73 +12,44 @@ const POS = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   
-  // Customer selection states
   const [customerSearchTerm, setCustomerSearchTerm] = useState('');
   const [searchingCustomer, setSearchingCustomer] = useState(false);
   const { selectedCustomer, setSelectedCustomer, customers } = useCustomer();
 
-  // Focus search input when page loads and on key press
   useEffect(() => {
-    if (searchInputRef.current) {
-      searchInputRef.current.focus();
-    }
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const activeElement = document.activeElement;
-      const isInputActive = activeElement instanceof HTMLInputElement || 
-                           activeElement instanceof HTMLTextAreaElement;
-      
-      if (!isInputActive && searchInputRef.current) {
-        searchInputRef.current.focus();
+    const handleKeyPress = (event: KeyboardEvent) => {
+      if (event.ctrlKey && event.key === 'k') {
+        event.preventDefault();
+        searchInputRef.current?.focus();
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener('keydown', handleKeyPress);
+    return () => document.removeEventListener('keydown', handleKeyPress);
   }, []);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-  };
-
-  // Filter customers based on search term
-  const filteredCustomers = customers.filter(customer => 
-    !customerSearchTerm || 
-    customer.name?.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
-    customer.mobile?.toLowerCase().includes(customerSearchTerm.toLowerCase())
-  );
-
-  // Handle customer selection
   const selectCustomer = (customer: any) => {
     setSelectedCustomer(customer);
     setSearchingCustomer(false);
+    setCustomerSearchTerm('');
   };
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (searchingCustomer && !(event.target as Element).closest('.customer-dropdown')) {
-        setSearchingCustomer(false);
-      }
-    };
+  const filteredCustomers = customers.filter(customer =>
+    customer.name?.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
+    customer.mobile?.includes(customerSearchTerm)
+  );
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [searchingCustomer]);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+  };
 
   return (
-    <div className="bg-gray-50 min-h-screen">
-      <div className="max-w-[1400px] mx-auto bg-white rounded-lg shadow-sm">
-        <div className="grid grid-cols-1 lg:grid-cols-4">
-          {/* Products Section (3/4 width on large screens) */}
-          <div className="lg:col-span-3 p-4 border-r border-gray-200">
-            {/* Search and Menu Bar */}
-            <div className="flex items-center gap-4 mb-4">
-              <Button variant="ghost" size="icon" className="text-gray-500">
-                <Menu className="h-6 w-6" />
-              </Button>
-              
-              <form onSubmit={handleSearch} className="flex-1 flex gap-2">
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 min-h-screen">
+          <div className="lg:col-span-2 p-4 bg-white border-r border-gray-200">
+            <div className="flex items-center justify-between mb-4">
+              <form onSubmit={handleSubmit} className="flex items-center gap-2 flex-1 max-w-md">
                 <Input
                   ref={searchInputRef}
                   type="search"
@@ -98,20 +69,17 @@ const POS = () => {
               </Button>
             </div>
             
-            {/* Category Filters */}
             <POSCategoryFilters 
               onCategoryChange={setSelectedCategoryId}
               selectedCategoryId={selectedCategoryId}
             />
             
-            {/* Products Grid - Pass search term and category ID */}
             <POSProductGrid 
               searchTerm={searchTerm} 
               categoryId={selectedCategoryId}
             />
           </div>
           
-          {/* Order Details Section */}
           <div className="lg:col-span-1 p-4 relative">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold">Order Details</h2>
@@ -120,7 +88,6 @@ const POS = () => {
               </Button>
             </div>
             
-            {/* Customer Selection - Add this new component */}
             <div className="mb-4 customer-dropdown">
               <label className="text-sm font-medium text-gray-700 mb-1 block">Customer</label>
               <div className="flex items-center gap-2">
@@ -136,39 +103,43 @@ const POS = () => {
                         {selectedCustomer ? selectedCustomer.name : "Walk-In Customer"}
                       </span>
                     </span>
-                    <ChevronDown className="h-4 w-4 opacity-70" />
                   </Button>
                   
                   {searchingCustomer && (
-                    <div className="absolute z-50 mt-1 w-full bg-white shadow-lg rounded-md border">
+                    <div className="absolute z-50 mt-1 w-full bg-white shadow-lg rounded-md border max-h-60 overflow-hidden">
                       <div className="p-2 border-b">
                         <Input
+                          type="text"
                           placeholder="Search customers..."
                           value={customerSearchTerm}
                           onChange={(e) => setCustomerSearchTerm(e.target.value)}
-                          autoFocus
+                          className="w-full text-sm"
                         />
                       </div>
-                      <div className="max-h-60 overflow-y-auto">
+                      <div className="max-h-48 overflow-y-auto">
                         <div 
-                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center"
+                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b"
                           onClick={() => selectCustomer(null)}
                         >
-                          <User className="h-4 w-4 mr-2 text-gray-500" />
-                          No Customer Selected
+                          <div className="flex items-center">
+                            <User className="h-4 w-4 mr-2 text-gray-400" />
+                            <span>Walk-In Customer</span>
+                          </div>
                         </div>
                         {filteredCustomers.map(customer => (
                           <div 
-                            key={customer.id} 
-                            className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                            key={customer.id}
+                            className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b last:border-b-0"
                             onClick={() => selectCustomer(customer)}
                           >
-                            {customer.name}
-                            {customer.mobile && (
-                              <span className="text-xs text-gray-500 block">
-                                {customer.mobile}
-                              </span>
-                            )}
+                            <div>
+                              <span className="font-medium">{customer.name}</span>
+                              {customer.mobile && (
+                                <span className="text-xs text-gray-500 block">
+                                  {customer.mobile}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         ))}
                       </div>
