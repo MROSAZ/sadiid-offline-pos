@@ -18,7 +18,7 @@ import { getBusinessSettings } from '@/lib/businessSettings';
  * - Authentication-aware re-initialization
  */
 const AppInitializer: React.FC = () => {
-  const { isOnline } = useNetwork();
+  const { isOnline, retryOperation } = useNetwork();
   const { refreshCustomers } = useCustomer();
   const { setLocation } = useCart();
   const { user } = useAuth();
@@ -148,7 +148,3 @@ const AppInitializer: React.FC = () => {
 };
 
 export default AppInitializer;
-function retryOperation(arg0: () => Promise<boolean>, arg1: number) {
-  throw new Error('Function not implemented.');
-}
-
