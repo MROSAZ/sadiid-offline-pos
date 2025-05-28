@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react'; // Remove useMemo import if not used
 import { getSales, markSaleAsSynced } from '@/lib/storage';
 import { createSale } from '@/services/api';
 import { useNetwork } from '@/context/NetworkContext';
@@ -29,6 +29,7 @@ const Sales = () => {
   const [businessSettings, setBusinessSettings] = useState(null);
   const { isOnline } = useNetwork();
 
+  // Load business settings at component mount
   useEffect(() => {
     const fetchSettings = async () => {
       try {
@@ -40,7 +41,7 @@ const Sales = () => {
     };
     
     fetchSettings();
-    loadSales();
+    loadSales(); // Moved loadSales here to avoid multiple useEffect hooks
   }, []);
 
   const loadSales = async (page = 1) => {
@@ -62,6 +63,8 @@ const Sales = () => {
     }
   };
 
+  // Removed second useEffect that was just calling loadSales()
+
   const handlePageChange = (page: number) => {
     loadSales(page);
   };
@@ -73,11 +76,16 @@ const Sales = () => {
     }
 
     try {
+      // Remove local properties before sending
       const { local_id, is_synced, ...saleData } = sale;
       
+      // Send to server
       await createSale(saleData);
+      
+      // Mark as synced locally
       await markSaleAsSynced(local_id);
       
+      // Refresh data
       loadSales(pagination.page);
       
       toast.success('Sale synced successfully');
@@ -87,113 +95,125 @@ const Sales = () => {
     }
   };
 
+  // Create a formatter function - regular function, not using hooks
   const formatAmount = (payment: any) => {
     if (!payment || !payment[0]) return 'N/A';
-    return formatCurrencySync(payment[0].amount, businessSettings);
+    
+    // Use sync version if available or default formatting
+    if (typeof formatCurrencySync === 'function' && businessSettings) {
+      return formatCurrencySync(payment[0].amount, businessSettings);
+    } else {
+      // Fallback to simple formatting
+      return `$${parseFloat(payment[0].amount).toFixed(2)}`;
+    }
   };
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sadiid-600"></div>
-      </div>
-    );
-  }
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Sales History</h1>
+        <Button 
+          onClick={() => loadSales(pagination.page)}
+          variant="outline"
+        >
+          Refresh
+        </Button>
       </div>
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>ID</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Customer</TableHead>
-              <TableHead>Total</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sales.length > 0 ? (
-              sales.map((sale) => (
-                <TableRow key={sale.local_id}>
-                  <TableCell>{sale.local_id}</TableCell>
-                  <TableCell>
-                    {new Date(sale.transaction_date).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>
-                    {sale.customer_id || 'Walk-in Customer'}
-                  </TableCell>
-                  <TableCell>
-                    {formatAmount(sale.payment)}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={sale.is_synced ? "success" : "destructive"}>
-                      {sale.is_synced ? 'Synced' : 'Not Synced'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {!sale.is_synced && (
-                      <Button 
-                        size="sm" 
-                        onClick={() => handleSync(sale)}
-                        disabled={!isOnline}
-                      >
-                        Sync
-                      </Button>
-                    )}
-                  </TableCell>
+      {loading ? (
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sadiid-600"></div>
+        </div>
+      ) : (
+        <>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>ID</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Total</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center py-8">
-                  No sales found
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-
-        {pagination.totalPages > 1 && (
-          <div className="p-4">
-            <Pagination>
+              </TableHeader>
+              <TableBody>
+                {sales.length > 0 ? (
+                  sales.map((sale) => (
+                    <TableRow key={sale.local_id}>
+                      <TableCell>{sale.local_id}</TableCell>
+                      <TableCell>
+                        {new Date(sale.transaction_date).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        {sale.customer_id || 'Walk-in Customer'}
+                      </TableCell>
+                      <TableCell>
+                        {formatAmount(sale.payment)}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={sale.is_synced ? "success" : "destructive"}>
+                          {sale.is_synced ? 'Synced' : 'Not Synced'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {!sale.is_synced && (
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            disabled={!isOnline}
+                            onClick={() => handleSync(sale)}
+                          >
+                            Sync
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-4 text-gray-500">
+                      No sales found
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+          
+          {pagination.totalPages > 1 && (
+            <Pagination className="mt-4">
               <PaginationContent>
                 <PaginationItem>
                   <PaginationPrevious 
-                    onClick={() => handlePageChange(pagination.page - 1)}
-                    className={pagination.page <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    onClick={() => handlePageChange(Math.max(1, pagination.page - 1))} 
+                    className={pagination.page <= 1 ? "pointer-events-none opacity-50" : ""}
                   />
                 </PaginationItem>
                 
-                {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((page) => (
-                  <PaginationItem key={page}>
+                {Array.from({length: pagination.totalPages}).map((_, i) => (
+                  <PaginationItem key={i}>
                     <PaginationLink
-                      onClick={() => handlePageChange(page)}
-                      isActive={page === pagination.page}
-                      className="cursor-pointer"
+                      isActive={pagination.page === i + 1}
+                      onClick={() => handlePageChange(i + 1)}
                     >
-                      {page}
+                      {i + 1}
                     </PaginationLink>
                   </PaginationItem>
                 ))}
                 
                 <PaginationItem>
                   <PaginationNext 
-                    onClick={() => handlePageChange(pagination.page + 1)}
-                    className={pagination.page >= pagination.totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    onClick={() => handlePageChange(Math.min(pagination.totalPages, pagination.page + 1))}
+                    className={pagination.page >= pagination.totalPages ? "pointer-events-none opacity-50" : ""}
                   />
                 </PaginationItem>
               </PaginationContent>
             </Pagination>
-          </div>
-        )}
-      </div>
+          )}
+        </>
+      )}
     </div>
   );
 };

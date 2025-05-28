@@ -1,3 +1,4 @@
+
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Routes, Route, Navigate } from "react-router-dom";
@@ -22,6 +23,7 @@ import Settings from "./pages/Settings";
 
 const App = () => {
   useEffect(() => {
+    // Initialize the IndexedDB database
     const setupDB = async () => {
       try {
         await initDB();
@@ -30,7 +32,7 @@ const App = () => {
         console.error('Error initializing IndexedDB:', error);
       }
     };
-
+    
     setupDB();
   }, []);
 
@@ -40,8 +42,10 @@ const App = () => {
         <TooltipProvider>
           <Toaster position="top-right" />
           <Routes>
+            {/* Public routes */}
             <Route path="/login" element={<Login />} />
             
+            {/* Protected routes - wrapped with business-specific providers */}
             <Route 
               path="/" 
               element={

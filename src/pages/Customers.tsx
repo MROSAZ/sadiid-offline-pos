@@ -3,11 +3,13 @@ import { Users, Plus, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import CustomerList from '@/components/customers/CustomerList';
+import { useNetwork } from '@/context/NetworkContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import NetworkStatusIndicator from '@/components/ui/NetworkStatusIndicator';
 
 const Customers = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const { isOnline } = useNetwork();
 
   return (
     <div className="container mx-auto space-y-6">

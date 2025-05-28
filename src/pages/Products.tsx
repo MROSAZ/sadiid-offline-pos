@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Package } from 'lucide-react';
 import ProductList from '@/components/products/ProductList';
@@ -30,6 +31,7 @@ const Products = () => {
         />
       </div>
 
+      {/* Add Category Filters */}
       <POSCategoryFilters 
         onCategoryChange={setSelectedCategoryId}
         selectedCategoryId={selectedCategoryId}
