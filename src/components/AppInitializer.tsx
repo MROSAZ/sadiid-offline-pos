@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useNetwork } from '@/context/NetworkContext';
@@ -45,22 +44,27 @@ const AppInitializer: React.FC = () => {
       try {
         console.log(`Initializing app (attempt ${initializationAttempts + 1})...`);
 
-        // Step 1: Auto-select business location if none selected
-        const locationId = await autoSelectLocation();
-        if (locationId) {
-          console.log(`Selected location: ${locationId}`);
-          setLocation(locationId);
-        } else {
-          console.warn('No location could be selected');
-        }
-
-        // Step 2: Load business settings from cache
+        // Step 1: Load business settings first since we need it for locations
         try {
           await getBusinessSettings(false);
           console.log('Business settings loaded from cache');
         } catch (error) {
           console.warn('Failed to load business settings from cache', error);
-        }        // Step 3: Load existing customer data into context
+        }
+
+        // Step 2: Auto-select business location with priority
+        const locationId = await autoSelectLocation();
+        if (locationId) {
+          console.log(`Selected location: ${locationId}`);
+          setLocation(locationId);
+          // Save to localStorage for persistence
+          localStorage.setItem('selected_location_id', locationId.toString());
+        } else {
+          console.warn('No location could be selected');
+          toast.error('Failed to select business location');
+        }
+
+        // Step 3: Load existing customer data into context
         try {
           const contacts = await getContacts();
           await refreshCustomers();

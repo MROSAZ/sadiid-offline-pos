@@ -1,5 +1,4 @@
-
-import React, { createContext, useContext, useReducer, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
 
 export interface CartItem {
   id: number;
@@ -136,6 +135,21 @@ interface CartProviderProps {
 export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   const [cart, dispatch] = useReducer(cartReducer, initialState);
   
+  // Add effect to update location when it changes in localStorage
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'selected_location_id' && e.newValue) {
+        const newLocationId = parseInt(e.newValue, 10);
+        if (newLocationId && newLocationId !== cart.location_id) {
+          dispatch({ type: 'SET_LOCATION', payload: newLocationId });
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [cart.location_id]);
+
   const addItem = (item: Omit<CartItem, 'id'>) => {
     const newItem = { ...item, id: Date.now() };
     dispatch({ type: 'ADD_ITEM', payload: newItem as CartItem });

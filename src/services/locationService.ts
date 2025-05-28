@@ -1,4 +1,7 @@
 import { getBusinessSettings, BusinessLocation } from '@/lib/businessSettings';
+import { getBusinessSettingsFromStorage } from '@/lib/storage';
+import { saveBusinessSettings } from '@/lib/storage';
+import { toast } from 'sonner';
 
 // Constants
 const LOCATION_STORAGE_KEY = 'selected_location_id';
@@ -55,9 +58,23 @@ export const getSelectedLocation = async (): Promise<BusinessLocation | null> =>
  */
 export const saveSelectedLocationId = (locationId: number): void => {
   try {
+    if (!locationId) {
+      console.error('Invalid location ID:', locationId);
+      return;
+    }
+    
+    // Save to localStorage
     localStorage.setItem(LOCATION_STORAGE_KEY, locationId.toString());
+    
+    // Also save to IndexedDB for better persistence
+    const settings = getBusinessSettingsFromStorage();
+    if (settings) {
+      settings.default_location_id = locationId;
+      saveBusinessSettings(settings);
+    }
   } catch (error) {
-    console.error('Error saving selected location ID to localStorage:', error);
+    console.error('Error saving selected location ID:', error);
+    toast.error('Failed to save selected location');
   }
 };
 
@@ -85,8 +102,8 @@ export const autoSelectLocation = async (): Promise<number | null> => {
     // Get current location ID
     let locationId = getSelectedLocationId();
     
-    // Check if current selection is valid
-    const locations = await getLocations(true); // Use cached data
+    // Get locations with cached data first
+    const locations = await getLocations(true, false);
     
     // If we're offline and no locations found, but have a cached location ID, trust it
     if (locations.length === 0 && !navigator.onLine && locationId) {
@@ -94,22 +111,35 @@ export const autoSelectLocation = async (): Promise<number | null> => {
       return locationId;
     }
     
-    if (locations.length === 0) {
-      console.warn('No active business locations found');
-      return null;
+    // If no locations found, try forcing a refresh if online
+    if (locations.length === 0 && navigator.onLine) {
+      console.log('No locations in cache, fetching from server...');
+      const freshLocations = await getLocations(true, true);
+      if (freshLocations.length === 0) {
+        console.warn('No active business locations found');
+        return null;
+      }
     }
     
-    // If no location selected or invalid selection, select first active one
-    const isValid = locationId && locations.some(loc => loc.id === locationId);
+    // Validate current selection
+    const isValid = locationId && locations.some(loc => loc.id === locationId && loc.is_active === 1);
+    
     if (!isValid) {
-      const firstLocation = locations[0];
-      locationId = firstLocation.id;
-      saveSelectedLocationId(firstLocation.id);
-      console.log(`Auto-selected business location: ${firstLocation.name} (ID: ${firstLocation.id})`);
+      // Select first active location
+      const firstActiveLocation = locations.find(loc => loc.is_active === 1);
+      if (firstActiveLocation) {
+        locationId = firstActiveLocation.id;
+        saveSelectedLocationId(firstActiveLocation.id);
+        console.log(`Auto-selected business location: ${firstActiveLocation.name} (ID: ${firstActiveLocation.id})`);
+      } else {
+        console.warn('No active locations available');
+        return null;
+      }
     } else {
-      // Even if valid, ensure it's saved to localStorage (in case it was cleared)
+      // Even if valid, ensure it's saved to localStorage
       saveSelectedLocationId(locationId);
-      console.log(`Confirmed existing business location: ${locations.find(loc => loc.id === locationId)?.name} (ID: ${locationId})`);
+      const selectedLocation = locations.find(loc => loc.id === locationId);
+      console.log(`Confirmed existing business location: ${selectedLocation?.name} (ID: ${locationId})`);
     }
     
     return locationId;
@@ -120,7 +150,6 @@ export const autoSelectLocation = async (): Promise<number | null> => {
       const cachedId = getSelectedLocationId();
       if (cachedId) {
         console.log('Fallback to cached location ID:', cachedId);
-        // Ensure it's saved even in fallback scenario
         saveSelectedLocationId(cachedId);
         return cachedId;
       }
