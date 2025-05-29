@@ -1,4 +1,5 @@
 import { getBusinessSettings, BusinessLocation } from '@/lib/businessSettings';
+import { saveSelectedLocation, getSelectedLocationFromDB } from '@/lib/storage'; // Fixed: Updated import name
 
 // Constants
 const LOCATION_STORAGE_KEY = 'selected_location_id';
@@ -30,18 +31,32 @@ export const getLocations = async (
 };
 
 /**
- * Get the currently selected location ID from localStorage
+ * Get the currently selected location ID from localStorage/IndexedDB
  */
-export const getSelectedLocationId = (): number | null => {
-  const locationId = localStorage.getItem('selected_location_id');
-  return locationId ? parseInt(locationId, 10) : null;
+export const getSelectedLocationId = async (): Promise<number | null> => {
+  try {
+    // Try IndexedDB first, fallback to localStorage
+    const locationId = await getSelectedLocationFromDB(); // Fixed: Use renamed function
+    if (locationId !== null) {
+      return locationId;
+    }
+    
+    // Fallback to localStorage
+    const storedId = localStorage.getItem(LOCATION_STORAGE_KEY);
+    return storedId ? parseInt(storedId, 10) : null;
+  } catch (error) {
+    console.error('Error getting selected location ID:', error);
+    // Fallback to localStorage only
+    const storedId = localStorage.getItem(LOCATION_STORAGE_KEY);
+    return storedId ? parseInt(storedId, 10) : null;
+  }
 };
 
 /**
  * Get the currently selected location object
  */
-export const getSelectedLocation = async (): Promise<BusinessLocation | null> => {
-  const locationId = getSelectedLocationId();
+export const getSelectedLocationObject = async (): Promise<BusinessLocation | null> => { // Fixed: Renamed to avoid conflict
+  const locationId = await getSelectedLocationId();
   if (!locationId) return null;
 
   const settings = await getBusinessSettings();
@@ -51,13 +66,17 @@ export const getSelectedLocation = async (): Promise<BusinessLocation | null> =>
 };
 
 /**
- * Set the selected location ID in localStorage
+ * Set the selected location ID in localStorage and IndexedDB
  */
-export const saveSelectedLocationId = (locationId: number): void => {
+export const saveSelectedLocationId = async (locationId: number): Promise<void> => {
   try {
+    // Save to both localStorage (fallback) and IndexedDB (primary)
     localStorage.setItem(LOCATION_STORAGE_KEY, locationId.toString());
+    await saveSelectedLocation(locationId);
   } catch (error) {
-    console.error('Error saving selected location ID to localStorage:', error);
+    console.error('Error saving selected location ID:', error);
+    // Fallback to localStorage only
+    localStorage.setItem(LOCATION_STORAGE_KEY, locationId.toString());
   }
 };
 
@@ -83,7 +102,7 @@ export const isValidLocationId = async (locationId: number): Promise<boolean> =>
 export const autoSelectLocation = async (): Promise<number | null> => {
   try {
     // Get current location ID
-    let locationId = getSelectedLocationId();
+    let locationId = await getSelectedLocationId();
     
     // Check if current selection is valid
     const locations = await getLocations(true); // Use cached data
@@ -104,11 +123,11 @@ export const autoSelectLocation = async (): Promise<number | null> => {
     if (!isValid) {
       const firstLocation = locations[0];
       locationId = firstLocation.id;
-      saveSelectedLocationId(firstLocation.id);
+      await saveSelectedLocationId(firstLocation.id); // Fixed: Added await
       console.log(`Auto-selected business location: ${firstLocation.name} (ID: ${firstLocation.id})`);
     } else {
       // Even if valid, ensure it's saved to localStorage (in case it was cleared)
-      saveSelectedLocationId(locationId);
+      await saveSelectedLocationId(locationId); // Fixed: Added await
       console.log(`Confirmed existing business location: ${locations.find(loc => loc.id === locationId)?.name} (ID: ${locationId})`);
     }
     
@@ -117,11 +136,11 @@ export const autoSelectLocation = async (): Promise<number | null> => {
     console.error('Error auto-selecting location:', error);
     // In offline mode, try to use cached location ID as fallback
     if (!navigator.onLine) {
-      const cachedId = getSelectedLocationId();
+      const cachedId = await getSelectedLocationId();
       if (cachedId) {
         console.log('Fallback to cached location ID:', cachedId);
         // Ensure it's saved even in fallback scenario
-        saveSelectedLocationId(cachedId);
+        await saveSelectedLocationId(cachedId); // Fixed: Added await
         return cachedId;
       }
     }

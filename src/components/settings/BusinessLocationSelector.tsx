@@ -21,12 +21,16 @@ const BusinessLocationSelector = () => {
     }
   }, [settings]);
   
-  const handleLocationChange = (locationId: string) => {
+  const handleLocationChange = async (locationId: string) => {
     const numericId = parseInt(locationId, 10);
     if (!isNaN(numericId)) {
-      setLocation(numericId);
-      saveSelectedLocationId(numericId);
-      toast.success(`Business location set to ${getCurrentLocationName()}`);
+      setLocation(numericId); // Updates cart context
+      try {
+        await saveSelectedLocationId(numericId); // Now async save to IndexedDB
+        toast.success(`Business location set to ${getCurrentLocationName()}`);
+      } catch (error) {
+        toast.error('Failed to save location setting');
+      }
     }
   };
   

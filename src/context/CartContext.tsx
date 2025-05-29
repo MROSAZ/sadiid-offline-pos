@@ -1,5 +1,5 @@
-
-import React, { createContext, useContext, useReducer, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
+import { getSelectedLocationId } from '@/services/locationService';
 
 export interface CartItem {
   id: number;
@@ -178,6 +178,22 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     return subtotal - cart.discount + cart.tax;
   };
   
+  // Load selected location on mount
+  useEffect(() => {
+    const loadSelectedLocation = async () => {
+      try {
+        const locationId = await getSelectedLocationId();
+        if (locationId) {
+          setLocation(locationId);
+        }
+      } catch (error) {
+        console.error('Error loading selected location:', error);
+      }
+    };
+    
+    loadSelectedLocation();
+  }, []);
+
   return (
     <CartContext.Provider value={{
       cart,

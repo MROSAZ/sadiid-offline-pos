@@ -1,4 +1,3 @@
-
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
 
 interface SadiidPOSDB extends DBSchema {
@@ -33,6 +32,15 @@ interface SadiidPOSDB extends DBSchema {
   business_settings: {
     key: string;
     value: any;
+  };
+  settings: {
+    key: string;
+    value: {
+      key: string;
+      value: any;
+      timestamp: string;
+    };
+    indexes: { 'by-timestamp': string }; // Fixed: Added proper index definition
   };
 }
 
@@ -79,6 +87,12 @@ export const initDB = async () => {
           });
           salesStore.createIndex('by-date', 'transaction_date');
           salesStore.createIndex('by-sync', 'is_synced');
+        }
+        
+        // Add settings store for location and other app settings
+        if (!db.objectStoreNames.contains('settings')) {
+          const settingsStore = db.createObjectStore('settings', { keyPath: 'key' });
+          settingsStore.createIndex('by-timestamp', 'timestamp', { unique: false }); // Fixed: Correct index name
         }
       },
     });
@@ -307,6 +321,40 @@ export const getLocalItemAsJson = <T>(key: string): T | null => {
     return item ? JSON.parse(item) as T : null;
   } catch (error) {
     console.error(`Error getting/parsing item ${key} from localStorage:`, error);
+    return null;
+  }
+};
+
+// Add location storage functions
+export const saveSelectedLocation = async (locationId: number): Promise<void> => {
+  try {
+    const db = await getDB(); // Fixed: Use getDB() instead of openDB()
+    const transaction = db.transaction(['settings'], 'readwrite');
+    const store = transaction.objectStore('settings');
+    
+    await store.put({
+      key: 'selected_location_id',
+      value: locationId,
+      timestamp: new Date().toISOString()
+    });
+    
+    await transaction.done; // Fixed: Use transaction.done instead of transaction.complete
+  } catch (error) {
+    console.error('Error saving selected location to IndexedDB:', error);
+    throw error;
+  }
+};
+
+export const getSelectedLocationFromDB = async (): Promise<number | null> => { // Fixed: Renamed to avoid conflict
+  try {
+    const db = await getDB(); // Fixed: Use getDB() instead of openDB()
+    const transaction = db.transaction(['settings'], 'readonly');
+    const store = transaction.objectStore('settings');
+    
+    const result = await store.get('selected_location_id');
+    return result ? result.value : null;
+  } catch (error) {
+    console.error('Error getting selected location from IndexedDB:', error);
     return null;
   }
 };
