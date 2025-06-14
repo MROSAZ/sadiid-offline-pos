@@ -39,6 +39,7 @@ export interface BusinessSettings {
   currency_symbol_placement?: 'before' | 'after';
   currency_precision?: number;
   quantity_precision?: number;
+  timezone?: string; // Add timezone field
   pos_settings?: {
     amount_rounding_method: string;
     [key: string]: any;
@@ -102,6 +103,7 @@ export const getBusinessSettings = async (forceRefresh = false): Promise<Busines
           currency_symbol_placement: apiData.currency_symbol_placement || 'before',
           currency_precision: apiData.currency_precision || 2,
           quantity_precision: apiData.quantity_precision || 2,
+          timezone: apiData.time_zone || 'UTC', // Add timezone from API response
           pos_settings: apiData.pos_settings || {
             amount_rounding_method: null
           },
@@ -300,6 +302,7 @@ export const createMockBusinessSettings = (): BusinessSettings => ({
   currency_symbol_placement: "before",
   currency_precision: 2,
   quantity_precision: 2,
+  timezone: "UTC", // Add default timezone
   pos_settings: {
     amount_rounding_method: null
   },

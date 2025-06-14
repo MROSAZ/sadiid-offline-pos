@@ -9,6 +9,7 @@ import { Package, X, Plus, Minus } from 'lucide-react';
 import { formatCurrencySync } from '@/utils/formatting';
 import { useBusinessSettings } from '@/context/BusinessSettingsContext';
 import { useCustomer } from '@/context/CustomerContext';
+import { getBusinessTimestamp } from '@/utils/dateUtils';
 
 // For product placeholder
 const PLACEHOLDER_SVG = `data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M 20 70 Q 60 20, 100 70' fill='none' stroke='%239e9e9e' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E`;
@@ -53,8 +54,8 @@ const POSOrderDetails = () => {
       // Prepare sale data
       const saleData = {
         location_id: cart.location_id,
-        contact_id: selectedCustomer?.id || walkInCustomer?.id ,
-        transaction_date: new Date().toISOString(),
+        contact_id: selectedCustomer?.id || walkInCustomer?.id,
+        transaction_date: getBusinessTimestamp(), // Use business timezone instead of UTC
         status: 'final',
         products: cart.items.map(item => ({
           product_id: item.product_id,
