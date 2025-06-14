@@ -76,10 +76,65 @@ export const getCurrentUser = async () => {
 };
 
 // ============== PRODUCTS ==============
-export const fetchProducts = async (page = 1, perPage = 50) => {
+export const fetchProducts = async (page = 1, perPage = 500) => {
   try {
-    const response = await api.get(`/connector/api/product?per_page=${perPage}&page=${page}`);
-    return response.data;
+    let allProducts = [];
+    let currentPage = page;
+    let hasMorePages = true;
+    let totalCount = 0;
+    let lastPageInfo = null;
+
+    // If page > 1, just fetch that specific page (for backward compatibility)
+    if (page > 1) {
+      const response = await api.get(`/connector/api/product?per_page=${perPage}&page=${page}`);
+      return response.data;
+    }
+
+    // If page = 1, fetch all products across all pages
+    while (hasMorePages) {
+      const response = await api.get(`/connector/api/product?per_page=${perPage}&page=${currentPage}`);
+      const responseData = response.data;
+
+      if (responseData.data && responseData.data.length > 0) {
+        allProducts = [...allProducts, ...responseData.data];
+        
+        // Store pagination info from first page
+        if (currentPage === 1) {
+          totalCount = responseData.total || 0;
+          lastPageInfo = {
+            current_page: responseData.current_page,
+            per_page: responseData.per_page,
+            total: responseData.total,
+            last_page: responseData.last_page,
+            from: responseData.from,
+            to: responseData.to
+          };
+        }
+        
+        // Check if we got fewer products than requested (last page)
+        if (responseData.data.length < perPage || 
+            (responseData.last_page && currentPage >= responseData.last_page)) {
+          hasMorePages = false;
+        } else {
+          currentPage++;
+        }
+      } else {
+        hasMorePages = false;
+      }
+    }
+
+    // Return in the same format as the original API response
+    return {
+      data: allProducts,
+      total: totalCount,
+      current_page: 1,
+      per_page: allProducts.length,
+      last_page: 1,
+      from: 1,
+      to: allProducts.length,
+      ...lastPageInfo
+    };
+
   } catch (error) {
     console.error('Error fetching products:', error);
     throw error;
@@ -87,10 +142,65 @@ export const fetchProducts = async (page = 1, perPage = 50) => {
 };
 
 // ============== CONTACTS ==============
-export const fetchContacts = async (page = 1, perPage = 50, type = 'customer') => {
+export const fetchContacts = async (page = 1, perPage = 500, type = 'customer') => {
   try {
-    const response = await api.get(`/connector/api/contactapi?type=${type}&per_page=${perPage}&page=${page}`);
-    return response.data;
+    let allContacts = [];
+    let currentPage = page;
+    let hasMorePages = true;
+    let totalCount = 0;
+    let lastPageInfo = null;
+
+    // If page > 1, just fetch that specific page (for backward compatibility)
+    if (page > 1) {
+      const response = await api.get(`/connector/api/contactapi?type=${type}&per_page=${perPage}&page=${page}`);
+      return response.data;
+    }
+
+    // If page = 1, fetch all contacts across all pages
+    while (hasMorePages) {
+      const response = await api.get(`/connector/api/contactapi?type=${type}&per_page=${perPage}&page=${currentPage}`);
+      const responseData = response.data;
+
+      if (responseData.data && responseData.data.length > 0) {
+        allContacts = [...allContacts, ...responseData.data];
+        
+        // Store pagination info from first page
+        if (currentPage === 1) {
+          totalCount = responseData.total || 0;
+          lastPageInfo = {
+            current_page: responseData.current_page,
+            per_page: responseData.per_page,
+            total: responseData.total,
+            last_page: responseData.last_page,
+            from: responseData.from,
+            to: responseData.to
+          };
+        }
+        
+        // Check if we got fewer contacts than requested (last page)
+        if (responseData.data.length < perPage || 
+            (responseData.last_page && currentPage >= responseData.last_page)) {
+          hasMorePages = false;
+        } else {
+          currentPage++;
+        }
+      } else {
+        hasMorePages = false;
+      }
+    }
+
+    // Return in the same format as the original API response
+    return {
+      data: allContacts,
+      total: totalCount,
+      current_page: 1,
+      per_page: allContacts.length,
+      last_page: 1,
+      from: 1,
+      to: allContacts.length,
+      ...lastPageInfo
+    };
+
   } catch (error) {
     console.error('Error fetching contacts:', error);
     throw error;

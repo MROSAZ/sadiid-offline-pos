@@ -294,7 +294,7 @@ export const syncDataOnLogin = async (showToast = false): Promise<boolean> => {
     // Force sync products (ignore timing threshold)
     console.log('🛍️ Force syncing products...');
     try {
-      const productsResponse = await fetchProducts(1, 1000);
+      const productsResponse = await fetchProducts();
       if (productsResponse.data) {
         await saveProducts(productsResponse.data);
         updateSyncTimestamp('products');
