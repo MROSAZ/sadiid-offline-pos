@@ -53,7 +53,7 @@ const POSOrderDetails = () => {
       // Prepare sale data
       const saleData = {
         location_id: cart.location_id,
-        contact_id: selectedCustomer?.id || walkInCustomer?.id || null,
+        contact_id: selectedCustomer?.id || walkInCustomer?.id ,
         transaction_date: new Date().toISOString(),
         status: 'final',
         products: cart.items.map(item => ({
