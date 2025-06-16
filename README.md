@@ -2,18 +2,20 @@
 
 ## Table of Contents
 1. [Overview](#overview)
-2. [Technology Stack](#technology-stack)
-3. [Architecture](#architecture)
-4. [Core Features](#core-features)
-5. [Database Design](#database-design)
-6. [Synchronization System](#synchronization-system)
-7. [Authentication & Security](#authentication--security)
-8. [Offline Capabilities](#offline-capabilities)
-9. [UI Components](#ui-components)
-10. [Code Structure](#code-structure)
-11. [Performance Optimizations](#performance-optimizations)
-12. [PWA Implementation](#pwa-implementation)
-13. [Development & Deployment](#development--deployment)
+2. [Project Status](#project-status)
+3. [Technology Stack](#technology-stack)
+4. [Architecture](#architecture)
+5. [Core Features](#core-features)
+6. [Database Design](#database-design)
+7. [Synchronization System](#synchronization-system)
+8. [Authentication & Security](#authentication--security)
+9. [Offline Capabilities](#offline-capabilities)
+10. [UI Components](#ui-components)
+11. [Code Structure](#code-structure)
+12. [Performance Optimizations](#performance-optimizations)
+13. [PWA Implementation](#pwa-implementation)
+14. [Development & Deployment](#development--deployment)
+15. [Known Issues & Cleanup Plan](#known-issues--cleanup-plan)
 
 ## Overview
 
@@ -28,6 +30,28 @@ Sadiid Offline POS is a Progressive Web Application (PWA) that provides a compre
 - **Customer Management**: Comprehensive customer database and history
 - **Sales Analytics**: Detailed reporting and sales tracking
 - **Multi-location Support**: Business settings and location management
+
+## Project Status
+
+### Current Implementation Status
+- ✅ **Core POS Functionality**: Fully implemented and functional
+- ✅ **Product Management**: Complete with search and filtering
+- ✅ **Customer Management**: Full CRUD operations with sync
+- ✅ **Authentication System**: OAuth 2.0 implementation complete
+- ✅ **Database Schema**: IndexedDB stores defined and working
+- ✅ **Network Context**: Online/offline status monitoring
+- ⚠️ **Sales Management**: UI incomplete, needs finishing
+- ⚠️ **Sync Services**: Core functions missing implementation
+- ⚠️ **API Service**: Several functions incomplete
+- ❌ **Unused Files**: Need cleanup and removal
+
+### Active Development Areas
+Please refer to [`CLEANUP_COMPLETION_PLAN.md`](CLEANUP_COMPLETION_PLAN.md) for detailed information about:
+- Incomplete files that need completion
+- Unused files scheduled for removal
+- Database schema updates required
+- TypeScript errors to resolve
+- Estimated completion timeline (6 days)
 
 ## Technology Stack
 
@@ -99,7 +123,7 @@ App
 ## Core Features
 
 ### 1. Point of Sale (POS)
-**File**: `src/pages/POS.tsx`
+**File**: [`src/pages/POS.tsx`](src/pages/POS.tsx)
 
 The POS interface is the heart of the application, providing:
 - **Product Grid**: Visual product catalog with search and filtering
@@ -109,12 +133,12 @@ The POS interface is the heart of the application, providing:
 - **Receipt Generation**: Automatic receipt creation and printing
 
 **Key Components**:
-- `POSProductGrid`: Displays products in a grid layout
-- `POSOrderDetails`: Shopping cart and checkout interface
-- `POSCategoryFilters`: Product category filtering
+- [`POSProductGrid`](src/components/pos/POSProductGrid.tsx): Displays products in a grid layout
+- [`POSOrderDetails`](src/components/pos/POSOrderDetails.tsx): Shopping cart and checkout interface
+- [`POSCategoryFilters`](src/components/pos/POSCategoryFilters.tsx): Product category filtering
 
 ### 2. Product Management
-**File**: `src/pages/Products.tsx`
+**File**: [`src/pages/Products.tsx`](src/pages/Products.tsx)
 
 Comprehensive product catalog management:
 - **Product Listing**: Paginated product display
@@ -123,7 +147,7 @@ Comprehensive product catalog management:
 - **Category Management**: Product categorization system
 
 ### 3. Customer Management
-**File**: `src/pages/Customers.tsx`
+**File**: [`src/pages/Customers.tsx`](src/pages/Customers.tsx)
 
 Customer relationship management features:
 - **Customer Database**: Complete customer information storage
@@ -132,13 +156,15 @@ Customer relationship management features:
 - **Customer Search**: Quick customer lookup by name or phone
 
 ### 4. Sales Tracking
-**File**: `src/pages/Sales.tsx`
+**File**: [`src/pages/Sales.tsx`](src/pages/Sales.tsx) ⚠️ *Incomplete*
 
 Sales analytics and reporting:
 - **Transaction History**: Complete sales record keeping
 - **Sync Status**: Monitor offline transaction synchronization
 - **Payment Details**: Track payment methods and amounts
 - **Business Reporting**: Sales performance metrics
+
+*Note: This component requires completion - see cleanup plan for details.*
 
 ## Database Design
 
@@ -226,14 +252,14 @@ interface QueuedOperation {
 
 The synchronization system consists of two main components:
 
-#### 1. Sync Service (`src/services/syncService.ts`)
+#### 1. Sync Service (`src/services/syncService.ts`) ⚠️ *Incomplete*
 Handles the main synchronization logic:
 - **Data Freshness Checking**: Determines when data needs updating
 - **Batch Synchronization**: Efficient bulk data transfer
 - **Retry Logic**: Automatic retry for failed operations
 - **Progress Tracking**: Real-time sync status updates
 
-#### 2. Sync Queue (`src/services/syncQueue.ts`)
+#### 2. Sync Queue (`src/services/syncQueue.ts`) ⚠️ *Incomplete*
 Manages offline operations queue:
 - **Operation Queuing**: Store offline actions for later sync
 - **Queue Processing**: Batch process queued operations
@@ -271,7 +297,7 @@ graph TD
 ## Authentication & Security
 
 ### OAuth 2.0 Implementation
-**File**: `src/services/api.ts`
+**File**: [`src/services/api.ts`](src/services/api.ts)
 
 The application uses OAuth 2.0 password grant flow:
 
@@ -297,7 +323,7 @@ const login = async (username: string, password: string) => {
 - **Secure Storage**: Encrypted token storage
 
 ### Authentication Context
-**File**: `src/context/AuthContext.tsx`
+**File**: [`src/context/AuthContext.tsx`](src/context/AuthContext.tsx)
 
 Manages application-wide authentication state:
 - **Login/Logout**: User session management
@@ -324,7 +350,7 @@ The application is built with an offline-first approach:
 - **Report Generation**: Basic reporting from local data
 
 #### 3. Queue Management
-**File**: `src/services/syncQueue.ts`
+**File**: [`src/services/syncQueue.ts`](src/services/syncQueue.ts)
 
 ```typescript
 export const queueOperation = async (
@@ -347,7 +373,7 @@ export const queueOperation = async (
 ```
 
 ### Network Status Monitoring
-**File**: `src/context/NetworkContext.tsx`
+**File**: [`src/context/NetworkContext.tsx`](src/context/NetworkContext.tsx)
 
 Real-time network status tracking:
 - **Connection Detection**: Monitor online/offline status
@@ -492,7 +518,7 @@ const memoizedProductList = useMemo(() =>
 ## PWA Implementation
 
 ### Service Worker Configuration
-**File**: `vite.config.ts`
+**File**: [`vite.config.ts`](vite.config.ts)
 
 The application is configured as a PWA using Vite PWA plugin:
 
@@ -631,20 +657,69 @@ VITE_CLIENT_SECRET=cEM0njAX1oCo9OK4NDdwjEyWr1KKmjt6545j6zSf
 - **Offline Scenarios**: Test offline functionality
 - **PWA Features**: Test installation and offline usage
 
+## Known Issues & Cleanup Plan
+
+### Current Development Status
+
+The application is functional but requires completion of several components and cleanup of unused code. 
+
+**⚠️ Active Issues:**
+- [`Sales.tsx`](src/pages/Sales.tsx) - UI implementation incomplete
+- [`syncService.ts`](src/services/syncService.ts) - Core sync functions missing
+- [`syncQueue.ts`](src/services/syncQueue.ts) - Queue management incomplete
+- [`api.ts`](src/services/api.ts) - Several API functions missing
+
+### Detailed Cleanup Plan
+
+Please refer to [`CLEANUP_COMPLETION_PLAN.md`](CLEANUP_COMPLETION_PLAN.md) for:
+- **Complete task breakdown** with priorities
+- **Code templates** for missing implementations
+- **Testing checklist** for verification
+- **Risk assessment** for cleanup activities
+- **Estimated timeline** (6 days total)
+
+### Files Scheduled for Removal
+```
+src/pages/Index.tsx
+src/components/BusinessDetailsTest.tsx
+src/components/settings/BusinessLocationSelector.tsx
+src/routes/AppRoutes.tsx
+src/lib/sync.ts
+src/components/pos/POSGrid.tsx
+src/components/pos/POSProductCard.tsx
+src/hooks/useLocalStorage.ts
+```
+
+### Success Criteria
+- [ ] All identified incomplete files completed
+- [ ] Unused files removed from codebase
+- [ ] TypeScript errors resolved
+- [ ] Sync functionality fully operational
+- [ ] Application builds without errors
+- [ ] All manual tests passing
+
 ## Conclusion
 
 The Sadiid Offline POS application represents a modern, robust point-of-sale solution built with cutting-edge web technologies. Its offline-first architecture ensures business continuity, while the comprehensive feature set provides everything needed for retail operations.
 
-Key strengths include:
+**Current Strengths:**
 - **Reliability**: Robust offline capabilities with automatic sync
 - **Performance**: Optimized for speed and responsiveness
 - **Scalability**: Modular architecture supports future enhancements
 - **User Experience**: Intuitive interface with responsive design
 - **Security**: Enterprise-grade authentication and data protection
 
+**Near-term Goals:**
+- Complete remaining incomplete components
+- Finalize sync service implementation
+- Clean up unused code and optimize build
+- Achieve 100% TypeScript compliance
+- Complete comprehensive testing
+
 The technical implementation demonstrates best practices in modern web development, making it a solid foundation for future enhancements and scalability.
 
 ---
 
-*Last Updated: May 25, 2025*
-*Version: 1.0.0*
+*Last Updated: June 16, 2025*
+*Version: 1.0.0-rc*
+*Status: Release Candidate - Pending Cleanup Completion*
