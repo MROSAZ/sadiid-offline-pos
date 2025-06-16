@@ -122,7 +122,7 @@ export const updateLastSyncTimestamp = (): void => {
 };
 
 // Check if sync is needed based on elapsed time
-export const isSyncNeeded = (thresholdMinutes = 30): boolean => {
+export const isSyncNeeded = (thresholdMinutes = 1): boolean => {
   const lastSync = getLastSyncTimestamp();
   if (!lastSync) return true;
   

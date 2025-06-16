@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react'; // Remove useMemo import if not used
 import { getSales, markSaleAsSynced } from '@/lib/storage';
-import { createSale } from '@/services/api';
 import { queueOperation } from '@/services/syncQueue';
 import { useNetwork } from '@/context/NetworkContext';
 import { toast } from 'sonner';
