@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { toast } from 'sonner';
 import { startBackgroundSync, stopBackgroundSync } from '@/lib/sync';
+import { processQueue } from '@/services/syncQueue';
 
 interface NetworkContextType {
   isOnline: boolean;
@@ -143,14 +144,14 @@ export const NetworkProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setIsOnline(true);
         setLastOnlineTime(new Date());
         measureConnectionQuality();
-        
-        // Check if we're reconnecting after being offline
+          // Check if we're reconnecting after being offline
         if (!isOnline && !networkReconnectedRef.current) {
           networkReconnectedRef.current = true;
           toast.success('You are back online!');
           
-          // Restart background sync
+          // Start background sync and process queue
           startBackgroundSync();
+          processQueue(); // Process any pending operations
         }
       } else {
         console.log('Browser reports online but server is not reachable.');

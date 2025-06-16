@@ -1,4 +1,3 @@
-
 /**
  * Queue management system for offline operations that need to be synchronized
  * when the connection is restored.
@@ -161,4 +160,96 @@ export const getQueueStats = async (): Promise<{
   });
   
   return stats;
+};
+
+// Process the queue - sync pending operations when online
+export const processQueue = async (): Promise<void> => {
+  if (!navigator.onLine) {
+    console.log('Device offline, skipping queue processing');
+    return;
+  }
+  
+  try {
+    const pendingOps = await getOperationsByStatus('pending');
+    
+    if (pendingOps.length === 0) {
+      console.log('No pending operations to process');
+      return;
+    }
+    
+    console.log(`Processing ${pendingOps.length} pending operations`);
+    
+    for (const operation of pendingOps) {
+      try {
+        await updateOperationStatus(operation.id, 'processing');
+        
+        switch (operation.type) {
+          case 'sale':
+            await processSaleOperation(operation);
+            break;
+          case 'customer':
+            await processCustomerOperation(operation);
+            break;
+          case 'attendance':
+            await processAttendanceOperation(operation);
+            break;
+          default:
+            console.warn(`Unknown operation type: ${operation.type}`);
+            await updateOperationStatus(operation.id, 'failed', 'Unknown operation type');
+        }
+      } catch (error: any) {
+        console.error(`Failed to process operation ${operation.id}:`, error);
+        await updateOperationStatus(operation.id, 'failed', error.message || 'Processing failed');
+      }
+    }
+  } catch (error) {
+    console.error('Error processing queue:', error);
+  }
+};
+
+// Process sale operation
+const processSaleOperation = async (operation: QueuedOperation): Promise<void> => {
+  const { createSale } = await import('@/services/api');
+  const { markSaleAsSynced } = await import('@/lib/storage');
+  
+  try {
+    const { local_id, saleData } = operation.data;
+    const response = await createSale(saleData);
+    
+    if (response.success) {
+      await markSaleAsSynced(local_id);
+      await updateOperationStatus(operation.id, 'completed');
+      console.log(`Successfully synced sale: ${local_id}`);
+    } else {
+      throw new Error(response.error || 'Sale sync failed');
+    }
+  } catch (error: any) {
+    throw new Error(`Sale sync failed: ${error.message}`);
+  }
+};
+
+// Process customer operation
+const processCustomerOperation = async (operation: QueuedOperation): Promise<void> => {
+  const { createContact } = await import('@/services/api');
+  
+  try {
+    const customerData = operation.data;
+    const response = await createContact(customerData);
+    
+    if (response.success) {
+      await updateOperationStatus(operation.id, 'completed');
+      console.log(`Successfully synced customer: ${customerData.name}`);
+    } else {
+      throw new Error(response.error || 'Customer sync failed');
+    }
+  } catch (error: any) {
+    throw new Error(`Customer sync failed: ${error.message}`);
+  }
+};
+
+// Process attendance operation
+const processAttendanceOperation = async (operation: QueuedOperation): Promise<void> => {
+  // TODO: Implement attendance sync when attendance API is available
+  console.log('Attendance sync not yet implemented');
+  await updateOperationStatus(operation.id, 'failed', 'Attendance sync not implemented');
 };
