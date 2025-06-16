@@ -37,22 +37,13 @@ Sadiid Offline POS is a Progressive Web Application (PWA) that provides a compre
 - ✅ **Core POS Functionality**: Fully implemented and functional
 - ✅ **Product Management**: Complete with search and filtering
 - ✅ **Customer Management**: Full CRUD operations with sync
-- ✅ **Authentication System**: OAuth 2.0 implementation complete, works offline
+- ✅ **Authentication System**: OAuth 2.0 implementation complete
 - ✅ **Database Schema**: IndexedDB stores defined and working
 - ✅ **Network Context**: Online/offline status monitoring
-- ✅ **Offline-First Architecture**: Implemented across core components
-- ✅ **Background Sync Utilities**: Created for non-blocking operations
 - ⚠️ **Sales Management**: UI incomplete, needs finishing
 - ⚠️ **Sync Services**: Core functions missing implementation
 - ⚠️ **API Service**: Several functions incomplete
 - ❌ **Unused Files**: Need cleanup and removal
-
-### Recent Offline-First Improvements
-- **Business Settings**: Now loads from cache first, background refresh
-- **Authentication**: Works offline with default user profiles
-- **Dashboard**: Graceful sync handling, no blocking on network status
-- **Sales Operations**: Always queue for sync, never block on network
-- **App Initialization**: Non-blocking background sync startup
 
 ### Active Development Areas
 Please refer to [`CLEANUP_COMPLETION_PLAN.md`](CLEANUP_COMPLETION_PLAN.md) for detailed information about:
@@ -259,241 +250,107 @@ interface QueuedOperation {
 
 ### Architecture Overview
 
-The synchronization system is built on an **offline-first** principle where all user interactions are stored locally first, then synchronized with the server in the background.
+The synchronization system consists of two main components:
 
 #### 1. Sync Service (`src/services/syncService.ts`) ⚠️ *Incomplete*
 Handles the main synchronization logic:
-- **Background Synchronization**: All sync happens in background, never blocking UI
-- **Data Freshness Checking**: Determines when data needs updating from server
+- **Data Freshness Checking**: Determines when data needs updating
 - **Batch Synchronization**: Efficient bulk data transfer
 - **Retry Logic**: Automatic retry for failed operations
 - **Progress Tracking**: Real-time sync status updates
 
 #### 2. Sync Queue (`src/services/syncQueue.ts`) ⚠️ *Incomplete*
-Manages all operations queue (both online and offline):
-- **Operation Queuing**: Store ALL user actions for later sync
-- **Queue Processing**: Batch process queued operations when online
-- **Error Handling**: Retry failed operations with exponential backoff
-- **Queue Persistence**: Maintain queue across app restarts and network changes
+Manages offline operations queue:
+- **Operation Queuing**: Store offline actions for later sync
+- **Queue Processing**: Batch process queued operations
+- **Error Handling**: Retry failed operations with backoff
+- **Queue Persistence**: Maintain queue across app restarts
 
-### Offline-First Data Flow
+### Sync Flow
 
 ```mermaid
 graph TD
-    A[User Action] --> B[Store in IndexedDB]
-    B --> C[Queue Operation]
-    C --> D[Update UI Immediately]
-    E[Background Sync Process] --> F{Network Available?}
-    F -->|Yes| G[Process Queue]
-    F -->|No| H[Wait for Network]
-    G --> I[Send to Server]
+    A[User Action] --> B{Online?}
+    B -->|Yes| C[Direct API Call]
+    B -->|No| D[Queue Operation]
+    C --> E[Update Local Storage]
+    D --> F[Store in IndexedDB Queue]
+    G[Network Restored] --> H[Process Queue]
+    H --> I[Sync to Server]
     I --> J{Success?}
     J -->|Yes| K[Mark as Synced]
-    J -->|No| L[Retry with Backoff]
-    H --> F
-    L --> G
+    J -->|No| L[Retry Later]
 ```
 
 ### Sync Strategies
 
-#### 1. User Actions (Client → Queue → Server)
-**All user actions follow this pattern:**
-- **Sales Transactions**: Store → Queue → Sync to server
-- **Customer Creation/Updates**: Store → Queue → Sync to server  
-- **Inventory Changes**: Store → Queue → Sync to server
-- **Attendance Records**: Store → Queue → Sync to server
+#### 1. Pull Synchronization (Server → Client)
+- **Products**: Every 24 hours or on demand
+- **Customers**: Every 6 hours or on demand
+- **Business Settings**: On login and periodically
 
-**Key Principle**: Never block the user interface waiting for network calls.
+#### 2. Push Synchronization (Client → Server)
+- **Sales Transactions**: Immediate when online, queued when offline
+- **New Customers**: Immediate when online, queued when offline
+- **Attendance Records**: Immediate when online, queued when offline
 
-#### 2. Data Updates (Server → Client)
-**Background data refresh:**
-- **Products**: Fetch fresh data every 24 hours or on demand
-- **Customers**: Fetch updates every 6 hours or on demand
-- **Business Settings**: Fetch on login and periodically
-- **Categories**: Fetch with products or separately
+## Authentication & Security
 
-### Implementation Details
+### OAuth 2.0 Implementation
+**File**: [`src/services/api.ts`](src/services/api.ts)
 
-#### Offline-First User Flow Example:
+The application uses OAuth 2.0 password grant flow:
+
 ```typescript
-// ❌ WRONG - Direct API call when online
-if (isOnline) {
-  await createSale(saleData);
-} else {
-  await saveSaleLocally(saleData);
-}
+const login = async (username: string, password: string) => {
+  const formData = new FormData();
+  formData.append('grant_type', 'password');
+  formData.append('client_id', '48');
+  formData.append('client_secret', 'cEM0njAX1oCo9OK4NDdwjEyWr1KKmjt6545j6zSf');
+  formData.append('username', username);
+  formData.append('password', password);
 
-// ✅ CORRECT - Always store locally first
-await saveSale(saleData); // Always saves to IndexedDB
-await queueOperation('sale', saleData); // Always queues for sync
-// Background process handles sync when network available
-```
-
-#### Queue Processing Logic:
-```typescript
-export const processQueue = async (): Promise<void> => {
-  if (!navigator.onLine) return;
-  
-  const pendingOps = await getOperationsByStatus('pending');
-  
-  for (const operation of pendingOps) {
-    try {
-      await updateOperationStatus(operation.id, 'processing');
-      
-      switch (operation.type) {
-        case 'sale':
-          await syncSaleToServer(operation.data);
-          break;
-        case 'customer':
-          await syncCustomerToServer(operation.data);
-          break;
-        // ... other operation types
-      }
-      
-      await updateOperationStatus(operation.id, 'completed');
-    } catch (error) {
-      await updateOperationStatus(operation.id, 'failed', error.message);
-    }
-  }
+  const response = await axios.post(`${BASE_URL}/oauth/token`, formData);
+  return response.data;
 };
 ```
 
-### Data Consistency Strategy
+### Security Features
+- **Token-based Authentication**: Secure JWT tokens
+- **Automatic Token Refresh**: Seamless session management
+- **Route Protection**: Protected routes with authentication checks
+- **Session Expiry Handling**: Automatic logout on token expiration
+- **Secure Storage**: Encrypted token storage
 
-#### 1. Local-First Operations
-- **Immediate Response**: UI updates instantly from local data
-- **Eventual Consistency**: Server sync happens in background
-- **Conflict Resolution**: Last-write-wins with timestamp comparison
-- **Data Integrity**: Local validation before queuing
+### Authentication Context
+**File**: [`src/context/AuthContext.tsx`](src/context/AuthContext.tsx)
 
-#### 2. Server Data Updates
-- **Pull-Based**: Client requests fresh data periodically
-- **Incremental Sync**: Only fetch changes since last sync
-- **Merge Strategy**: Merge server updates with local changes
-- **Fallback**: Always prefer local data if server unavailable
-
-#### 3. Network State Handling
-```typescript
-// Network becomes available
-window.addEventListener('online', () => {
-  processQueue(); // Start processing pending operations
-  syncDataFromServer(); // Fetch fresh data from server
-});
-
-// Network becomes unavailable  
-window.addEventListener('offline', () => {
-  // Continue normal operation with local data
-  // All operations continue to be queued
-});
-```
-## Code Structure
-
-### State Management Pattern
-
-The application uses a combination of React Context and local state with offline-first principles:
-
-#### 1. Global State (Context)
-- **AuthContext**: User authentication state
-- **CartContext**: Shopping cart state (always local)
-- **CustomerContext**: Selected customer state (from IndexedDB)
-- **NetworkContext**: Network connection status
-- **BusinessSettingsContext**: Business configuration (cached locally)
-
-#### 2. Local State (Component)
-- **UI State**: Component-specific UI state
-- **Form State**: Form input and validation state
-- **Loading States**: Background sync operation status (never blocks UI)
-
-### Data Flow Pattern
-
-```mermaid
-graph LR
-    A[User Interaction] --> B[Component]
-    B --> C[Local Storage - IndexedDB]
-    C --> D[Queue Operation]
-    D --> E[Update UI State]
-    F[Background Sync] --> G[Process Queue]
-    G --> H[API/Server]
-    H --> I[Update Sync Status]
-```
-
-**Key Principles:**
-1. **User interactions never wait for network**
-2. **All data flows through IndexedDB first**
-3. **UI always reflects local state**
-4. **Sync happens transparently in background**
-
-### Error Handling Strategy
-
-#### 1. Network Independence
-```typescript
-// ❌ WRONG - Network-dependent error handling
-try {
-  if (isOnline) {
-    await createSale(saleData);
-  } else {
-    throw new Error('Cannot create sale while offline');
-  }
-} catch (error) {
-  showError('Sale creation failed');
-}
-
-// ✅ CORRECT - Network-independent operation
-try {
-  await saveSale(saleData); // Always succeeds locally
-  await queueOperation('sale', saleData); // Always queues
-  showSuccess('Sale created successfully'); // Always shows success
-} catch (error) {
-  showError('Failed to save sale locally'); // Only fails on storage issues
-}
-```
-
-#### 2. Background Sync Error Handling
-```typescript
-// Background sync handles network errors gracefully
-export const syncSaleToServer = async (saleData: any) => {
-  try {
-    const result = await createSale(saleData);
-    if (result.success) {
-      await markSaleAsSynced(saleData.local_id);
-      return true;
-    }
-    throw new Error(result.error);
-  } catch (error) {
-    // Schedule retry with exponential backoff
-    await scheduleRetry(saleData, error);
-    return false;
-  }
-};
-```
-
-#### 3. Component Error Boundaries
-- **Graceful Degradation**: Handle component errors gracefully
-- **User Feedback**: Show meaningful status messages about sync
-- **Error Recovery**: Provide manual sync retry mechanisms
+Manages application-wide authentication state:
+- **Login/Logout**: User session management
+- **Token Storage**: Secure token persistence
+- **User Information**: Current user data management
+- **Authentication Status**: Real-time auth state tracking
 
 ## Offline Capabilities
 
 ### Offline-First Design
 
-The application is built with a true offline-first approach where **network connectivity is treated as an enhancement, not a requirement**.
+The application is built with an offline-first approach:
 
 #### 1. Data Availability
 - **Complete Product Catalog**: Full product database stored locally
 - **Customer Information**: Complete customer database offline
 - **Business Settings**: All configuration data available offline
-- **Transaction History**: All transactions stored locally immediately
+- **Transaction History**: Local storage of all transactions
 
 #### 2. Functionality Preservation
-- **Sales Processing**: Complete POS functionality always available
-- **Customer Management**: Add and edit customers without network
-- **Product Browsing**: Full product catalog access offline
-- **Report Generation**: All reporting from local data
+- **Sales Processing**: Complete POS functionality offline
+- **Customer Management**: Add and edit customers offline
+- **Product Browsing**: Full product catalog access
+- **Report Generation**: Basic reporting from local data
 
 #### 3. Queue Management
 **File**: [`src/services/syncQueue.ts`](src/services/syncQueue.ts)
-
-All operations are queued regardless of network status:
 
 ```typescript
 export const queueOperation = async (
@@ -511,107 +368,152 @@ export const queueOperation = async (
   
   const db = await initSyncQueueDB();
   await db.add(QUEUE_STORE_NAME, operation);
-  
-  // If online, start background processing
-  if (navigator.onLine) {
-    processQueue(); // Non-blocking background process
-  }
-  
   return operation.id;
 };
 ```
 
-#### 4. User Experience Principles
-
-**Immediate Feedback:**
-- All user actions complete instantly
-- UI never shows loading states for user operations
-- Success messages appear immediately after local storage
-
-**Background Sync Indicators:**
-- Subtle sync status indicators in UI
-- Non-intrusive notifications for sync completion
-- Clear indication of items pending sync
-
-**Network Transparency:**
-- Application works identically online and offline
-- Network status visible but doesn't change functionality
-- Automatic sync when network becomes available
-
 ### Network Status Monitoring
 **File**: [`src/context/NetworkContext.tsx`](src/context/NetworkContext.tsx)
 
-Network monitoring is used for sync optimization, not functionality:
+Real-time network status tracking:
+- **Connection Detection**: Monitor online/offline status
+- **Automatic Sync Trigger**: Start sync when connection restored
+- **User Notifications**: Inform users of network status changes
+- **Graceful Degradation**: Smooth transition between online/offline modes
 
-```typescript
-export const NetworkContext = () => {
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
-  
-  useEffect(() => {
-    const handleOnline = () => {
-      setIsOnline(true);
-      // Start background sync - never blocks UI
-      processQueue();
-      syncDataFromServer();
-    };
-    
-    const handleOffline = () => {
-      setIsOnline(false);
-      // Application continues normally
-    };
-    
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
-};
+## UI Components
+
+### Design System
+
+The application uses a comprehensive design system built on:
+- **Shadcn/ui**: Base component library
+- **Tailwind CSS**: Utility-first styling
+- **Responsive Design**: Mobile-first approach
+- **Accessibility**: WCAG compliance
+
+### Component Categories
+
+#### 1. Base UI Components (`src/components/ui/`)
+- **Button**: Various button styles and states
+- **Input**: Form input components with validation
+- **Table**: Data display with sorting and pagination
+- **Card**: Content containers with consistent styling
+- **Badge**: Status indicators and labels
+- **Dialog**: Modal dialogs and overlays
+
+#### 2. Business Components
+
+##### POS Components (`src/components/pos/`)
+- **POSProductGrid**: Product display grid with search
+- **POSOrderDetails**: Shopping cart and checkout
+- **POSCategoryFilters**: Product category navigation
+
+##### Product Components (`src/components/products/`)
+- **ProductCard**: Individual product display
+- **ProductList**: Product listing with pagination
+
+##### Customer Components (`src/components/customers/`)
+- **CustomerList**: Customer database display
+
+### Responsive Design
+
+The application uses a mobile-first responsive design:
+
+```css
+/* Mobile First */
+.grid { grid-template-columns: 1fr; }
+
+/* Tablet */
+@media (min-width: 768px) {
+  .grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  .grid { grid-template-columns: repeat(3, 1fr); }
+}
 ```
 
-**Key Features:**
-- **Background Sync Trigger**: Start sync when connection restored
-- **User Notifications**: Inform users of sync status (not functionality status)
-- **Graceful Enhancement**: Online connectivity enhances but doesn't enable features
+## Code Structure
 
-## Performance Optimizations
+### State Management Pattern
 
-#### 1. Offline-First Optimizations
-```typescript
-// Instant local operations
-const addToCart = async (product: Product) => {
-  // Immediate UI update
-  updateCartState(product);
-  
-  // Background storage (non-blocking)
-  saveCartToStorage(cartState);
-};
+The application uses a combination of React Context and local state:
 
-// Background sync optimization
-const debouncedSync = debounce(processQueue, 5000); // Batch sync operations
+#### 1. Global State (Context)
+- **AuthContext**: User authentication state
+- **CartContext**: Shopping cart state
+- **CustomerContext**: Selected customer state
+- **NetworkContext**: Network connection status
+- **BusinessSettingsContext**: Business configuration
+
+#### 2. Local State (Component)
+- **UI State**: Component-specific UI state
+- **Form State**: Form input and validation state
+- **Loading States**: Async operation status
+
+### Data Flow Pattern
+
+```mermaid
+graph LR
+    A[User Interaction] --> B[Component]
+    B --> C[Context/Hook]
+    C --> D[Service Layer]
+    D --> E[Storage Layer]
+    E --> F[IndexedDB/API]
 ```
 
-#### 2. Storage Optimizations
+### Error Handling Strategy
+
+#### 1. API Error Handling
 ```typescript
-// Batch IndexedDB operations for better performance
-export const batchSaveOperations = async (operations: QueuedOperation[]) => {
-  const db = await initSyncQueueDB();
-  const tx = db.transaction('operations', 'readwrite');
-  
-  for (const operation of operations) {
-    tx.store.add(operation);
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response?.status === 401) {
+      // Handle authentication errors
+      removeToken();
+      window.location.href = '/login';
+    }
+    
+    if (!navigator.onLine) {
+      // Handle offline errors
+      return Promise.reject({ isOffline: true, ...error });
+    }
+    
+    return Promise.reject(error);
   }
-  
-  await tx.done;
-};
+);
 ```
 
-#### 3. Background Processing
-- **Non-blocking Sync**: All sync operations happen in background
-- **Intelligent Batching**: Group similar operations for efficiency
-- **Resource Management**: Limit concurrent sync operations
+#### 2. Component Error Boundaries
+- **Graceful Degradation**: Handle component errors gracefully
+- **User Feedback**: Show meaningful error messages
+- **Error Recovery**: Provide retry mechanisms
+
+### Performance Optimizations
+
+#### 1. Code Splitting
+```typescript
+// Lazy load pages
+const POS = lazy(() => import('./pages/POS'));
+const Products = lazy(() => import('./pages/Products'));
+```
+
+#### 2. Memoization
+```typescript
+// Memoize expensive calculations
+const memoizedProductList = useMemo(() => 
+  products.filter(product => 
+    product.name.toLowerCase().includes(searchTerm.toLowerCase())
+  ), [products, searchTerm]
+);
+```
+
+#### 3. Virtual Scrolling
+- **Large Lists**: Virtualize large product and customer lists
+- **Memory Efficiency**: Render only visible items
+- **Smooth Scrolling**: Maintain 60fps scrolling performance
 
 ## PWA Implementation
 
@@ -759,31 +661,22 @@ VITE_CLIENT_SECRET=cEM0njAX1oCo9OK4NDdwjEyWr1KKmjt6545j6zSf
 
 ### Current Development Status
 
-The application is functional but needs completion of the offline-first sync system:
+The application is functional but requires completion of several components and cleanup of unused code. 
 
 **⚠️ Active Issues:**
 - [`Sales.tsx`](src/pages/Sales.tsx) - UI implementation incomplete
-- [`syncService.ts`](src/services/syncService.ts) - Background sync logic missing
-- [`syncQueue.ts`](src/services/syncQueue.ts) - Queue processing incomplete
-- [`api.ts`](src/services/api.ts) - Sync endpoint functions missing
+- [`syncService.ts`](src/services/syncService.ts) - Core sync functions missing
+- [`syncQueue.ts`](src/services/syncQueue.ts) - Queue management incomplete
+- [`api.ts`](src/services/api.ts) - Several API functions missing
 
-**⚠️ Architecture Implementation Status:**
-- ✅ **Business Settings**: Converted to offline-first with background refresh
-- ✅ **Authentication**: Now works offline with background user data refresh  
-- ✅ **POS Operations**: Already offline-first (sales processing)
-- ✅ **Dashboard Sync**: Updated to handle offline gracefully
-- ✅ **Sales Management**: Updated to queue operations offline-first
-- ✅ **App Initialization**: Non-blocking background sync
-- ⚠️ **Sync Queue Service**: Queue processing needs completion
-- ⚠️ **Background Sync**: Core sync logic needs finalization
+### Detailed Cleanup Plan
 
-### Implementation Priority
-
-1. **Complete Queue System**: Finish syncQueue.ts implementation
-2. **Background Sync Service**: Complete syncService.ts with proper offline-first patterns
-3. **Remove Direct API Calls**: Audit codebase for any blocking API calls in user flows
-4. **Enhanced Error Handling**: Implement offline-first error handling
-5. **Sync Status UI**: Add proper sync status indicators
+Please refer to [`CLEANUP_COMPLETION_PLAN.md`](CLEANUP_COMPLETION_PLAN.md) for:
+- **Complete task breakdown** with priorities
+- **Code templates** for missing implementations
+- **Testing checklist** for verification
+- **Risk assessment** for cleanup activities
+- **Estimated timeline** (6 days total)
 
 ### Files Scheduled for Removal
 ```
@@ -807,26 +700,26 @@ src/hooks/useLocalStorage.ts
 
 ## Conclusion
 
-The Sadiid Offline POS application represents a true offline-first point-of-sale solution. Its architecture ensures that **users can always complete their work immediately**, regardless of network connectivity, while background synchronization maintains data consistency with the server.
+The Sadiid Offline POS application represents a modern, robust point-of-sale solution built with cutting-edge web technologies. Its offline-first architecture ensures business continuity, while the comprehensive feature set provides everything needed for retail operations.
 
-**Offline-First Strengths:**
-- **Reliability**: Never dependent on network connectivity
-- **Performance**: Instant response to all user actions
-- **User Experience**: Consistent behavior online and offline
-- **Data Integrity**: Robust queue system prevents data loss
-- **Scalability**: Background sync scales with usage patterns
+**Current Strengths:**
+- **Reliability**: Robust offline capabilities with automatic sync
+- **Performance**: Optimized for speed and responsiveness
+- **Scalability**: Modular architecture supports future enhancements
+- **User Experience**: Intuitive interface with responsive design
+- **Security**: Enterprise-grade authentication and data protection
 
-**Key Architectural Principles:**
-- User interactions complete immediately in local storage
-- Network connectivity is an enhancement, not a requirement  
-- All server communication happens in background
-- UI always reflects local state
-- Eventual consistency through intelligent sync
+**Near-term Goals:**
+- Complete remaining incomplete components
+- Finalize sync service implementation
+- Clean up unused code and optimize build
+- Achieve 100% TypeScript compliance
+- Complete comprehensive testing
 
-The technical implementation demonstrates best practices in offline-first web application development, making it a reliable foundation for retail operations in any network environment.
+The technical implementation demonstrates best practices in modern web development, making it a solid foundation for future enhancements and scalability.
 
 ---
 
 *Last Updated: June 16, 2025*
 *Version: 1.0.0-rc*
-*Status: Release Candidate - Offline-First Architecture*
+*Status: Release Candidate - Pending Cleanup Completion*

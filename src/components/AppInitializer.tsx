@@ -75,28 +75,26 @@ const AppInitializer: React.FC = () => {
           console.log(`Found ${products?.length || 0} products in storage`);
         } catch (error) {
           console.warn('Failed to check products in storage', error);
-        }        // Step 5: Always start background sync process (it will handle network checks internally)
-        console.log('🔄 Starting background sync process...');
-        
-        // Queue background sync without blocking initialization
-        setTimeout(async () => {
-          try {
-            await retryOperation(async () => {
-              const syncResult = await syncDataOnLogin(initializationAttempts > 0);
-              if (syncResult) {
-                console.log('✅ Background sync completed successfully');
-              } else {
-                console.log('⚠️ Background sync skipped (offline or no data to sync)');
-              }
-              return syncResult;
-            }, 2); // Retry up to 2 times
-            
-            // Refresh customer data after sync if successful
-            await refreshCustomers();
-          } catch (error) {
-            console.log('Background sync failed (non-blocking):', error);
-          }
-        }, 500); // Small delay to not block initialization
+        }        // Step 5: Only sync with server if online and user is authenticated
+        if (isOnline && user) {
+          console.log('🔄 Online and authenticated, performing login sync...');
+          await retryOperation(async () => {
+            const syncResult = await syncDataOnLogin(initializationAttempts > 0);
+            if (syncResult) {
+              console.log('✅ Login sync completed successfully');
+            } else {
+              console.warn('⚠️ Login sync failed or was skipped');
+            }
+            return syncResult;
+          }, 2); // Retry up to 2 times
+          
+          // Refresh customer data after sync
+          await refreshCustomers();
+        } else if (!isOnline) {
+          console.log('📴 Offline, skipping login sync');
+        } else {
+          console.log('🔐 Not authenticated, skipping login sync');
+        }
 
         // Mark initialization as complete
         setInitialized(true);
