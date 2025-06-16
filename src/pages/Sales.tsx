@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'; // Remove useMemo import if not used
 import { getSales, markSaleAsSynced } from '@/lib/storage';
-import { createSale } from '@/services/api';
+import { queueOperation } from '@/services/syncQueue';
 import { useNetwork } from '@/context/NetworkContext';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -68,30 +68,29 @@ const Sales = () => {
   const handlePageChange = (page: number) => {
     loadSales(page);
   };
-
   const handleSync = async (sale: any) => {
-    if (!isOnline) {
-      toast.error('Cannot sync while offline');
-      return;
-    }
-
     try {
-      // Remove local properties before sending
+      // Remove local properties before queuing
       const { local_id, is_synced, ...saleData } = sale;
       
-      // Send to server
-      await createSale(saleData);
+      // Always queue the operation for sync (offline-first approach)
+      await queueOperation('sale', { local_id, saleData });
       
-      // Mark as synced locally
+      // Mark as synced locally since it's now queued
       await markSaleAsSynced(local_id);
       
       // Refresh data
       loadSales(pagination.page);
       
-      toast.success('Sale synced successfully');
+      // Show appropriate message based on network status
+      if (isOnline) {
+        toast.success('Sale queued for sync');
+      } else {
+        toast.success('Sale queued for sync when connection is restored');
+      }
     } catch (error) {
-      console.error('Error syncing sale:', error);
-      toast.error('Failed to sync sale');
+      console.error('Error queuing sale for sync:', error);
+      toast.error('Failed to queue sale for sync');
     }
   };
 

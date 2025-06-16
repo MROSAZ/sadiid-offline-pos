@@ -226,12 +226,24 @@ export const getContacts = async () => {
   return db.getAll('contacts');
 };
 
+export const saveContact = async (contact: any) => {
+  const db = await getDB();
+  // Generate local ID if not provided
+  if (!contact.id) {
+    contact.local_id = `contact_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+  }
+  contact.is_synced = 0; // Mark as unsynced
+  const id = await db.add('contacts', contact);
+  return id;
+};
+
 // Sales management
 export const saveSale = async (sale: any) => {
   const db = await getDB();
-  // Mark as not synced if offline
-  sale.is_synced = navigator.onLine ? 1 : 0;
+  // Always mark as not synced for offline-first approach
+  sale.is_synced = 0;
   sale.transaction_date = new Date().toISOString();
+  sale.local_id = `sale_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
   const id = await db.add('sales', sale);
   return id;
 };

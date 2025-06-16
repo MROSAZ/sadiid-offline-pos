@@ -22,7 +22,7 @@ import {
 } from './syncQueue';
 
 // Constants for sync operation
-const SYNC_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+const SYNC_INTERVAL_MS = 1 * 60 * 1000; // 1 minute
 const SYNC_PRODUCT_THRESHOLD_HOURS = 24; // Sync products every 24 hours
 const SYNC_CONTACT_THRESHOLD_HOURS = 6; // Sync contacts every 6 hours
 const MAX_RETRY_ATTEMPTS = 3;

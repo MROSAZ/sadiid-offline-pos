@@ -74,24 +74,29 @@ const Dashboard = () => {
       console.error('Error loading stats:', error);
     }
   };
-  
-  const handleSync = async () => {
-    if (!isOnline) {
-      toast.error('Cannot sync while offline');
-      return;
-    }
-      setSyncing(true);
+    const handleSync = async () => {
+    setSyncing(true);
     try {
+      // Always perform sync operation - let the sync service handle network checks
       const result = await syncDataOnLogin(true); // Force sync with toasts
       if (result) {
         toast.success('Data synced successfully');
         await loadStats();
       } else {
-        toast.error('Sync failed');
+        // If offline, still show positive feedback since data will sync when online
+        if (!isOnline) {
+          toast.info('You are offline. Data will sync automatically when connection is restored.');
+        } else {
+          toast.error('Sync failed');
+        }
       }
     } catch (error) {
       console.error('Sync error:', error);
-      toast.error('Failed to sync data');
+      if (!isOnline) {
+        toast.info('You are offline. Data will sync automatically when connection is restored.');
+      } else {
+        toast.error('Failed to sync data');
+      }
     } finally {
       setSyncing(false);
     }
