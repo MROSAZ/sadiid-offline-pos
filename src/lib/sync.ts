@@ -19,7 +19,7 @@ import {
   updateLastSyncTimestamp,
   isSyncNeeded,
   cleanupCompletedOperations
-} from './syncQueue';
+} from '@/services/syncQueue';
 
 // Constants for sync operation
 const SYNC_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
@@ -45,10 +45,11 @@ const updateSyncTimestamp = (type: keyof SyncTimestamps): void => {
   const timestamps = getSyncTimestamps();
   timestamps[type] = Date.now();
   
-  // Fix: Check if all required types are updated for a full sync
-  if ((type === 'products' || type === 'contacts' || type === 'settings') &&
-      timestamps.products && timestamps.contacts && timestamps.settings) {
-    timestamps.lastFullSync = Date.now();
+  // Check if all required types are updated for a full sync
+  if (type === 'products' || type === 'contacts' || type === 'settings') {
+    if (timestamps.products && timestamps.contacts && timestamps.settings) {
+      timestamps.lastFullSync = Date.now();
+    }
   }
   
   setLocalItem('sync_timestamps', JSON.stringify(timestamps));
@@ -294,7 +295,7 @@ export const syncDataOnLogin = async (showToast = false): Promise<boolean> => {
     // Force sync products (ignore timing threshold)
     console.log('🛍️ Force syncing products...');
     try {
-      const productsResponse = await fetchProducts();
+      const productsResponse = await fetchProducts(1, 1000);
       if (productsResponse.data) {
         await saveProducts(productsResponse.data);
         updateSyncTimestamp('products');
@@ -376,5 +377,3 @@ export const stopBackgroundSync = (): void => {
     console.log('Background sync stopped');
   }
 };
-
-// Additional sync-related functions...
