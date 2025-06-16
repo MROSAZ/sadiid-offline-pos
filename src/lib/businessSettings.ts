@@ -1,46 +1,6 @@
 import { toast } from 'sonner';
 import { getBusinessSettingsFromStorage, saveBusinessSettings } from './storage';
 import api from '../services/api';
-import { queueBackgroundTask, BackgroundTasks, performWhenOnline } from '../utils/backgroundSync';
-
-/**
- * Queue a background refresh of business settings without blocking the UI
- */
-const queueBackgroundSettingsRefresh = async (): Promise<void> => {
-  const refreshTask = performWhenOnline(async () => {
-    console.log('Performing background settings refresh...');
-    const { fetchBusinessDetails } = await import('@/services/api');
-    const apiData = await fetchBusinessDetails();
-    
-    if (apiData && apiData.name && apiData.currency) {
-      const settings: BusinessSettings = {
-        name: apiData.name,
-        currency: {
-          symbol: apiData.currency.symbol || '$',
-          code: apiData.currency.code || 'USD',
-          thousand_separator: apiData.currency.thousand_separator || ',',
-          decimal_separator: apiData.currency.decimal_separator || '.'
-        },
-        currency_symbol_placement: apiData.currency_symbol_placement || 'before',
-        currency_precision: apiData.currency_precision || 2,
-        quantity_precision: apiData.quantity_precision || 2,
-        timezone: apiData.time_zone || 'UTC',
-        pos_settings: apiData.pos_settings || {
-          amount_rounding_method: null
-        },
-        locations: Array.isArray(apiData.locations) ? apiData.locations : []
-      };
-      
-      // Update cache and storage
-      businessSettingsCache = settings;
-      saveSettingsToStorage(settings);
-      
-      console.log('Background settings refresh completed');
-    }
-  });
-
-  queueBackgroundTask(BackgroundTasks.BUSINESS_SETTINGS_REFRESH, refreshTask, 100);
-};
 
 // Define the business settings types
 export interface CurrencyInfo {
@@ -107,39 +67,18 @@ export const getBusinessSettings = async (forceRefresh = false): Promise<Busines
     if (businessSettingsCache && !forceRefresh) {
       console.log('Returning cached business settings');
       return businessSettingsCache;
-    }    // Check localStorage for cached settings first (unless forcing refresh)
+    }
+
+    // Check localStorage for cached settings first (unless forcing refresh)
     if (!forceRefresh) {
       const localSettings = getBusinessSettingsFromStorage();
       if (localSettings) {
         console.log('Returning stored business settings');
         businessSettingsCache = localSettings;
-        
-        // If we have cached settings, queue a background refresh but return immediately
-        if (navigator.onLine) {
-          // Queue background refresh without blocking
-          queueBackgroundSettingsRefresh();
-        }
-        
         return localSettings;
       }
-    }
-
-    // Always try to get from cache first, then queue background fetch
-    const localSettings = getBusinessSettingsFromStorage();
-    if (localSettings && !forceRefresh) {
-      console.log('Using cached business settings, queuing background refresh');
-      businessSettingsCache = localSettings;
-      
-      // Queue background refresh
-      if (navigator.onLine) {
-        queueBackgroundSettingsRefresh();
-      }
-      
-      return localSettings;
-    }
-
-    // Only fetch directly if we have no cached data and are online
-    if (navigator.onLine && (!localSettings || forceRefresh)) {
+    }// If we're online, fetch from API
+    if (navigator.onLine) {
       try {
         const { fetchBusinessDetails } = await import('@/services/api');
         const apiData = await fetchBusinessDetails();
@@ -188,15 +127,24 @@ export const getBusinessSettings = async (forceRefresh = false): Promise<Busines
           businessSettingsCache = localSettings;
           return localSettings;
         }
-          throw apiError;
+        
+        throw apiError;      }
+    } else {
+      // Offline: Try to get from localStorage
+      console.log('Device is offline, checking for cached settings');
+      const localSettings = getBusinessSettingsFromStorage();
+      if (localSettings) {
+        console.log('Using cached business settings (offline)');
+        businessSettingsCache = localSettings;
+        return localSettings;
       }
+      
+      // If no cached settings available offline, return default settings
+      console.warn('No cached settings available offline, using defaults');
+      const defaultSettings = createMockBusinessSettings();
+      businessSettingsCache = defaultSettings;
+      return defaultSettings;
     }
-    
-    // If no cached settings available, return default settings
-    console.warn('No cached settings available, using defaults');
-    const defaultSettings = createMockBusinessSettings();
-    businessSettingsCache = defaultSettings;
-    return defaultSettings;
   } catch (error) {
     console.error('Error fetching business settings:', error);
     

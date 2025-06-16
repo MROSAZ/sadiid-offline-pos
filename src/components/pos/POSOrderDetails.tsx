@@ -3,13 +3,13 @@ import { Button } from '@/components/ui/button';
 import { useCart } from '@/context/CartContext';
 import { saveSale } from '@/lib/storage';
 import { toast } from 'sonner';
-import { useNetwork } from '@/context/NetworkContext';
+import { useNetwork } from '@/context/NetworkContext'; 
+import { createSale } from '@/services/api';
 import { Package, X, Plus, Minus } from 'lucide-react';
 import { formatCurrencySync } from '@/utils/formatting';
 import { useBusinessSettings } from '@/context/BusinessSettingsContext';
 import { useCustomer } from '@/context/CustomerContext';
 import { getBusinessTimestamp } from '@/utils/dateUtils';
-import { queueOperation } from '@/services/syncQueue';
 
 // For product placeholder
 const PLACEHOLDER_SVG = `data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M 20 70 Q 60 20, 100 70' fill='none' stroke='%239e9e9e' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E`;
@@ -73,11 +73,24 @@ const POSOrderDetails = () => {
         tax_amount: cart.tax,
         sale_note: cart.note || undefined,
       };
-        // Offline-first: Always store locally first, then queue for sync
-      await saveSale(saleData);
-      await queueOperation('sale', saleData);
       
-      // Clear cart and show immediate success
+      // Different process flows for online vs offline
+      if (isOnline) {
+        // Online: Create sale directly through API
+        const result = await createSale(saleData);
+        
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to create sale');
+        }
+        
+        toast.success('Sale completed successfully');
+      } else {
+        // Offline: Save to IndexedDB
+        await saveSale(saleData);
+        toast.success('Sale saved for syncing when online');
+      }
+      
+      // Clear cart and show success
       clearCart();
       toast.success('Sale completed successfully');
     } catch (error) {
@@ -183,9 +196,11 @@ const POSOrderDetails = () => {
             disabled={cart.items.length === 0}
           >
             Clear
-          </Button>          <Button 
+          </Button>
+          <Button 
             variant="outline" 
             className="w-full border-gray-300"
+            disabled={!isOnline}
           >
             Hold
           </Button>
