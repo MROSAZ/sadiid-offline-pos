@@ -11,7 +11,7 @@ feat: implement true offline-first architecture with automatic sync queue proces
 - Add comprehensive offline-first documentation and examples
 ```
 
-## Detailed Commit Description
+## Detailed Commit Description 
 ```
 Implement True Offline-First Architecture with Automatic Background Sync
 
