@@ -3,6 +3,24 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { login as apiLogin, getCurrentUser } from '@/services/api';
 import { getToken, removeToken, saveToken, getUser, saveUser } from '@/lib/storage';
+import { queueBackgroundTask, BackgroundTasks, performWhenOnline } from '../utils/backgroundSync';
+
+/**
+ * Queue a background refresh of user data without blocking the UI
+ */
+const queueBackgroundUserRefresh = async (): Promise<void> => {
+  const refreshTask = performWhenOnline(async () => {
+    console.log('Performing background user refresh...');
+    const userData = await getCurrentUser();
+    
+    if (userData && userData.data) {
+      await saveUser(userData.data);
+      console.log('Background user refresh completed');
+    }
+  });
+
+  queueBackgroundTask(BackgroundTasks.USER_REFRESH, refreshTask, 200);
+};
 
 interface User {
   id: number;
@@ -43,31 +61,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!token) {
         setIsLoading(false);
         return false;
-      }
-
-      // Then check IndexedDB for user data
+      }      // Then check IndexedDB for user data
       const localUser = await getUser();
       if (localUser) {
         setUser(localUser);
         setIsLoading(false);
+        
+        // If online, queue background refresh of user data
+        if (navigator.onLine) {
+          queueBackgroundUserRefresh();
+        }
+        
         return true;
       }
 
-      // Only if we don't have user data locally, try to fetch from API
+      // If no local user data, create default user profile from token
+      // This allows the app to work offline even without initial user data
+      const defaultUser = {
+        id: token.user_id || 1,
+        name: 'User',
+        email: token.username || 'user@example.com',
+        // Add other default fields as needed
+      };
+      
+      setUser(defaultUser);
+      await saveUser(defaultUser);
+      
+      // If online, queue background fetch of real user data
       if (navigator.onLine) {
-        const userData = await getCurrentUser();
-        setUser(userData.data);
-        await saveUser(userData.data);
-        setIsLoading(false);
-        return true;
-      } else {
-        // Offline and no local user data
-        toast.error("You are offline and we could not find your user data");
-        removeToken();
-        setUser(null);
-        setIsLoading(false);
-        return false;
+        queueBackgroundUserRefresh();
       }
+      
+      setIsLoading(false);
+      return true;
     } catch (error) {
       console.error('Authentication check failed:', error);
       
