@@ -2,6 +2,7 @@
 import React from 'react';
 import { useNetwork } from '@/context/NetworkContext';
 import { Wifi, WifiOff, CloudOff } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 interface NetworkStatusIndicatorProps {
@@ -14,14 +15,13 @@ const NetworkStatusIndicator: React.FC<NetworkStatusIndicatorProps> = ({
   showText = false
 }) => {
   const { isOnline, connectionQuality } = useNetwork();
-  
-  // Get appropriate icon and color based on status
+    // Get appropriate icon and color based on status
   const getStatusInfo = () => {
     if (!isOnline) {
       return {
         icon: <WifiOff size={16} />,
         text: 'Offline',
-        colorClass: 'bg-red-500 text-white'
+        variant: 'destructive' as const
       };
     }
     
@@ -30,43 +30,43 @@ const NetworkStatusIndicator: React.FC<NetworkStatusIndicatorProps> = ({
         return {
           icon: <Wifi size={16} />,
           text: 'Excellent',
-          colorClass: 'bg-green-500 text-white'
+          variant: 'default' as const
         };
       case 'good':
         return {
           icon: <Wifi size={16} />,
           text: 'Good',
-          colorClass: 'bg-green-400 text-white'
+          variant: 'secondary' as const
         };
       case 'poor':
         return {
           icon: <CloudOff size={16} />,
           text: 'Poor',
-          colorClass: 'bg-yellow-500 text-white'
+          variant: 'outline' as const
         };
       case 'unknown':
       default:
         return {
           icon: <Wifi size={16} />,
           text: 'Online',
-          colorClass: 'bg-blue-500 text-white'
+          variant: 'secondary' as const
         };
     }
   };
   
-  const { icon, text, colorClass } = getStatusInfo();
+  const { icon, text, variant } = getStatusInfo();
   
   return (
-    <div 
+    <Badge 
+      variant={variant}
       className={cn(
-        'flex items-center gap-1.5 px-2 py-1 rounded-full text-xs',
-        colorClass,
+        'flex items-center gap-1.5 text-xs',
         className
       )}
     >
       {icon}
       {showText && <span>{text}</span>}
-    </div>
+    </Badge>
   );
 };
 
