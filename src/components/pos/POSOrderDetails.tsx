@@ -399,8 +399,7 @@ const POSOrderDetails = () => {  const { cart, getSubtotal, getTotal, updateQuan
             </div>
           )}
           
-          {/* Action Buttons - Always Visible */}
-          <div className="space-y-2 mt-3">
+          {/* Action Buttons - Always Visible */}          <div className="space-y-2 mt-3">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button 
@@ -416,36 +415,6 @@ const POSOrderDetails = () => {  const { cart, getSubtotal, getTotal, updateQuan
                 <p>Complete the sale with {paymentMethod} payment</p>
               </TooltipContent>
             </Tooltip>
-            
-            <div className="grid grid-cols-2 gap-2">
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button 
-                    variant="outline"
-                    disabled={cart.items.length === 0}
-                  >
-                    Clear
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Clear Cart</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Are you sure you want to clear all items from the cart? This action cannot be undone.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => clearCart()}>
-                      Clear Cart
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-              <Button variant="outline">
-                Hold
-              </Button>
-            </div>
           </div></div>
       </CardContent>
     </Card>
