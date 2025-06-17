@@ -1,10 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Search, Menu, Table, Grid3X3 } from 'lucide-react';
+import { Menu, Table, Grid3X3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Command, CommandInput } from '@/components/ui/command';
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import ViewportContainer from '@/components/layouts/ViewportContainer';
 import POSProductGrid from '@/components/pos/POSProductGrid';
 import POSOrderDetails from '../components/pos/POSOrderDetails';
 import POSCategoryFilters from '../components/pos/POSCategoryFilters';
@@ -34,13 +34,13 @@ const POS = () => {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
   };  return (
-    <TooltipProvider>
-      <div className="h-screen bg-gray-50 overflow-hidden">
-        <ResizablePanelGroup direction="horizontal" className="h-full">
+    <ViewportContainer padding={false}>
+      <TooltipProvider>
+        <div className="h-full w-full flex">
           {/* Products Panel */}
-          <ResizablePanel defaultSize={75} minSize={60}>
-            <div className="p-4 h-full flex flex-col bg-white overflow-hidden">
-              {/* Search and Menu Bar */}
+          <div className="flex-1 h-full flex flex-col bg-white">
+            {/* Search and Menu Bar - Fixed */}
+            <div className="viewport-header p-4 border-b bg-white">
               <div className="flex items-center gap-4 mb-4">
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -84,27 +84,25 @@ const POS = () => {
                 onCategoryChange={setSelectedCategoryId}
                 selectedCategoryId={selectedCategoryId}
               />
-              
-              {/* Products Grid */}
-              <div className="flex-1 overflow-hidden">
-                <POSProductGrid 
-                  searchTerm={searchTerm} 
-                  categoryId={selectedCategoryId}
-                  viewMode={viewMode}
-                />
-              </div>
             </div>
-          </ResizablePanel>
-
-          <ResizableHandle />
+            
+            {/* Products Grid - Scrollable Area */}
+            <div className="flex-1 min-h-0 p-4">
+              <POSProductGrid 
+                searchTerm={searchTerm} 
+                categoryId={selectedCategoryId}
+                viewMode={viewMode}
+              />
+            </div>
+          </div>
 
           {/* Cart Panel */}
-          <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
+          <div className="w-96 h-full border-l bg-white">
             <POSOrderDetails />
-          </ResizablePanel>
-        </ResizablePanelGroup>
-      </div>
-    </TooltipProvider>
+          </div>
+        </div>
+      </TooltipProvider>
+    </ViewportContainer>
   );
 };
 

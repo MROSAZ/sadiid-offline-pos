@@ -3,6 +3,8 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import ViewportContainer from '@/components/layouts/ViewportContainer';
 import { syncDataOnLogin, startBackgroundSync } from '../services/syncService';
 import { getQueueStats } from '@/services/syncQueue';
 import { toast } from 'sonner';
@@ -186,114 +188,122 @@ const Dashboard = () => {
       </Card>
     );
   };
-
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
-        <Button 
-          onClick={handleSync} 
-          disabled={syncing || !isOnline}
-          className="bg-sadiid-600 hover:bg-sadiid-700"
-        >
-          {syncing ? 'Syncing...' : 'Sync Data'}
-        </Button>
-      </div>
-      
-      {/* Network Status Card */}
-      <div className="mb-8">
-        {getNetworkStatusCard()}
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-medium">Products</CardTitle>
-            <CardDescription>Total products in catalog</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold text-sadiid-600">{stats.products}</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-medium">Customers</CardTitle>
-            <CardDescription>Total customers in database</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold text-sadiid-600">{stats.customers}</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-medium">Pending Sales</CardTitle>
-            <CardDescription>Sales waiting to be synced</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold text-sadiid-600">{stats.pendingSales}</p>
-          </CardContent>
-        </Card>
-      </div>
-      
-      {/* Sync Queue Stats */}
-      {queueStats.total > 0 && (
-        <div className="mt-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Sync Queue Status</CardTitle>
-              <CardDescription>Status of operations waiting to be synchronized</CardDescription>
-            </CardHeader>            <CardContent className="grid grid-cols-4 gap-4">
-              <div className="flex flex-col items-center p-3 bg-gray-50 rounded-md">
-                <Badge variant="outline" className="mb-2">
-                  {queueStats.pending} Pending
-                </Badge>
-                <span className="text-sm text-gray-500">Waiting to sync</span>
-              </div>
-              <div className="flex flex-col items-center p-3 bg-blue-50 rounded-md">
-                <Badge variant="default" className="mb-2 bg-blue-600">
-                  {queueStats.processing} Processing
-                </Badge>
-                <span className="text-sm text-gray-500">Currently syncing</span>
-              </div>
-              <div className="flex flex-col items-center p-3 bg-red-50 rounded-md">
-                <Badge variant="destructive" className="mb-2">
-                  {queueStats.failed} Failed
-                </Badge>
-                <span className="text-sm text-gray-500">Sync errors</span>
-              </div>
-              <div className="flex flex-col items-center p-3 bg-green-50 rounded-md">
-                <Badge variant="secondary" className="mb-2 bg-green-600 text-white">
-                  {queueStats.completed} Completed
-                </Badge>
-                <span className="text-sm text-gray-500">Successfully synced</span>
-              </div>
-            </CardContent>
-          </Card>
+    <ViewportContainer>
+      {/* Header Section - Fixed */}
+      <div className="viewport-header mb-4">
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
+          <Button 
+            onClick={handleSync} 
+            disabled={syncing || !isOnline}
+            className="bg-sadiid-600 hover:bg-sadiid-700"
+          >
+            {syncing ? 'Syncing...' : 'Sync Data'}
+          </Button>
         </div>
-      )}
-      
-      <div className="mt-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>Common tasks and actions</CardDescription>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Button className="w-full" asChild>
-              <Link to="/pos">New Sale</Link>
-            </Button>
-            <Button variant="outline" className="w-full" asChild>
-              <Link to="/customers">Manage Customers</Link>
-            </Button>
-            <Button variant="outline" className="w-full" asChild>
-              <Link to="/sales">View Sales</Link>
-            </Button>
-          </CardContent>
-        </Card>
       </div>
-    </div>
+
+      {/* Scrollable Content */}
+      <ScrollArea className="flex-1">
+        <div className="space-y-6">
+          {/* Network Status Card */}
+          <div>
+            {getNetworkStatusCard()}
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg font-medium">Products</CardTitle>
+                <CardDescription>Total products in catalog</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-3xl font-bold text-sadiid-600">{stats.products}</p>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg font-medium">Customers</CardTitle>
+                <CardDescription>Total customers in database</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-3xl font-bold text-sadiid-600">{stats.customers}</p>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg font-medium">Pending Sales</CardTitle>
+                <CardDescription>Sales waiting to be synced</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-3xl font-bold text-sadiid-600">{stats.pendingSales}</p>
+              </CardContent>
+            </Card>
+          </div>
+          
+          {/* Sync Queue Stats */}
+          {queueStats.total > 0 && (
+            <div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Sync Queue Status</CardTitle>
+                  <CardDescription>Status of operations waiting to be synchronized</CardDescription>
+                </CardHeader>
+                <CardContent className="grid grid-cols-4 gap-4">
+                  <div className="flex flex-col items-center p-3 bg-gray-50 rounded-md">
+                    <Badge variant="outline" className="mb-2">
+                      {queueStats.pending} Pending
+                    </Badge>
+                    <span className="text-sm text-gray-500">Waiting to sync</span>
+                  </div>
+                  <div className="flex flex-col items-center p-3 bg-blue-50 rounded-md">
+                    <Badge variant="default" className="mb-2 bg-blue-600">
+                      {queueStats.processing} Processing
+                    </Badge>
+                    <span className="text-sm text-gray-500">Currently syncing</span>
+                  </div>
+                  <div className="flex flex-col items-center p-3 bg-red-50 rounded-md">
+                    <Badge variant="destructive" className="mb-2">
+                      {queueStats.failed} Failed
+                    </Badge>
+                    <span className="text-sm text-gray-500">Sync errors</span>
+                  </div>
+                  <div className="flex flex-col items-center p-3 bg-green-50 rounded-md">
+                    <Badge variant="secondary" className="mb-2 bg-green-600 text-white">
+                      {queueStats.completed} Completed
+                    </Badge>
+                    <span className="text-sm text-gray-500">Successfully synced</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+          
+          <div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Quick Actions</CardTitle>
+                <CardDescription>Common tasks and actions</CardDescription>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <Button className="w-full" asChild>
+                  <Link to="/pos">New Sale</Link>
+                </Button>
+                <Button variant="outline" className="w-full" asChild>
+                  <Link to="/customers">Manage Customers</Link>
+                </Button>
+                <Button variant="outline" className="w-full" asChild>
+                  <Link to="/sales">View Sales</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </ScrollArea>
+    </ViewportContainer>
   );
 };
 

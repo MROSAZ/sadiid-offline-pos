@@ -4,6 +4,8 @@ import { queueOperation } from '@/services/syncQueue';
 import { useNetwork } from '@/context/NetworkContext';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import ViewportContainer from '@/components/layouts/ViewportContainer';
 import { 
   Table, 
   TableBody, 
@@ -106,114 +108,125 @@ const Sales = () => {
       return `$${parseFloat(payment[0].amount).toFixed(2)}`;
     }
   };
-
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Sales History</h1>
-        <Button 
-          onClick={() => loadSales(pagination.page)}
-          variant="outline"
-        >
-          Refresh
-        </Button>
+    <ViewportContainer>
+      {/* Header - Fixed */}
+      <div className="viewport-header mb-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold">Sales History</h1>
+          <Button 
+            onClick={() => loadSales(pagination.page)}
+            variant="outline"
+          >
+            Refresh
+          </Button>
+        </div>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sadiid-600"></div>
-        </div>
-      ) : (
-        <>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Total</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sales.length > 0 ? (
-                  sales.map((sale) => (
-                    <TableRow key={sale.local_id}>
-                      <TableCell>{sale.local_id}</TableCell>
-                      <TableCell>
-                        {new Date(sale.transaction_date).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        {sale.customer_id || 'Walk-in Customer'}
-                      </TableCell>
-                      <TableCell>
-                        {formatAmount(sale.payment)}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={sale.is_synced ? "success" : "destructive"}>
-                          {sale.is_synced ? 'Synced' : 'Not Synced'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {!sale.is_synced && (
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            disabled={!isOnline}
-                            onClick={() => handleSync(sale)}
-                          >
-                            Sync
-                          </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-4 text-gray-500">
-                      No sales found
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+      {/* Content Area */}
+      <div className="flex-1 min-h-0 flex flex-col">
+        {loading ? (
+          <div className="flex justify-center items-center flex-1">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sadiid-600"></div>
           </div>
-          
-          {pagination.totalPages > 1 && (
-            <Pagination className="mt-4">
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious 
-                    onClick={() => handlePageChange(Math.max(1, pagination.page - 1))} 
-                    className={pagination.page <= 1 ? "pointer-events-none opacity-50" : ""}
-                  />
-                </PaginationItem>
-                
-                {Array.from({length: pagination.totalPages}).map((_, i) => (
-                  <PaginationItem key={i}>
-                    <PaginationLink
-                      isActive={pagination.page === i + 1}
-                      onClick={() => handlePageChange(i + 1)}
-                    >
-                      {i + 1}
-                    </PaginationLink>
-                  </PaginationItem>
-                ))}
-                
-                <PaginationItem>
-                  <PaginationNext 
-                    onClick={() => handlePageChange(Math.min(pagination.totalPages, pagination.page + 1))}
-                    className={pagination.page >= pagination.totalPages ? "pointer-events-none opacity-50" : ""}
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          )}
-        </>
-      )}
-    </div>
+        ) : (
+          <>
+            {/* Table - Scrollable */}
+            <div className="flex-1 min-h-0 rounded-md border">
+              <ScrollArea className="h-full">
+                <Table>
+                  <TableHeader className="sticky top-0 bg-white z-10">
+                    <TableRow>
+                      <TableHead>ID</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Total</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sales.length > 0 ? (
+                      sales.map((sale) => (
+                        <TableRow key={sale.local_id}>
+                          <TableCell>{sale.local_id}</TableCell>
+                          <TableCell>
+                            {new Date(sale.transaction_date).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>
+                            {sale.customer_id || 'Walk-in Customer'}
+                          </TableCell>
+                          <TableCell>
+                            {formatAmount(sale.payment)}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={sale.is_synced ? "success" : "destructive"}>
+                              {sale.is_synced ? 'Synced' : 'Not Synced'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {!sale.is_synced && (
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                disabled={!isOnline}
+                                onClick={() => handleSync(sale)}
+                              >
+                                Sync
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-4 text-gray-500">
+                          No sales found
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
+            </div>
+            
+            {/* Pagination - Fixed */}
+            {pagination.totalPages > 1 && (
+              <div className="viewport-footer mt-4">
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious 
+                        onClick={() => handlePageChange(Math.max(1, pagination.page - 1))} 
+                        className={pagination.page <= 1 ? "pointer-events-none opacity-50" : ""}
+                      />
+                    </PaginationItem>
+                    
+                    {Array.from({length: pagination.totalPages}).map((_, i) => (
+                      <PaginationItem key={i}>
+                        <PaginationLink
+                          isActive={pagination.page === i + 1}
+                          onClick={() => handlePageChange(i + 1)}
+                        >
+                          {i + 1}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ))}
+                    
+                    <PaginationItem>
+                      <PaginationNext 
+                        onClick={() => handlePageChange(Math.min(pagination.totalPages, pagination.page + 1))}
+                        className={pagination.page >= pagination.totalPages ? "pointer-events-none opacity-50" : ""}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </ViewportContainer>
   );
 };
 

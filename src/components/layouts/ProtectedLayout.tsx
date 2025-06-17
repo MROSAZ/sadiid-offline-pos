@@ -11,11 +11,11 @@ const ProtectedLayout = () => {
     <BusinessSettingsProvider>
       <CartProvider>
         <CustomerProvider>
-          <div className="flex h-screen bg-gray-50">
+          <div className="flex h-screen bg-gray-50 overflow-hidden">
             <Sidebar />
-            <div className="flex-1 flex flex-col overflow-hidden">
+            <div className="flex-1 flex flex-col min-h-0">
               <Header />
-              <main className="flex-1 overflow-auto p-4">
+              <main className="flex-1 overflow-hidden">
                 <Outlet />
               </main>
             </div>
