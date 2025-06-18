@@ -115,21 +115,8 @@
   .viewport-header {
     @apply flex-shrink-0;
   }
-    .viewport-footer {
+  
+  .viewport-footer {
     @apply flex-shrink-0;
-  }
-    .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
-  
-  /* Prevent horizontal overflow */
-  .prevent-horizontal-overflow {
-    max-width: 100%;
-    overflow-x: hidden;
   }
 }

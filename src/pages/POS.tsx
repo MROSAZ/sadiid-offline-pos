@@ -38,9 +38,10 @@ const POS = () => {
       <TooltipProvider>
         <div className="h-full w-full flex">
           {/* Products Panel */}
-          <div className="flex-1 h-full flex flex-col bg-white">            {/* Search and Menu Bar - Fixed */}
-            <div className="viewport-header p-4 border-b bg-white w-full min-w-0">
-              <div className="flex items-center gap-4 mb-4 w-full min-w-0">
+          <div className="flex-1 h-full flex flex-col bg-white">
+            {/* Search and Menu Bar - Fixed */}
+            <div className="viewport-header p-4 border-b bg-white">
+              <div className="flex items-center gap-4 mb-4">
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button variant="ghost" size="icon" className="text-gray-500">
@@ -50,8 +51,9 @@ const POS = () => {
                   <TooltipContent>
                     <p>Menu</p>
                   </TooltipContent>
-                </Tooltip>                
-                <div className="flex-1 min-w-0">
+                </Tooltip>
+                
+                <div className="flex-1">
                   <Command className="rounded-lg border shadow-md">
                     <CommandInput 
                       ref={searchInputRef}
@@ -75,14 +77,13 @@ const POS = () => {
                     <Table className="h-4 w-4" />
                   </ToggleGroupItem>
                 </ToggleGroup>
-              </div>              
-              {/* Category Filters */}
-              <div className="w-full min-w-0">
-                <POSCategoryFilters 
-                  onCategoryChange={setSelectedCategoryId}
-                  selectedCategoryId={selectedCategoryId}
-                />
               </div>
+              
+              {/* Category Filters */}
+              <POSCategoryFilters 
+                onCategoryChange={setSelectedCategoryId}
+                selectedCategoryId={selectedCategoryId}
+              />
             </div>
             
             {/* Products Grid - Scrollable Area */}
