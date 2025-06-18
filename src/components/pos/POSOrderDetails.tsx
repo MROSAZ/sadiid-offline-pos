@@ -147,10 +147,8 @@ const POSOrderDetails = () => {  const { cart, getSubtotal, getTotal, updateQuan
   const tax = cart.tax;
   const total = getTotal();  return (
     <TooltipProvider>
-      <div className="h-full w-full flex flex-col">
-        <Card className="h-full rounded-none border-0 flex flex-col">
-          <CardHeader className="pb-4 flex-shrink-0 border-b">
-            <CardTitle className="text-lg flex items-center justify-between">
+      <Card className="h-full rounded-none border-0 border-l flex flex-col">
+        <CardHeader className="pb-4 flex-shrink-0">        <CardTitle className="text-lg flex items-center justify-between">
           <div className="flex items-center gap-2">
             Order Details
             {cart.items.length > 0 && (
@@ -416,10 +414,10 @@ const POSOrderDetails = () => {  const { cart, getSubtotal, getTotal, updateQuan
               <TooltipContent>
                 <p>Complete the sale with {paymentMethod} payment</p>
               </TooltipContent>
-            </Tooltip>          </div></div>
+            </Tooltip>
+          </div></div>
       </CardContent>
     </Card>
-      </div>
     </TooltipProvider>
   );
 };

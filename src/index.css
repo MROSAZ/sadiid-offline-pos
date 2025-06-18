@@ -71,23 +71,8 @@
   * {
     @apply border-border;
   }
-  
-  html {
-    height: 100%;
-    overflow: hidden;
-  }
-  
   body {
     @apply bg-background text-foreground;
-    height: 100%;
-    overflow: hidden;
-    margin: 0;
-    padding: 0;
-  }
-  
-  #root {
-    height: 100vh;
-    overflow: hidden;
   }
 }
 
@@ -102,21 +87,5 @@
   
   .input-field {
     @apply border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sadiid-500 focus:border-transparent;
-  }
-  
-  .viewport-page {
-    @apply h-full w-full overflow-hidden flex flex-col;
-  }
-  
-  .viewport-content {
-    @apply flex-1 min-h-0 overflow-auto;
-  }
-  
-  .viewport-header {
-    @apply flex-shrink-0;
-  }
-  
-  .viewport-footer {
-    @apply flex-shrink-0;
   }
 }
