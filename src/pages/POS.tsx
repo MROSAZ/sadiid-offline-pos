@@ -36,9 +36,8 @@ const POS = () => {
   };  return (
     <TooltipProvider>
       <div className="h-screen bg-gray-50 overflow-hidden">
-        <ResizablePanelGroup direction="horizontal" className="h-full">
-          {/* Products Panel */}
-          <ResizablePanel defaultSize={75} minSize={60}>
+        <ResizablePanelGroup direction="horizontal" className="h-full">          {/* Products Panel */}
+          <ResizablePanel defaultSize={65} minSize={55}>
             <div className="p-4 h-full flex flex-col bg-white overflow-hidden">
               {/* Search and Menu Bar */}
               <div className="flex items-center gap-4 mb-4">
@@ -99,7 +98,7 @@ const POS = () => {
           <ResizableHandle />
 
           {/* Cart Panel */}
-          <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
+          <ResizablePanel defaultSize={35} minSize={25} maxSize={45}>
             <POSOrderDetails />
           </ResizablePanel>
         </ResizablePanelGroup>

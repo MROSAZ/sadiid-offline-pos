@@ -270,59 +270,38 @@ const POSOrderDetails = () => {  const { cart, getSubtotal, getTotal, updateQuan
           <div className="space-y-3 pb-4">
             {cart.items.length > 0 ? (
               cart.items.map((item) => (
-                <div key={item.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                  <div className="w-12 h-12 bg-gray-100 rounded flex-shrink-0 flex justify-center items-center">
-                    <img src={PLACEHOLDER_SVG} alt={item.name} className="w-8 h-8" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-start">
-                      <h3 className="font-medium text-sm truncate pr-2">{item.name}</h3>
-                      <Button 
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeItem(item.id)} 
-                        className="h-6 w-6 text-red-500 hover:text-red-700 flex-shrink-0"
-                      >
-                        <X size={14} />
-                      </Button>
-                    </div>                    <div className="flex items-center justify-between mt-2">
-                      <div className="flex items-center border rounded">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button 
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleQuantityChange(item.id, -1, item.quantity)}
-                              className="h-8 w-8"
-                            >
-                              <Minus size={12} />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Decrease quantity</p>
-                          </TooltipContent>
-                        </Tooltip>
-                        <span className="px-3 py-1 text-sm min-w-[2rem] text-center">{item.quantity}</span>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button 
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleQuantityChange(item.id, 1, item.quantity)}
-                              className="h-8 w-8"
-                            >
-                              <Plus size={12} />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Increase quantity</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-                      <span className="text-blue-500 font-bold text-sm">
-                        {formatPrice(item.price * item.quantity)}
-                      </span>
+                <div key={item.id} className="grid grid-cols-[auto_1fr_auto] items-center gap-3 p-2 bg-gray-50 rounded-lg w-full">
+                  {/* Image */}
+                  <div className="flex-shrink-0">
+                    <div className="w-10 h-10 bg-gray-100 rounded flex justify-center items-center">
+                      <img src={PLACEHOLDER_SVG} alt={item.name} className="w-6 h-6" />
                     </div>
+                  </div>
+
+                  {/* Middle Section: Name and Quantity */}
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-800 truncate" title={item.name}>
+                      {item.name}
+                    </p>
+                    <div className="flex items-center border rounded w-fit mt-1.5">
+                      <Button variant="ghost" size="icon" onClick={() => handleQuantityChange(item.id, -1, item.quantity)} className="h-6 w-6" disabled={item.quantity <= 1}>
+                        <Minus size={12} />
+                      </Button>
+                      <span className="px-2 text-sm font-medium">{item.quantity}</span>
+                      <Button variant="ghost" size="icon" onClick={() => handleQuantityChange(item.id, 1, item.quantity)} className="h-6 w-6">
+                        <Plus size={12} />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Right Section: Price and Remove button */}
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-semibold text-blue-600 w-16 text-right">
+                      {formatPrice(item.price * item.quantity)}
+                    </p>
+                    <Button variant="ghost" size="icon" onClick={() => removeItem(item.id)} className="h-7 w-7 text-red-500 hover:text-red-700">
+                      <X size={14} />
+                    </Button>
                   </div>
                 </div>
               ))
