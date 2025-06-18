@@ -30,10 +30,8 @@ const Products = () => {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
-      </div>
-
-      {/* Category Filters - Fixed */}
-      <div className="flex-shrink-0 mb-6">
+      </div>      {/* Category Filters - Fixed */}
+      <div className="flex-shrink-0 mb-6 w-full min-w-0">
         <POSCategoryFilters 
           onCategoryChange={setSelectedCategoryId}
           selectedCategoryId={selectedCategoryId}
