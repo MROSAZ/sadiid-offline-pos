@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import CustomerList from '@/components/customers/CustomerList';
 import { useNetwork } from '@/context/NetworkContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import NetworkStatusIndicator from '@/components/ui/NetworkStatusIndicator';
+import NetworkStatusIndicator from '@/components/NetworkStatusIndicator';
 
 const Customers = () => {
   const [searchQuery, setSearchQuery] = useState('');
