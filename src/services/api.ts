@@ -395,27 +395,6 @@ export const createSale = async (saleData: SaleData) => {
   }
 };
 
-// ============== BUSINESS LOCATION MANAGEMENT ==============
-export const listBusinessLocations = async () => {
-  try {
-    const response = await api.get('/connector/api/business-location');
-    return response.data;
-  } catch (error) {
-    console.error('Error listing business locations:', error);
-    throw error;
-  }
-};
-
-export const getBusinessLocation = async (locationId: string | number) => {
-  try {
-    const response = await api.get(`/connector/api/business-location/${locationId}`);
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching business location:', error);
-    throw error;
-  }
-};
-
 // ========================================
 // Business Details Management
 // ========================================

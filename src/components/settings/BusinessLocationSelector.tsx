@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useCart } from '@/context/CartContext';
-import { saveSelectedLocationId, formatLocationAddress } from '@/services/locationService';
+import { setSelectedLocationId, formatLocationAddress } from '@/services/locationService';
 import { BusinessLocation } from '@/lib/businessSettings';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -23,14 +23,17 @@ const BusinessLocationSelector = () => {
   
   const handleLocationChange = async (locationId: string) => {
     const numericId = parseInt(locationId, 10);
-    if (!isNaN(numericId)) {
-      setLocation(numericId); // Updates cart context
-      try {
-        await saveSelectedLocationId(numericId); // Now async save to IndexedDB
-        toast.success(`Business location set to ${getCurrentLocationName()}`);
-      } catch (error) {
-        toast.error('Failed to save location setting');
-      }
+    if (isNaN(numericId)) return;
+
+    const newLocation = locations.find(loc => loc.id === numericId);
+    if (!newLocation) return;
+
+    setLocation(numericId); // Updates cart context
+    try {
+      await setSelectedLocationId(numericId);
+      toast.success(`Business location set to ${newLocation.name}`);
+    } catch (error) {
+      toast.error('Failed to save location setting');
     }
   };
   
