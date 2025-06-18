@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getCategories } from '@/lib/storage';
 import { toast } from 'sonner';
@@ -41,17 +41,18 @@ const POSCategoryFilters: React.FC<POSCategoryFiltersProps> = ({
   // Handle selecting a category
   const handleCategorySelect = (categoryId: number | null) => {
     onCategoryChange(categoryId);
-  };
-  if (loading) {
+  };  if (loading) {
     return (
-      <div className="py-3 mb-4">
-        <div className="flex space-x-2 overflow-x-auto">
-          {[1, 2, 3, 4, 5].map(i => (
-            <Skeleton 
-              key={i} 
-              className="h-8 w-24 flex-shrink-0"
-            />
-          ))}
+      <div className="mb-4">
+        <div className="overflow-x-auto scrollbar-hide">
+          <div className="flex space-x-2 w-max">
+            {[1, 2, 3, 4, 5].map(i => (
+              <Skeleton 
+                key={i} 
+                className="h-8 w-24 flex-shrink-0"
+              />
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -60,34 +61,33 @@ const POSCategoryFilters: React.FC<POSCategoryFiltersProps> = ({
   if (categories.length === 0) {
     return null;
   }
+
   return (
-    <div className="mb-4">
-      <ToggleGroup 
-        type="single" 
-        value={selectedCategoryId?.toString() || "all"}
-        onValueChange={(value) => {
-          if (value === "all") {
-            onCategoryChange(null);
-          } else if (value) {
-            onCategoryChange(parseInt(value));
-          }
-        }}
-        className="justify-start overflow-x-auto flex-nowrap"
-      >
-        <ToggleGroupItem value="all" className="whitespace-nowrap">
-          All Products
-        </ToggleGroupItem>
-        
-        {categories.map((category) => (
-          <ToggleGroupItem 
-            key={category.id} 
-            value={category.id.toString()}
-            className="whitespace-nowrap"
+    <div className="mb-4 min-w-0 w-full">
+      <div className="overflow-x-auto scrollbar-hide">
+        <div className="flex space-x-2 w-max">
+          <Button
+            variant={selectedCategoryId === null ? "default" : "outline"}
+            size="sm"
+            onClick={() => handleCategorySelect(null)}
+            className="whitespace-nowrap flex-shrink-0"
           >
-            {category.name}
-          </ToggleGroupItem>
-        ))}
-      </ToggleGroup>
+            All Products
+          </Button>
+          
+          {categories.map((category) => (
+            <Button
+              key={category.id}
+              variant={selectedCategoryId === category.id ? "default" : "outline"}
+              size="sm"
+              onClick={() => handleCategorySelect(category.id)}
+              className="whitespace-nowrap flex-shrink-0"
+            >
+              {category.name}
+            </Button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 };
