@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { syncDataOnLogin, startBackgroundSync } from '../services/syncService';
 import { getQueueStats } from '@/services/syncQueue';
 import { toast } from 'sonner';
@@ -243,23 +244,30 @@ const Dashboard = () => {
             <CardHeader>
               <CardTitle>Sync Queue Status</CardTitle>
               <CardDescription>Status of operations waiting to be synchronized</CardDescription>
-            </CardHeader>
-            <CardContent className="grid grid-cols-4 gap-4">
+            </CardHeader>            <CardContent className="grid grid-cols-4 gap-4">
               <div className="flex flex-col items-center p-3 bg-gray-50 rounded-md">
-                <span className="text-lg font-bold text-yellow-600">{queueStats.pending}</span>
-                <span className="text-sm text-gray-500">Pending</span>
+                <Badge variant="outline" className="mb-2">
+                  {queueStats.pending} Pending
+                </Badge>
+                <span className="text-sm text-gray-500">Waiting to sync</span>
               </div>
-              <div className="flex flex-col items-center p-3 bg-gray-50 rounded-md">
-                <span className="text-lg font-bold text-blue-600">{queueStats.processing}</span>
-                <span className="text-sm text-gray-500">Processing</span>
+              <div className="flex flex-col items-center p-3 bg-blue-50 rounded-md">
+                <Badge variant="default" className="mb-2 bg-blue-600">
+                  {queueStats.processing} Processing
+                </Badge>
+                <span className="text-sm text-gray-500">Currently syncing</span>
               </div>
-              <div className="flex flex-col items-center p-3 bg-gray-50 rounded-md">
-                <span className="text-lg font-bold text-red-600">{queueStats.failed}</span>
-                <span className="text-sm text-gray-500">Failed</span>
+              <div className="flex flex-col items-center p-3 bg-red-50 rounded-md">
+                <Badge variant="destructive" className="mb-2">
+                  {queueStats.failed} Failed
+                </Badge>
+                <span className="text-sm text-gray-500">Sync errors</span>
               </div>
-              <div className="flex flex-col items-center p-3 bg-gray-50 rounded-md">
-                <span className="text-lg font-bold text-green-600">{queueStats.completed}</span>
-                <span className="text-sm text-gray-500">Completed</span>
+              <div className="flex flex-col items-center p-3 bg-green-50 rounded-md">
+                <Badge variant="secondary" className="mb-2 bg-green-600 text-white">
+                  {queueStats.completed} Completed
+                </Badge>
+                <span className="text-sm text-gray-500">Successfully synced</span>
               </div>
             </CardContent>
           </Card>

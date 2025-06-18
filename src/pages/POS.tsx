@@ -1,28 +1,22 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Search, Menu, Table, X, ChevronDown, User } from 'lucide-react';
+import { Search, Menu, Table, Grid3X3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Command, CommandInput } from '@/components/ui/command';
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import POSProductGrid from '@/components/pos/POSProductGrid';
 import POSOrderDetails from '../components/pos/POSOrderDetails';
 import POSCategoryFilters from '../components/pos/POSCategoryFilters';
-import { useCustomer } from '@/context/CustomerContext';
 
 const POS = () => {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
-  
-  // Customer selection states
-  const [customerSearchTerm, setCustomerSearchTerm] = useState('');
-  const [searchingCustomer, setSearchingCustomer] = useState(false);
-  const { selectedCustomer, setSelectedCustomer, customers } = useCustomer();
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
 
   // Focus search input when page loads and on key press
   useEffect(() => {
-    if (searchInputRef.current) {
-      searchInputRef.current.focus();
-    }
-
     const handleKeyDown = (e: KeyboardEvent) => {
       const activeElement = document.activeElement;
       const isInputActive = activeElement instanceof HTMLInputElement || 
@@ -39,161 +33,77 @@ const POS = () => {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-  };
-
-  // Filter customers based on search term
-  const filteredCustomers = customers.filter(customer => 
-    !customerSearchTerm || 
-    customer.name?.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
-    customer.mobile?.toLowerCase().includes(customerSearchTerm.toLowerCase())
-  );
-
-  // Handle customer selection
-  const selectCustomer = (customer: any) => {
-    setSelectedCustomer(customer);
-    setSearchingCustomer(false);
-  };
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (searchingCustomer && !(event.target as Element).closest('.customer-dropdown')) {
-        setSearchingCustomer(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [searchingCustomer]);
-
-  return (
-    <div className="bg-gray-50 min-h-screen">
-      <div className="max-w-[1400px] mx-auto bg-white rounded-lg shadow-sm">
-        <div className="grid grid-cols-1 lg:grid-cols-4">
-          {/* Products Section (3/4 width on large screens) */}
-          <div className="lg:col-span-3 p-4 border-r border-gray-200">
-            {/* Search and Menu Bar */}
-            <div className="flex items-center gap-4 mb-4">
-              <Button variant="ghost" size="icon" className="text-gray-500">
-                <Menu className="h-6 w-6" />
-              </Button>
-              
-              <form onSubmit={handleSearch} className="flex-1 flex gap-2">
-                <Input
-                  ref={searchInputRef}
-                  type="search"
-                  placeholder="Search all products here..."
-                  className="flex-1"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-                <Button type="submit" className="bg-blue-500 hover:bg-blue-600">
-                  <Search className="h-4 w-4 mr-2" />
-                  Search
-                </Button>
-              </form>
-              
-              <Button variant="ghost" size="icon" className="text-gray-500">
-                <Table className="h-6 w-6" />
-              </Button>
-            </div>
-            
-            {/* Category Filters */}
-            <POSCategoryFilters 
-              onCategoryChange={setSelectedCategoryId}
-              selectedCategoryId={selectedCategoryId}
-            />
-            
-            {/* Products Grid - Pass search term and category ID */}
-            <POSProductGrid 
-              searchTerm={searchTerm} 
-              categoryId={selectedCategoryId}
-            />
-          </div>
-          
-          {/* Order Details Section */}
-          <div className="lg:col-span-1 p-4 relative">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold">Order Details</h2>
-              <Button variant="ghost" size="icon" className="text-gray-700">
-                <X className="h-6 w-6" />
-              </Button>
-            </div>
-            
-            {/* Customer Selection - Add this new component */}
-            <div className="mb-4 customer-dropdown">
-              <label className="text-sm font-medium text-gray-700 mb-1 block">Customer</label>
-              <div className="flex items-center gap-2">
-                <div className="relative flex-1">
-                  <Button 
-                    variant="outline" 
-                    className="w-full flex justify-between items-center text-left h-10 px-3"
-                    onClick={() => setSearchingCustomer(!searchingCustomer)}
-                  >
-                    <span className="flex items-center">
-                      <User className="h-4 w-4 mr-2 text-gray-500" />
-                      <span className="truncate">
-                        {selectedCustomer ? selectedCustomer.name : "Walk-In Customer"}
-                      </span>
-                    </span>
-                    <ChevronDown className="h-4 w-4 opacity-70" />
-                  </Button>
-                  
-                  {searchingCustomer && (
-                    <div className="absolute z-50 mt-1 w-full bg-white shadow-lg rounded-md border">
-                      <div className="p-2 border-b">
-                        <Input
-                          placeholder="Search customers..."
-                          value={customerSearchTerm}
-                          onChange={(e) => setCustomerSearchTerm(e.target.value)}
-                          autoFocus
-                        />
-                      </div>
-                      <div className="max-h-60 overflow-y-auto">
-                        <div 
-                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center"
-                          onClick={() => selectCustomer(null)}
-                        >
-                          <User className="h-4 w-4 mr-2 text-gray-500" />
-                          No Customer Selected
-                        </div>
-                        {filteredCustomers.map(customer => (
-                          <div 
-                            key={customer.id} 
-                            className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                            onClick={() => selectCustomer(customer)}
-                          >
-                            {customer.name}
-                            {customer.mobile && (
-                              <span className="text-xs text-gray-500 block">
-                                {customer.mobile}
-                              </span>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+  };  return (
+    <TooltipProvider>
+      <div className="h-screen bg-gray-50 overflow-hidden">
+        <ResizablePanelGroup direction="horizontal" className="h-full">          {/* Products Panel */}
+          <ResizablePanel defaultSize={65} minSize={55}>
+            <div className="p-4 h-full flex flex-col bg-white overflow-hidden">
+              {/* Search and Menu Bar */}
+              <div className="flex items-center gap-4 mb-4">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" className="text-gray-500">
+                      <Menu className="h-6 w-6" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Menu</p>
+                  </TooltipContent>
+                </Tooltip>
+                
+                <div className="flex-1">
+                  <Command className="rounded-lg border shadow-md">
+                    <CommandInput 
+                      ref={searchInputRef}
+                      placeholder="Search all products here..."
+                      value={searchTerm}
+                      onValueChange={setSearchTerm}
+                    />
+                  </Command>
                 </div>
                 
-                {selectedCustomer && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => selectCustomer(null)}
-                    className="h-10 w-10"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                )}
+                <ToggleGroup 
+                  type="single" 
+                  value={viewMode} 
+                  onValueChange={(value) => value && setViewMode(value as 'grid' | 'table')}
+                  className="border rounded-md"
+                >
+                  <ToggleGroupItem value="grid" aria-label="Grid view" size="sm">
+                    <Grid3X3 className="h-4 w-4" />
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="table" aria-label="Table view" size="sm">
+                    <Table className="h-4 w-4" />
+                  </ToggleGroupItem>
+                </ToggleGroup>
+              </div>
+              
+              {/* Category Filters */}
+              <POSCategoryFilters 
+                onCategoryChange={setSelectedCategoryId}
+                selectedCategoryId={selectedCategoryId}
+              />
+              
+              {/* Products Grid */}
+              <div className="flex-1 overflow-hidden">
+                <POSProductGrid 
+                  searchTerm={searchTerm} 
+                  categoryId={selectedCategoryId}
+                  viewMode={viewMode}
+                />
               </div>
             </div>
-            
+          </ResizablePanel>
+
+          <ResizableHandle />
+
+          {/* Cart Panel */}
+          <ResizablePanel defaultSize={35} minSize={25} maxSize={45}>
             <POSOrderDetails />
-          </div>
-        </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
       </div>
-    </div>
+    </TooltipProvider>
   );
 };
 
