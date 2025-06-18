@@ -5,7 +5,6 @@ import { useCart } from '@/context/CartContext';
 import { loadProducts, ProductData } from '@/utils/productUtils';
 import ProductCard from '@/components/products/ProductCard';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   Pagination,
@@ -16,7 +15,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import usePagination from '@/hooks/usePagination';
+import useResponsivePagination from '@/hooks/useResponsivePagination';
 
 interface POSProductGridProps {
   searchTerm?: string;
@@ -27,8 +26,6 @@ interface POSProductGridProps {
 const POSProductGrid: React.FC<POSProductGridProps> = ({ searchTerm = '', categoryId = null, viewMode = 'grid' }) => {
   const [products, setProducts] = useState<ProductData[]>([]);
   const [loading, setLoading] = useState(true);
-  
-  const itemsPerPage = 20; // Adjust based on your UI needs
   
   const { addItem } = useCart();
 
@@ -53,12 +50,13 @@ const POSProductGrid: React.FC<POSProductGridProps> = ({ searchTerm = '', catego
     currentPage,
     totalPages,
     currentItems,
+    itemsPerPage,
     handlePageChange,
     nextPage,
     prevPage
-  } = usePagination<ProductData>({
+  } = useResponsivePagination<ProductData>({
     items: products,
-    itemsPerPage,
+    viewMode,
     initialPage: 1
   });
 
@@ -82,9 +80,9 @@ const POSProductGrid: React.FC<POSProductGridProps> = ({ searchTerm = '', catego
   };  if (loading) {
     return (
       <div className="h-full flex flex-col">
-        <ScrollArea className="flex-1">
+        <div className="flex-1">
           {viewMode === 'grid' ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 p-1">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 p-1">
               {Array.from({ length: itemsPerPage }).map((_, index) => (
                 <div key={index} className="p-3 border rounded-lg space-y-3">
                   <Skeleton className="h-16 w-16 mx-auto rounded" />
@@ -96,7 +94,8 @@ const POSProductGrid: React.FC<POSProductGridProps> = ({ searchTerm = '', catego
                   <Skeleton className="h-3 w-20" />
                 </div>
               ))}
-            </div>          ) : (
+            </div>
+          ) : (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -108,7 +107,7 @@ const POSProductGrid: React.FC<POSProductGridProps> = ({ searchTerm = '', catego
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {Array.from({ length: 8 }).map((_, index) => (
+                {Array.from({ length: itemsPerPage }).map((_, index) => (
                   <TableRow key={index}>
                     <TableCell>
                       <Skeleton className="h-10 w-10 rounded" />
@@ -133,27 +132,26 @@ const POSProductGrid: React.FC<POSProductGridProps> = ({ searchTerm = '', catego
               </TableBody>
             </Table>
           )}
-        </ScrollArea>
+        </div>
       </div>
     );
   }
+  
   if (products.length === 0) {
     return (
       <div className="h-full flex flex-col">
-        <ScrollArea className="flex-1">
-          <div className="flex flex-col items-center justify-center h-64 text-gray-400">
-            <Package size={48} />
-            <p className="mt-2">No products found</p>
-            <p className="text-sm">Try adjusting your search or category filter</p>
-          </div>
-        </ScrollArea>
+        <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
+          <Package size={48} />
+          <p className="mt-2">No products found</p>
+          <p className="text-sm">Try adjusting your search or category filter</p>
+        </div>
       </div>
     );
   }  return (
     <div className="h-full flex flex-col">
-      <ScrollArea className="flex-1">
+      <div className="flex-1">
         {viewMode === 'grid' ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 p-1">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 p-1">
             {currentItems.map((product) => (
               <ProductCard 
                 key={product.id}
@@ -162,7 +160,8 @@ const POSProductGrid: React.FC<POSProductGridProps> = ({ searchTerm = '', catego
                 compact={true}
               />
             ))}
-          </div>        ) : (
+          </div>
+        ) : (
           <Table>
             <TableHeader>
               <TableRow>
@@ -213,7 +212,7 @@ const POSProductGrid: React.FC<POSProductGridProps> = ({ searchTerm = '', catego
             </TableBody>
           </Table>
         )}
-      </ScrollArea>
+      </div>
       
       {totalPages > 1 && (
         <div className="flex-shrink-0 mt-4 border-t pt-4">
