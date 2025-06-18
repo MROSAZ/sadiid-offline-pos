@@ -6,16 +6,7 @@ import { loadProducts, ProductData } from '@/utils/productUtils';
 import ProductCard from '@/components/products/ProductCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
-import useResponsivePagination from '@/hooks/useResponsivePagination';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface POSProductGridProps {
   searchTerm?: string;
@@ -46,19 +37,6 @@ const POSProductGrid: React.FC<POSProductGridProps> = ({ searchTerm = '', catego
     fetchProducts();
   }, [searchTerm, categoryId]);
   
-  const {
-    currentPage,
-    totalPages,
-    currentItems,
-    itemsPerPage,
-    handlePageChange,
-    nextPage,
-    prevPage
-  } = useResponsivePagination<ProductData>({
-    items: products,
-    viewMode,
-    initialPage: 1
-  });
 
   const handleAddToCart = (product: ProductData) => {
     if (product.price) {
@@ -80,10 +58,10 @@ const POSProductGrid: React.FC<POSProductGridProps> = ({ searchTerm = '', catego
   };  if (loading) {
     return (
       <div className="h-full flex flex-col">
-        <div className="flex-1">
+        <ScrollArea className="flex-1">
           {viewMode === 'grid' ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 p-1">
-              {Array.from({ length: itemsPerPage }).map((_, index) => (
+              {Array.from({ length: 12 }).map((_, index) => (
                 <div key={index} className="p-3 border rounded-lg space-y-3">
                   <Skeleton className="h-16 w-16 mx-auto rounded" />
                   <Skeleton className="h-4 w-full" />
@@ -107,7 +85,7 @@ const POSProductGrid: React.FC<POSProductGridProps> = ({ searchTerm = '', catego
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {Array.from({ length: itemsPerPage }).map((_, index) => (
+                {Array.from({ length: 10 }).map((_, index) => (
                   <TableRow key={index}>
                     <TableCell>
                       <Skeleton className="h-10 w-10 rounded" />
@@ -132,7 +110,7 @@ const POSProductGrid: React.FC<POSProductGridProps> = ({ searchTerm = '', catego
               </TableBody>
             </Table>
           )}
-        </div>
+        </ScrollArea>
       </div>
     );
   }
@@ -149,10 +127,10 @@ const POSProductGrid: React.FC<POSProductGridProps> = ({ searchTerm = '', catego
     );
   }  return (
     <div className="h-full flex flex-col">
-      <div className="flex-1">
+      <ScrollArea className="flex-1">
         {viewMode === 'grid' ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 p-1">
-            {currentItems.map((product) => (
+            {products.map((product) => (
               <ProductCard 
                 key={product.id}
                 product={product}
@@ -173,7 +151,7 @@ const POSProductGrid: React.FC<POSProductGridProps> = ({ searchTerm = '', catego
               </TableRow>
             </TableHeader>
             <TableBody>
-              {currentItems.map((product) => (
+              {products.map((product) => (
                 <TableRow
                   key={product.id}
                   className="cursor-pointer hover:bg-muted/50"
@@ -212,67 +190,7 @@ const POSProductGrid: React.FC<POSProductGridProps> = ({ searchTerm = '', catego
             </TableBody>
           </Table>
         )}
-      </div>
-      
-      {totalPages > 1 && (
-        <div className="flex-shrink-0 mt-4 border-t pt-4">
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious 
-                  onClick={prevPage} 
-                  className={`cursor-pointer ${currentPage === 1 ? 'opacity-50 pointer-events-none' : ''}`}
-                />
-              </PaginationItem>
-              
-              {/* Page links */}
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                // Show first page, last page, current page, and pages around current
-                const pageNum = i + 1;
-                
-                if (
-                  pageNum === 1 || 
-                  pageNum === totalPages ||
-                  (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
-                ) {
-                  return (
-                    <PaginationItem key={pageNum}>
-                      <PaginationLink
-                        isActive={currentPage === pageNum}
-                        onClick={() => handlePageChange(pageNum)}
-                        className="cursor-pointer"
-                      >
-                        {pageNum}
-                      </PaginationLink>
-                    </PaginationItem>
-                  );
-                }
-                
-                // Show ellipsis if there's a gap
-                if (
-                  (pageNum === 2 && currentPage > 3) ||
-                  (pageNum === totalPages - 1 && currentPage < totalPages - 2)
-                ) {
-                  return (
-                    <PaginationItem key={`ellipsis-${pageNum}`}>
-                      <PaginationEllipsis />
-                    </PaginationItem>
-                  );
-                }
-                
-                return null;
-              }).filter(Boolean)}
-              
-              <PaginationItem>
-                <PaginationNext 
-                  onClick={nextPage} 
-                  className={`cursor-pointer ${currentPage === totalPages ? 'opacity-50 pointer-events-none' : ''}`}
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-        </div>
-      )}
+      </ScrollArea>
     </div>
   );
 };
