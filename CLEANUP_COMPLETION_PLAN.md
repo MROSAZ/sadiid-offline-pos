@@ -9,6 +9,7 @@ This document outlines the remaining tasks to complete the code cleanup and opti
 - ✅ POSCategoryFilters enhanced with "All Products" button
 - ✅ Duplicate sync services identified
 - ✅ Technical documentation created
+- ✅ Refactored business settings and location logic to use a single source of truth (IndexedDB).
 - ⚠️ Several incomplete files and unused code remain
 
 ## Immediate Tasks Required
@@ -72,14 +73,14 @@ Based on the analysis, the following files should be deleted as they are no long
 
 ```
 src/pages/Index.tsx
-src/components/BusinessDetailsTest.tsx
-src/components/settings/BusinessLocationSelector.tsx
 src/routes/AppRoutes.tsx
 src/lib/sync.ts
 src/components/pos/POSGrid.tsx
 src/components/pos/POSProductCard.tsx
 src/hooks/useLocalStorage.ts
 ```
+
+**Note:** `src/components/BusinessDetailsTest.tsx` and `src/components/settings/BusinessLocationSelector.tsx` were previously listed for deletion but have been kept. `BusinessLocationSelector.tsx` has been refactored to use the new centralized location service, and `BusinessDetailsTest.tsx` is retained for testing purposes.
 
 **Verification Required:** Before deletion, confirm these files are not imported or referenced anywhere in the codebase.
 

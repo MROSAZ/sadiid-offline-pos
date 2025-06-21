@@ -37,7 +37,7 @@ const initialState: CartState = {
   discount: 0,
   tax: 0,
   note: '',
-  location_id: parseInt(localStorage.getItem('selected_location_id') || '0') || null
+  location_id: null
 };
 
 const cartReducer = (state: CartState, action: CartAction): CartState => {
@@ -86,7 +86,10 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
       };
     
     case 'CLEAR_CART':
-      return initialState;
+      return {
+        ...initialState,
+        location_id: state.location_id,
+      };
     
     case 'SET_DISCOUNT':
       return { ...state, discount: action.payload };

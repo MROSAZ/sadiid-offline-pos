@@ -1,5 +1,4 @@
-
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { 
   getBusinessSettings, 
   getLocalBusinessSettings,
@@ -30,48 +29,38 @@ export const BusinessSettingsProvider: React.FC<BusinessSettingsProviderProps> =
   const [settings, setSettings] = useState<BusinessSettingsType | null>(getLocalBusinessSettings());
   const [loading, setLoading] = useState(!settings);
   const { isOnline } = useNetwork();
-  const loadSettings = async (showToast = false) => {
+
+  const loadSettings = useCallback(async (forceRefresh = false) => {
+    setLoading(true);
     try {
-      setLoading(true);
-      // Force refresh if we're online to get latest data
-      const businessSettings = await getBusinessSettings(isOnline);
+      const businessSettings = await getBusinessSettings(forceRefresh);
       setSettings(businessSettings);
-      if (showToast) toast.success('Business settings updated');
     } catch (error) {
       console.error('Failed to load business settings:', error);
-      if (showToast) toast.error('Failed to update business settings');
-      
-      // If we failed and don't have any settings, try to get cached ones
-      if (!settings) {
-        try {
-          const cachedSettings = await getBusinessSettings(false);
-          setSettings(cachedSettings);
-        } catch (cacheError) {
-          console.error('Failed to load cached settings too:', cacheError);
-        }
-      }
+      toast.error('Failed to load business settings');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Load settings on initial mount
   useEffect(() => {
     if (!settings) {
-      loadSettings();
+      loadSettings(isOnline);
     }
-  }, []);
+  }, [loadSettings, settings, isOnline]);
 
   // Refresh settings when coming back online
   useEffect(() => {
     if (isOnline) {
-      loadSettings();
+      loadSettings(true);
     }
-  }, [isOnline]);
+  }, [isOnline, loadSettings]);
 
-  const refreshSettings = async () => {
+  const refreshSettings = useCallback(async () => {
     await loadSettings(true);
-  };
+    toast.success('Business settings updated');
+  }, [loadSettings]);
 
   return (
     <BusinessSettingsContext.Provider value={{ settings, loading, refreshSettings }}>

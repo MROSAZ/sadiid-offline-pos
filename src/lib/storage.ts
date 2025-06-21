@@ -38,9 +38,7 @@ interface SadiidPOSDB extends DBSchema {
     value: {
       key: string;
       value: any;
-      timestamp: string;
     };
-    indexes: { 'by-timestamp': string }; // Fixed: Added proper index definition
   };
 }
 
@@ -91,8 +89,7 @@ export const initDB = async () => {
         
         // Add settings store for location and other app settings
         if (!db.objectStoreNames.contains('settings')) {
-          const settingsStore = db.createObjectStore('settings', { keyPath: 'key' });
-          settingsStore.createIndex('by-timestamp', 'timestamp', { unique: false }); // Fixed: Correct index name
+          db.createObjectStore('settings', { keyPath: 'key' });
         }
       },
     });
@@ -291,20 +288,18 @@ export const getSales = async (page = 1, limit = 20) => {
 };
 
 // Business settings
-export const saveBusinessSettings = async (settings: any) => {
+export const saveBusinessSettingsToDB = async (settings: any) => {
   const db = await getDB();
-  // Also save to localStorage for quick access
-  localStorage.setItem('business_settings', JSON.stringify(settings));
   await db.put('business_settings', settings, 'current_settings');
   return true;
 };
 
-export const getBusinessSettingsFromStorage = () => {
+export const getBusinessSettingsFromDB = async (): Promise<any | null> => {
   try {
-    const settingsString = localStorage.getItem('business_settings');
-    return settingsString ? JSON.parse(settingsString) : null;
+    const db = await getDB();
+    return await db.get('business_settings', 'current_settings');
   } catch (error) {
-    console.error('Error loading business settings from localStorage:', error);
+    console.error('Error getting business settings from DB:', error);
     return null;
   }
 };
@@ -338,32 +333,20 @@ export const getLocalItemAsJson = <T>(key: string): T | null => {
 };
 
 // Add location storage functions
-export const saveSelectedLocation = async (locationId: number): Promise<void> => {
+export const saveSelectedLocationIdToDB = async (locationId: number): Promise<void> => {
   try {
-    const db = await getDB(); // Fixed: Use getDB() instead of openDB()
-    const transaction = db.transaction(['settings'], 'readwrite');
-    const store = transaction.objectStore('settings');
-    
-    await store.put({
-      key: 'selected_location_id',
-      value: locationId,
-      timestamp: new Date().toISOString()
-    });
-    
-    await transaction.done; // Fixed: Use transaction.done instead of transaction.complete
+    const db = await getDB();
+    await db.put('settings', { key: 'selected_location_id', value: locationId });
   } catch (error) {
     console.error('Error saving selected location to IndexedDB:', error);
     throw error;
   }
 };
 
-export const getSelectedLocationFromDB = async (): Promise<number | null> => { // Fixed: Renamed to avoid conflict
+export const getSelectedLocationIdFromDB = async (): Promise<number | null> => {
   try {
-    const db = await getDB(); // Fixed: Use getDB() instead of openDB()
-    const transaction = db.transaction(['settings'], 'readonly');
-    const store = transaction.objectStore('settings');
-    
-    const result = await store.get('selected_location_id');
+    const db = await getDB();
+    const result = await db.get('settings', 'selected_location_id');
     return result ? result.value : null;
   } catch (error) {
     console.error('Error getting selected location from IndexedDB:', error);
