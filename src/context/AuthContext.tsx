@@ -4,6 +4,8 @@ import { toast } from 'sonner';
 import { login as apiLogin, getCurrentUser } from '@/services/api';
 import { getToken, removeToken, saveToken, getUser, saveUser } from '@/lib/storage';
 import { queueBackgroundTask, BackgroundTasks, performWhenOnline } from '../utils/backgroundSync';
+import { startBackgroundSync } from '@/services/syncService';
+import { autoSelectLocation } from '@/services/locationService';
 
 /**
  * Queue a background refresh of user data without blocking the UI
@@ -128,6 +130,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const userData = await getCurrentUser();
       setUser(userData.data);
       await saveUser(userData.data);
+      
+      // Start background sync and auto-select location
+      startBackgroundSync();
+      await autoSelectLocation();
       
       toast.success('Login successful');
       navigate('/dashboard');
