@@ -4,12 +4,19 @@
 
 This document provides a comprehensive overview of all files in the `src` folder and their functions.
 
+> **📋 Documentation Status**: Last verified and updated on June 23, 2025
+> - All files in `src` folder have been checked
+> - All functions and their purposes are documented
+> - UI component functions are excluded as requested
+
 ---
 
 ## 📁 Root Files
 
 ### `App.tsx`
-Main application component that sets up routing, contexts, and global providers.
+- **App**: Main application component that sets up routing, context providers, and initializes IndexedDB
+- **setupDB**: Async function to initialize IndexedDB on app startup
+- **Routes**: Defines protected and public routes with authentication
 
 ### `main.tsx`
 Application entry point that renders the App component with React Query and Router providers.
@@ -120,6 +127,25 @@ Route wrapper that ensures user authentication before accessing protected pages.
 - **clearCart**: Clears all items from cart
 - **setDiscount**: Sets discount amount
 - **setTax**: Sets tax amount
+- **setNote**: Sets note for the cart
+- **setLocation**: Sets location ID for the cart
+- **setCustomer**: Sets customer for the cart
+- **setEditingSale**: Sets sale ID being edited
+- **getSubtotal**: Calculates cart subtotal
+- **getTotal**: Calculates cart total including tax and discount
+
+### `context/CustomerContext.tsx`
+- **CustomerProvider**: Customer context provider
+- **useCustomer**: Hook for accessing customer state and actions
+- **loadCustomers**: Loads customers from IndexedDB
+- **refreshCustomers**: Refreshes customers from API
+- **setSelectedCustomer**: Sets the selected customer
+
+### `context/NetworkContext.tsx`
+- **NetworkProvider**: Network status context provider
+- **useNetwork**: Hook for accessing network state
+- **checkServerReachable**: Checks if server is reachable
+- **retryOperation**: Retries failed operations with exponential backoff
 - **setNote**: Sets order note
 - **setLocation**: Sets business location
 - **setCustomer**: Sets selected customer
@@ -132,8 +158,8 @@ Route wrapper that ensures user authentication before accessing protected pages.
 - **useCustomer**: Hook for accessing customer state
 - **loadCustomers**: Loads customers from storage/API
 - **refreshCustomers**: Refreshes customer data
-- **addCustomer**: Adds new customer
-- **updateCustomer**: Updates existing customer
+- **setSelectedCustomer**: Sets currently selected customer
+- **Customer Interface**: Type definition for customer data structure
 
 ### `context/NetworkContext.tsx`
 - **NetworkProvider**: Network status context provider
@@ -146,14 +172,26 @@ Route wrapper that ensures user authentication before accessing protected pages.
 ## 📁 Examples
 
 ### `examples/offlineFirstPatterns.ts`
+Comprehensive example file demonstrating offline-first implementation patterns:
+- **wrongSaleCreation**: Example of incorrect conditional online/offline logic
+- **wrongDataFetch**: Example of incorrect network-dependent data fetching
 - **correctSaleCreation**: Example of proper offline-first sale creation
+- **correctDataFetch**: Example of proper local-first data fetching with background sync
+- **correctSearchImplementation**: Example of local search with server enhancement
+- **correctSyncImplementation**: Example of proper background sync implementation
 - **correctCustomerCreation**: Example of proper offline-first customer creation
-- **correctDataFetch**: Example of proper offline-first data fetching
 - **handleFormSubmit**: Example form submission with offline support
 - **handleSearch**: Example search with offline fallback
 - **handleOnlineTransition**: Example online transition handling
 - **handleOfflineTransition**: Example offline transition handling
 - **robustOperation**: Example robust operation with retry logic
+
+---
+
+## 📁 Hooks
+
+### `hooks/use-mobile.tsx`
+- **useIsMobile**: Custom hook to detect if device is mobile based on screen width
 
 ---
 
@@ -188,21 +226,172 @@ Route wrapper that ensures user authentication before accessing protected pages.
 - **getProductsByCategory**: Gets products filtered by category
 - **saveContacts**: Saves contacts to IndexedDB
 - **getContacts**: Retrieves contacts from IndexedDB
+- **saveContact**: Saves single contact to IndexedDB
 - **saveSale**: Saves sale to IndexedDB
+- **getUnSyncedSales**: Gets sales not yet synced to server
 - **getSales**: Retrieves sales from IndexedDB
+- **getSaleById**: Retrieves specific sale by ID
+- **updateSale**: Updates existing sale data
 - **updateSaleWithSyncedData**: Updates sale with synced API data
 - **markSaleAsSynced**: Marks sale as successfully synced
 - **markSaleAsSyncFailed**: Marks sale as sync failed with error
+- **saveBusinessSettingsToDB**: Saves business settings to IndexedDB
+- **getBusinessSettingsFromDB**: Retrieves business settings from IndexedDB
+- **getLocalItem**: Gets item from localStorage
+- **setLocalItem**: Sets item in localStorage
+- **getLocalItemAsJson**: Gets and parses JSON item from localStorage
+- **saveSelectedLocationIdToDB**: Saves selected location ID to IndexedDB
+- **getSelectedLocationIdFromDB**: Retrieves selected location ID from IndexedDB
 
 ### `lib/utils.ts`
-- **cn**: Utility function for combining CSS class names
-- **formatCurrency**: Formats currency based on business settings
-- **formatDate**: Formats dates for display
-- **parseApiError**: Parses API errors into user-friendly messages
+Utility functions for common operations:
+- **cn**: Class name utility function for conditional CSS classes
 
 ---
 
 ## 📁 Pages
+
+### `pages/Customers.tsx`
+- **Customers**: Main customer management page with list and search functionality
+
+### `pages/Dashboard.tsx`
+- **Dashboard**: Main dashboard page with overview statistics and quick actions
+
+### `pages/Index.tsx`
+- **Index**: Landing page component that redirects to appropriate route
+
+### `pages/Login.tsx`
+- **Login**: Authentication page with login form and validation
+
+### `pages/NotFound.tsx`
+- **NotFound**: 404 error page for undefined routes
+
+### `pages/POS.tsx`
+- **POS**: Main point of sale interface with product grid, cart, and checkout
+
+### `pages/Products.tsx`
+- **Products**: Product management page with product listing and search
+
+### `pages/Sales.tsx`
+- **Sales**: Sales history and management page with pagination
+- **handleEditSale**: Loads sale data into cart for editing
+- **handlePrintReceipt**: Generates and prints app-based receipt
+- **handlePrintBill**: Opens backend invoice URL for printing
+- **handleSync**: Manually syncs individual sale
+- **formatAmount**: Formats currency amounts based on business settings
+
+### `pages/Settings.tsx`
+- **Settings**: Application settings and configuration page
+
+---
+
+## 📁 Services
+
+### `services/api.ts`
+Main API service with comprehensive backend integration:
+- **login**: User authentication
+- **getCurrentUser**: Get current user data
+- **fetchBusinessDetails**: Get business settings and configuration
+- **fetchProducts**: Get products with pagination
+- **fetchContacts**: Get contacts with filtering
+- **createContact**: Create new contact
+- **createSale**: Create new sale transaction
+- **fetchSales**: Get sales data with pagination
+- **getAttendance**: Get user attendance data
+- **clockIn**: Clock in attendance
+- **clockOut**: Clock out attendance
+- **saveCallLog**: Save call log entry
+- **listExpenses**: List expenses with filtering
+- **createExpense**: Create new expense
+- **updateExpense**: Update existing expense
+- **deleteExpense**: Delete expense
+- **getExpenseById**: Get specific expense by ID
+
+### `services/locationService.ts`
+Business location management service:
+- **getLocations**: Get all available business locations
+- **getSelectedLocationId**: Get currently selected location ID
+- **setSelectedLocationId**: Set selected location ID
+- **getSelectedLocation**: Get currently selected location object
+- **isValidLocationId**: Validate location ID
+- **autoSelectLocation**: Auto-select valid location
+- **ensureValidLocation**: Ensure a valid location is selected
+
+### `services/syncQueue.ts`
+Queue management system for offline operations:
+- **initSyncQueueDB**: Initialize sync queue IndexedDB
+- **queueOperation**: Add operation to sync queue
+- **getOperationsByStatus**: Get operations by status
+- **getOperationsByType**: Get operations by type
+- **updateOperationStatus**: Update operation status
+- **cleanupCompletedOperations**: Clean up old completed operations
+- **getLastSyncTimestamp**: Get last sync timestamp
+- **updateLastSyncTimestamp**: Update last sync timestamp
+- **isSyncNeeded**: Check if sync is needed
+- **deleteOperation**: Delete specific operation
+- **getQueueStats**: Get queue statistics
+- **processQueue**: Process pending operations
+- **processSaleOperation**: Process sale sync operation
+
+### `services/syncService.ts`
+Main synchronization service:
+- **syncOfflineSales**: Sync offline sales to server
+- **processFailedOperations**: Retry failed operations
+- **syncData**: Main data synchronization function
+- **syncDataOnLogin**: Sync data after user login
+- **startBackgroundSync**: Start background sync process
+- **stopBackgroundSync**: Stop background sync process
+
+---
+
+## 📁 Types
+
+### `types/performance.d.ts`
+- **PerformanceEventTiming**: Interface for performance event timing data
+
+---
+
+## 📁 Utils
+
+### `utils/apiUtils.ts`
+API utility functions:
+- **delay**: Promise-based delay function
+- **withRetry**: Retry function with exponential backoff
+
+### `utils/backgroundSync.ts`
+Background task management utilities:
+- **queueBackgroundTask**: Queue background task with unique ID
+- **isTaskQueued**: Check if task is currently queued
+- **getQueuedTaskCount**: Get count of queued tasks
+- **clearQueuedTasks**: Clear all queued tasks
+- **performWhenOnline**: Execute function when network is available
+- **BackgroundTasks**: Enum of background task types
+
+### `utils/dateUtils.ts`
+Date and time utility functions:
+- **getBusinessTimestamp**: Get current timestamp in business timezone
+- **formatBusinessDate**: Format date according to business settings
+- **parseBusinessDate**: Parse date string in business timezone
+- **getTimezoneOffset**: Get timezone offset for business location
+
+### `utils/formatting.ts`
+Formatting utility functions:
+- **formatCurrency**: Async currency formatting with business settings
+- **formatCurrencySync**: Synchronous currency formatting
+- **formatNumber**: Number formatting utilities
+- **formatPercentage**: Percentage formatting
+
+### `utils/productUtils.ts`
+Product-related utility functions:
+- **PRODUCT_PLACEHOLDER_SVG**: Default product image placeholder
+- **extractProductPrice**: Extract price from product variations
+- **extractProductStock**: Extract stock from product variations
+- **formatProductForCart**: Format product data for cart
+- **getProductImage**: Get product image URL with fallback
+- **calculateDiscountedPrice**: Calculate discounted price
+- **isProductInStock**: Check if product is in stock
+- **getProductsBySearchTerm**: Search products by term
+- **sortProducts**: Sort products by various criteria
 
 ### `pages/Customers.tsx`
 - **Customers**: Main customers page with list and search functionality
@@ -371,7 +560,45 @@ Route wrapper that ensures user authentication before accessing protected pages.
 
 ---
 
-## 📚 Dependencies
+## � Key Features
+
+### Offline-First Architecture
+- All data operations work offline with automatic sync when online
+- Queue-based sync system with retry logic
+- Local IndexedDB storage for products, customers, and sales
+
+### Point of Sale (POS)
+- Product browsing with search and category filters
+- Shopping cart management
+- Multiple payment methods
+- Receipt generation and printing
+
+### Sales Management
+- Sales history with pagination
+- Edit existing sales functionality
+- Print receipts and official invoices
+- Sync status tracking
+
+### Customer Management
+- Customer database with search
+- Add/edit customer information
+- Customer selection in POS
+
+### Sync System
+- Background sync with retry logic
+- Queue management for failed operations
+- Manual sync options
+- Network status monitoring
+
+### Business Settings
+- Multi-location support
+- Currency formatting
+- Timezone handling
+- Business configuration management
+
+---
+
+## �📚 Dependencies
 
 ### Core Technologies
 - **React 18**: UI framework
