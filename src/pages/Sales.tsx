@@ -71,17 +71,19 @@ const Sales = () => {
 
   const handlePageChange = (page: number) => {
     loadSales(page);
-  };
-  const handleSync = async (sale: any) => {
+  };  const handleSync = async (sale: any) => {
     try {
       // Remove local properties before queuing
-      const { local_id, is_synced, ...saleData } = sale;
+      const { local_id, is_synced, sync_error, ...saleData } = sale;
+      
+      // Use the sale's primary key (local_id or id) for sync
+      const saleKey = sale.local_id || sale.id;
       
       // Always queue the operation for sync (offline-first approach)
-      await queueOperation('sale', { local_id, saleData });
+      await queueOperation('sale', { local_id: saleKey, saleData });
       
-      // Mark as synced locally since it's now queued
-      await markSaleAsSynced(local_id);
+      // Mark as queued for sync
+      await markSaleAsSynced(saleKey);
       
       // Refresh data
       loadSales(pagination.page);
@@ -96,68 +98,123 @@ const Sales = () => {
       console.error('Error queuing sale for sync:', error);
       toast.error('Failed to queue sale for sync');
     }
-  };
-  const handleEditSale = (sale: any) => {
-    clearCart();
-    
-    // Handle both local sales (sell_lines) and synced sales structure
-    const saleLines = sale.sell_lines || [];
-    
-    if (saleLines.length === 0) {
-      toast.warning('This sale has no items to edit');
-      return;
-    }
-    
-    saleLines.forEach((line: any) => {
-      // Handle different product name sources
-      const productName = line.product?.name || line.name || `Product ${line.product_id}`;
-      const productSku = line.product?.sku || line.sku || '';
+  };const handleEditSale = async (sale: any) => {
+    try {
+      clearCart();
       
-      addItem({
-        product_id: line.product_id,
-        variation_id: line.variation_id,
-        name: productName,
-        sku: productSku,
-        price: parseFloat(line.unit_price_inc_tax || line.unit_price || 0),
-        quantity: parseInt(line.quantity, 10),
-        discount: parseFloat(line.line_discount_amount || 0),
-        tax: parseFloat(line.item_tax || 0),
-        total: parseFloat(line.unit_price_inc_tax || line.unit_price || 0) * parseInt(line.quantity, 10),
+      // Handle both local sales (sell_lines) and synced sales structure
+      const saleLines = sale.sell_lines || [];
+      
+      if (!saleLines || saleLines.length === 0) {
+        toast.warning('This sale has no items to edit');
+        return;
+      }
+      
+      // Load products data to get product names
+      const { getProducts } = await import('@/lib/storage');
+      const allProducts = await getProducts();
+      
+      saleLines.forEach((line: any) => {
+        // Try to find product info from stored products
+        const productInfo = allProducts.find(p => p.id === line.product_id);
+        
+        // Handle different product name sources with fallbacks
+        const productName = line.product?.name || 
+                           productInfo?.name || 
+                           line.name || 
+                           `Product ${line.product_id}`;
+        const productSku = line.product?.sku || 
+                          productInfo?.sku || 
+                          line.sku || 
+                          '';
+        
+        addItem({
+          product_id: line.product_id,
+          variation_id: line.variation_id,
+          name: productName,
+          sku: productSku,
+          price: parseFloat(line.unit_price_inc_tax || line.unit_price || 0),
+          quantity: parseFloat(line.quantity) || 1,
+          discount: parseFloat(line.line_discount_amount || 0),
+          tax: parseFloat(line.item_tax || 0),
+          total: parseFloat(line.unit_price_inc_tax || line.unit_price || 0) * (parseFloat(line.quantity) || 1),
+        });
       });
-    });
-    
-    if (sale.contact) {
-      setCustomer(sale.contact);
+      
+      // Set customer if available
+      if (sale.contact) {
+        setCustomer(sale.contact);
+      }
+      
+      // Set editing mode with the sale's ID (use id for synced sales, local_id for local sales)
+      const saleId = sale.id || sale.local_id;
+      setEditingSale(saleId);
+      
+      navigate('/pos');
+      toast.success('Sale loaded for editing');
+    } catch (error) {
+      console.error('Error loading sale for editing:', error);
+      toast.error('Failed to load sale for editing');
     }
-    
-    setEditingSale(sale.local_id);
-    navigate('/pos');
   };
-
   const handlePrintReceipt = (sale: any) => {
-    // This is a placeholder for the actual receipt printing logic
-    // You would typically generate a printable HTML receipt and open it in a new window
-    const receiptContent = `
-      <h1>Receipt for Sale #${sale.invoice_no || sale.local_id}</h1>
-      <p>Date: ${new Date(sale.transaction_date).toLocaleString()}</p>
-      <hr />
-      <h2>Items:</h2>
-      <ul>
-        ${sale.sell_lines.map((item: any) => `<li>${item.product.name} - ${item.quantity} x ${formatAmount(item.unit_price_inc_tax)}</li>`).join('')}
-      </ul>
-      <hr />
-      <h3>Total: ${formatAmount(sale.final_total)}</h3>
-    `;
-    const printWindow = window.open('', '_blank');
-    printWindow?.document.write(receiptContent);
-    printWindow?.document.close();
-    printWindow?.print();
-    toast.info(`Printing receipt for sale #${sale.invoice_no || sale.local_id}`);
-  };
+    try {
+      // Generate HTML receipt content
+      const saleLines = sale.sell_lines || [];
+      const itemsHtml = saleLines.map((item: any) => {
+        const productName = item.product?.name || item.name || `Product ${item.product_id}`;
+        const quantity = item.quantity || 1;
+        const price = item.unit_price_inc_tax || item.unit_price || 0;
+        return `<li>${productName} - ${quantity} x ${formatAmount(price)}</li>`;
+      }).join('');
 
+      const receiptContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Receipt - Sale #${sale.invoice_no || sale.local_id}</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            h1 { color: #333; }
+            hr { border: 1px solid #ccc; }
+            ul { list-style-type: none; padding: 0; }
+            li { margin: 5px 0; }
+            .total { font-weight: bold; font-size: 18px; }
+          </style>
+        </head>
+        <body>
+          <h1>Receipt for Sale #${sale.invoice_no || sale.local_id}</h1>
+          <p><strong>Date:</strong> ${new Date(sale.transaction_date).toLocaleString()}</p>
+          <p><strong>Customer:</strong> ${sale.contact?.name || 'Walk-in Customer'}</p>
+          <hr />
+          <h2>Items:</h2>
+          <ul>${itemsHtml}</ul>
+          <hr />
+          <p class="total">Total: ${formatAmount(sale.final_total)}</p>
+        </body>
+        </html>
+      `;
+      
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(receiptContent);
+        printWindow.document.close();
+        printWindow.print();
+        toast.success(`Receipt opened for printing`);
+      } else {
+        toast.error('Unable to open print window. Please check popup blocker settings.');
+      }
+    } catch (error) {
+      console.error('Error generating receipt:', error);
+      toast.error('Failed to generate receipt');
+    }
+  };
   const handlePrintBill = (invoiceUrl: string) => {
     if (invoiceUrl) {
       window.open(invoiceUrl, '_blank');
+      toast.success('Official bill opened in new window');
+    } else {
+      toast.error('Invoice URL not available');
     }
   };
 
@@ -237,10 +294,10 @@ const Sales = () => {
                         </DropdownMenuItem>
                         {sale.invoice_url && (
                           <DropdownMenuItem onClick={() => handlePrintBill(sale.invoice_url)}>
-                            Print Bill
+                            Print Official Bill
                           </DropdownMenuItem>
                         )}
-                        {!sale.is_synced && !sale.sync_error && (
+                        {(!sale.is_synced || sale.sync_error) && (
                            <DropdownMenuItem onClick={() => handleSync(sale)}>
                              Sync Now
                            </DropdownMenuItem>

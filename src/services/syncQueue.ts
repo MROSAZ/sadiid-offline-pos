@@ -215,8 +215,11 @@ export const processQueue = async (): Promise<void> => {
 const processSaleOperation = async (operation: QueuedOperation): Promise<void> => {
   const localSaleId = operation.data.local_id;
   try {
-    // The data for createSale is nested in saleData
-    const saleResponse = await createSale(operation.data.saleData);
+    // Extract sale data - handle both nested and direct formats
+    const saleData = operation.data.saleData || operation.data;
+    
+    // Create sale via API
+    const saleResponse = await createSale(saleData);
     
     if (saleResponse.success && saleResponse.data) {
       // Extract the synced sale data from API response (could be array or single object)
@@ -231,25 +234,27 @@ const processSaleOperation = async (operation: QueuedOperation): Promise<void> =
       await updateSaleWithSyncedData(localSaleId, syncedSaleData);
       await updateOperationStatus(operation.id, 'completed');
       console.log(`✅ Sale with local_id ${localSaleId} synced successfully and updated locally.`);
-      
-      // Notify user of successful sync
-      toast.success(`Sale synced successfully!`);
     } else {
       const errorMsg = saleResponse.error || 'Sync failed: API did not return sale data';
       await updateOperationStatus(operation.id, 'failed', errorMsg);
       await markSaleAsSyncFailed(localSaleId, errorMsg);
-      
-      // Notify user of sync failure with specific error message
-      toast.error(`Sync failed: ${errorMsg}. Please check and edit the sale if needed.`);
+      console.error(`❌ Sale sync failed: ${errorMsg}`);
     }
   } catch (error: any) {
     console.error(`❌ Failed to sync sale with local_id ${localSaleId}:`, error);
-    const errorMessage = error.response?.data?.message || error.message || 'Unknown error';
+    
+    // Extract meaningful error message
+    let errorMessage = 'Unknown error';
+    if (error.response?.data?.message) {
+      errorMessage = error.response.data.message;
+    } else if (error.response?.data?.error) {
+      errorMessage = error.response.data.error;
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
     await updateOperationStatus(operation.id, 'failed', errorMessage);
     await markSaleAsSyncFailed(localSaleId, errorMessage);
-    
-    // Notify user of error with option to edit
-    toast.error(`Sync error: ${errorMessage}. Please edit the sale and try again.`);
   }
 };
 

@@ -121,16 +121,16 @@ const POSOrderDetails = () => {  const { cart, getSubtotal, getTotal, updateQuan
       
       setProcessingProgress(50);
       await new Promise(resolve => setTimeout(resolve, 300));
-      
-      if (isEditingMode) {
-        // Update existing sale - store locally and queue for sync
-        await saveSale({ ...saleData, local_id: cart.editingSaleId });
+        if (isEditingMode) {
+        // Update existing sale - update the existing sale record and queue for sync
+        const { updateSale } = await import('@/lib/storage');
+        await updateSale(cart.editingSaleId, saleData);
         await queueOperation('sale', { local_id: cart.editingSaleId, saleData });
         toast.success('Sale updated successfully');
       } else {
         // Create new sale - offline-first: Always store locally first, then queue for sync
-        await saveSale(saleData);
-        await queueOperation('sale', saleData);
+        const savedSale = await saveSale(saleData);
+        await queueOperation('sale', { local_id: savedSale, saleData });
         toast.success('Sale completed successfully');
       }
       
