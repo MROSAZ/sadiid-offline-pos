@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from 'react'; // Remove useMemo import if not used
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getSales, markSaleAsSynced } from '@/lib/storage';
 import { queueOperation } from '@/services/syncQueue';
 import { useNetwork } from '@/context/NetworkContext';
+import { useCart } from '@/context/CartContext';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { 
@@ -16,6 +18,8 @@ import { Badge } from "@/components/ui/badge";
 import { formatCurrencySync } from '@/utils/formatting';
 import { getBusinessSettings } from '@/lib/businessSettings';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { MoreVertical } from 'lucide-react';
 
 const Sales = () => {
   const [sales, setSales] = useState<any[]>([]);
@@ -28,6 +32,8 @@ const Sales = () => {
   });
   const [businessSettings, setBusinessSettings] = useState(null);
   const { isOnline } = useNetwork();
+  const navigate = useNavigate();
+  const { clearCart, addItem, setCustomer, setEditingSale } = useCart();
 
   // Load business settings at component mount
   useEffect(() => {
@@ -63,21 +69,21 @@ const Sales = () => {
     }
   };
 
-  // Removed second useEffect that was just calling loadSales()
-
   const handlePageChange = (page: number) => {
     loadSales(page);
-  };
-  const handleSync = async (sale: any) => {
+  };  const handleSync = async (sale: any) => {
     try {
       // Remove local properties before queuing
-      const { local_id, is_synced, ...saleData } = sale;
+      const { local_id, is_synced, sync_error, ...saleData } = sale;
+      
+      // Use the sale's primary key (local_id or id) for sync
+      const saleKey = sale.local_id || sale.id;
       
       // Always queue the operation for sync (offline-first approach)
-      await queueOperation('sale', { local_id, saleData });
+      await queueOperation('sale', { local_id: saleKey, saleData });
       
-      // Mark as synced locally since it's now queued
-      await markSaleAsSynced(local_id);
+      // Mark as queued for sync
+      await markSaleAsSynced(saleKey);
       
       // Refresh data
       loadSales(pagination.page);
@@ -92,18 +98,137 @@ const Sales = () => {
       console.error('Error queuing sale for sync:', error);
       toast.error('Failed to queue sale for sync');
     }
+  };const handleEditSale = async (sale: any) => {
+    try {
+      clearCart();
+      
+      // Handle both local sales (sell_lines) and synced sales structure
+      const saleLines = sale.sell_lines || [];
+      
+      if (!saleLines || saleLines.length === 0) {
+        toast.warning('This sale has no items to edit');
+        return;
+      }
+      
+      // Load products data to get product names
+      const { getProducts } = await import('@/lib/storage');
+      const allProducts = await getProducts();
+      
+      saleLines.forEach((line: any) => {
+        // Try to find product info from stored products
+        const productInfo = allProducts.find(p => p.id === line.product_id);
+        
+        // Handle different product name sources with fallbacks
+        const productName = line.product?.name || 
+                           productInfo?.name || 
+                           line.name || 
+                           `Product ${line.product_id}`;
+        const productSku = line.product?.sku || 
+                          productInfo?.sku || 
+                          line.sku || 
+                          '';
+        
+        addItem({
+          product_id: line.product_id,
+          variation_id: line.variation_id,
+          name: productName,
+          sku: productSku,
+          price: parseFloat(line.unit_price_inc_tax || line.unit_price || 0),
+          quantity: parseFloat(line.quantity) || 1,
+          discount: parseFloat(line.line_discount_amount || 0),
+          tax: parseFloat(line.item_tax || 0),
+          total: parseFloat(line.unit_price_inc_tax || line.unit_price || 0) * (parseFloat(line.quantity) || 1),
+        });
+      });
+      
+      // Set customer if available
+      if (sale.contact) {
+        setCustomer(sale.contact);
+      }
+      
+      // Set editing mode with the sale's ID (use id for synced sales, local_id for local sales)
+      const saleId = sale.id || sale.local_id;
+      setEditingSale(saleId);
+      
+      navigate('/pos');
+      toast.success('Sale loaded for editing');
+    } catch (error) {
+      console.error('Error loading sale for editing:', error);
+      toast.error('Failed to load sale for editing');
+    }
+  };
+  const handlePrintReceipt = (sale: any) => {
+    try {
+      // Generate HTML receipt content
+      const saleLines = sale.sell_lines || [];
+      const itemsHtml = saleLines.map((item: any) => {
+        const productName = item.product?.name || item.name || `Product ${item.product_id}`;
+        const quantity = item.quantity || 1;
+        const price = item.unit_price_inc_tax || item.unit_price || 0;
+        return `<li>${productName} - ${quantity} x ${formatAmount(price)}</li>`;
+      }).join('');
+
+      const receiptContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Receipt - Sale #${sale.invoice_no || sale.local_id}</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            h1 { color: #333; }
+            hr { border: 1px solid #ccc; }
+            ul { list-style-type: none; padding: 0; }
+            li { margin: 5px 0; }
+            .total { font-weight: bold; font-size: 18px; }
+          </style>
+        </head>
+        <body>
+          <h1>Receipt for Sale #${sale.invoice_no || sale.local_id}</h1>
+          <p><strong>Date:</strong> ${new Date(sale.transaction_date).toLocaleString()}</p>
+          <p><strong>Customer:</strong> ${sale.contact?.name || 'Walk-in Customer'}</p>
+          <hr />
+          <h2>Items:</h2>
+          <ul>${itemsHtml}</ul>
+          <hr />
+          <p class="total">Total: ${formatAmount(sale.final_total)}</p>
+        </body>
+        </html>
+      `;
+      
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(receiptContent);
+        printWindow.document.close();
+        printWindow.print();
+        toast.success(`Receipt opened for printing`);
+      } else {
+        toast.error('Unable to open print window. Please check popup blocker settings.');
+      }
+    } catch (error) {
+      console.error('Error generating receipt:', error);
+      toast.error('Failed to generate receipt');
+    }
+  };
+  const handlePrintBill = (invoiceUrl: string) => {
+    if (invoiceUrl) {
+      window.open(invoiceUrl, '_blank');
+      toast.success('Official bill opened in new window');
+    } else {
+      toast.error('Invoice URL not available');
+    }
   };
 
   // Create a formatter function - regular function, not using hooks
-  const formatAmount = (payment: any) => {
-    if (!payment || !payment[0]) return 'N/A';
+  const formatAmount = (amount: number | string) => {
+    const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+    if (isNaN(numericAmount)) return 'N/A';
     
     // Use sync version if available or default formatting
-    if (typeof formatCurrencySync === 'function' && businessSettings) {
-      return formatCurrencySync(payment[0].amount, businessSettings);
+    if (businessSettings) {
+      return formatCurrencySync(numericAmount, businessSettings);
     } else {
       // Fallback to simple formatting
-      return `$${parseFloat(payment[0].amount).toFixed(2)}`;
+      return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(numericAmount);
     }
   };
 
@@ -121,66 +246,69 @@ const Sales = () => {
 
       {loading ? (
         <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sadiid-600"></div>
+          <p>Loading sales...</p>
         </div>
       ) : (
         <>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Total</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sales.length > 0 ? (
-                  sales.map((sale) => (
-                    <TableRow key={sale.local_id}>
-                      <TableCell>{sale.local_id}</TableCell>
-                      <TableCell>
-                        {new Date(sale.transaction_date).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        {sale.customer_id || 'Walk-in Customer'}
-                      </TableCell>
-                      <TableCell>
-                        {formatAmount(sale.payment)}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={sale.is_synced ? "success" : "destructive"}>
-                          {sale.is_synced ? 'Synced' : 'Not Synced'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {!sale.is_synced && (
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            disabled={!isOnline}
-                            onClick={() => handleSync(sale)}
-                          >
-                            Sync
-                          </Button>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Invoice No.</TableHead>
+                <TableHead>Customer</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Total</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sales.map((sale) => (
+                <TableRow key={sale.local_id}>
+                  <TableCell>{sale.invoice_no || `Local-${sale.local_id}`}</TableCell>
+                  <TableCell>{sale.contact?.name || 'N/A'}</TableCell>
+                  <TableCell>{new Date(sale.transaction_date).toLocaleDateString()}</TableCell>
+                  <TableCell>{formatAmount(sale.final_total)}</TableCell>
+                  <TableCell>
+                    {sale.is_synced === 1 && !sale.sync_error ? (
+                      <Badge variant="success">Synced</Badge>
+                    ) : sale.sync_error ? (
+                      <Badge variant="destructive">Failed</Badge>
+                    ) : (
+                      <Badge variant="outline">Pending</Badge>
+                    )}
+                    {sale.sync_error && <p className="text-xs text-red-500 mt-1">{sale.sync_error}</p>}
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <span className="sr-only">Open menu</span>
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleEditSale(sale)}>
+                          Edit Sale
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handlePrintReceipt(sale)}>
+                          Print Receipt
+                        </DropdownMenuItem>
+                        {sale.invoice_url && (
+                          <DropdownMenuItem onClick={() => handlePrintBill(sale.invoice_url)}>
+                            Print Official Bill
+                          </DropdownMenuItem>
                         )}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-4 text-gray-500">
-                      No sales found
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-          
+                        {(!sale.is_synced || sale.sync_error) && (
+                           <DropdownMenuItem onClick={() => handleSync(sale)}>
+                             Sync Now
+                           </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
           {pagination.totalPages > 1 && (
             <Pagination className="mt-4">
               <PaginationContent>

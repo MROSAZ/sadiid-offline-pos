@@ -250,19 +250,85 @@ export const getUnSyncedSales = async () => {
   return db.getAllFromIndex('sales', 'by-sync', 0);
 };
 
-export const markSaleAsSynced = async (id: number): Promise<boolean> => {
+export const markSaleAsSynced = async (id: number | string): Promise<boolean> => {
   try {
     const db = await getDB();
-    const sale = await db.get('sales', id);
+    const tx = db.transaction('sales', 'readwrite');
+    
+    // If ID is numeric, try to get sale directly
+    let sale = null;
+    if (typeof id === 'number') {
+      sale = await tx.store.get(id);
+    }
+    
+    // If not found or ID is a string, search through all sales
+    if (!sale) {
+      const allSales = await tx.store.getAll();
+      sale = allSales.find(s => 
+        s.local_id === id || 
+        s.id === id || 
+        s.local_id === id.toString() || 
+        s.id === id.toString()
+      );
+    }
+    
     if (sale) {
       sale.is_synced = 1;
-      await db.put('sales', sale);
+      await tx.store.put(sale);
+      await tx.done;
+      return true;
     }
-    return true;
   } catch (error) {
     console.error('Error marking sale as synced:', error);
-    return false;
   }
+  return false;
+};
+
+export const updateSaleWithSyncedData = async (localId: number | string, syncedData: any): Promise<void> => {
+  const db = await getDB();
+  const tx = db.transaction('sales', 'readwrite');
+  
+  // Get all sales and find the one with matching local_id
+  const allSales = await tx.store.getAll();
+  const sale = allSales.find(s => 
+    s.local_id === localId || 
+    s.id === localId || 
+    s.local_id === localId.toString() || 
+    s.id === localId.toString()
+  );
+  
+  if (sale) {
+    const updatedSale = { ...sale, ...syncedData, is_synced: 1, sync_error: null };
+    await tx.store.put(updatedSale);
+    console.log(`Sale ${localId} updated with synced data.`);
+  } else {
+    console.warn(`Sale with local_id ${localId} not found for updating.`);
+  }
+  await tx.done;
+};
+
+export const markSaleAsSyncFailed = async (localId: number | string, error: string): Promise<void> => {
+  const db = await getDB();
+  const tx = db.transaction('sales', 'readwrite');
+  
+  // Get all sales and find the one with matching local_id
+  const allSales = await tx.store.getAll();
+  const sale = allSales.find(s => 
+    s.local_id === localId || 
+    s.id === localId || 
+    s.local_id === localId.toString() || 
+    s.id === localId.toString()
+  );
+  
+  if (sale) {
+    sale.is_synced = 0; // Keep it as unsynced
+    sale.sync_error = error;
+    await tx.store.put(sale);
+    console.log(`Sale ${localId} marked as sync failed.`);
+  } else {
+    console.warn(`Sale with local_id ${localId} not found for marking as failed.`);
+  }
+  await tx.done;
 };
 
 export const getSales = async (page = 1, limit = 20) => {
@@ -285,6 +351,59 @@ export const getSales = async (page = 1, limit = 20) => {
     limit,
     totalPages: Math.ceil(allSales.length / limit)
   };
+};
+
+// Get sale by ID (local_id or id)
+export const getSaleById = async (saleId: string | number): Promise<any | null> => {
+  try {
+    const db = await getDB();
+    const allSales = await db.getAll('sales');
+    
+    // Try to find by local_id first, then by id
+    const sale = allSales.find(s => 
+      s.local_id === saleId || 
+      s.id === saleId || 
+      s.local_id === saleId.toString() || 
+      s.id === saleId.toString()
+    );
+    
+    return sale || null;
+  } catch (error) {
+    console.error('Error getting sale by ID:', error);
+    return null;
+  }
+};
+
+// Update sale data (for editing)
+export const updateSale = async (saleId: string | number, updatedData: any): Promise<boolean> => {
+  try {
+    const db = await getDB();
+    const tx = db.transaction('sales', 'readwrite');
+    const allSales = await tx.store.getAll();
+    
+    // Find the sale by local_id or id
+    const sale = allSales.find(s => 
+      s.local_id === saleId || 
+      s.id === saleId || 
+      s.local_id === saleId.toString() || 
+      s.id === saleId.toString()
+    );
+    
+    if (sale) {
+      // Update the sale with new data
+      const updated = { ...sale, ...updatedData, is_synced: 0, sync_error: null };
+      await tx.store.put(updated);
+      await tx.done;
+      console.log(`Sale ${saleId} updated successfully`);
+      return true;
+    } else {
+      console.warn(`Sale with ID ${saleId} not found for updating`);
+      return false;
+    }
+  } catch (error) {
+    console.error('Error updating sale:', error);
+    return false;
+  }
 };
 
 // Business settings

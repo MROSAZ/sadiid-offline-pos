@@ -20,6 +20,8 @@ interface CartState {
   tax: number;
   note: string;
   location_id: number | null;
+  customer: any | null;
+  editingSaleId: string | null;
 }
 
 type CartAction =
@@ -30,14 +32,18 @@ type CartAction =
   | { type: 'SET_DISCOUNT'; payload: number }
   | { type: 'SET_TAX'; payload: number }
   | { type: 'SET_NOTE'; payload: string }
-  | { type: 'SET_LOCATION'; payload: number };
+  | { type: 'SET_LOCATION'; payload: number }
+  | { type: 'SET_CUSTOMER'; payload: any | null }
+  | { type: 'SET_EDITING_SALE'; payload: string | null };
 
 const initialState: CartState = {
   items: [],
   discount: 0,
   tax: 0,
   note: '',
-  location_id: null
+  location_id: null,
+  customer: null,
+  editingSaleId: null,
 };
 
 const cartReducer = (state: CartState, action: CartAction): CartState => {
@@ -89,6 +95,8 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
       return {
         ...initialState,
         location_id: state.location_id,
+        customer: null,
+        editingSaleId: null,
       };
     
     case 'SET_DISCOUNT':
@@ -103,6 +111,12 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
     case 'SET_LOCATION':
       return { ...state, location_id: action.payload };
     
+    case 'SET_CUSTOMER':
+      return { ...state, customer: action.payload };
+
+    case 'SET_EDITING_SALE':
+      return { ...state, editingSaleId: action.payload };
+
     default:
       return state;
   }
@@ -118,6 +132,8 @@ interface CartContextType {
   setTax: (amount: number) => void;
   setNote: (note: string) => void;
   setLocation: (id: number) => void;
+  setCustomer: (customer: any | null) => void;
+  setEditingSale: (id: string | null) => void;
   getSubtotal: () => number;
   getTotal: () => number;
 }
@@ -172,6 +188,14 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     dispatch({ type: 'SET_LOCATION', payload: id });
   };
   
+  const setCustomer = (customer: any | null) => {
+    dispatch({ type: 'SET_CUSTOMER', payload: customer });
+  };
+
+  const setEditingSale = (id: string | null) => {
+    dispatch({ type: 'SET_EDITING_SALE', payload: id });
+  };
+
   const getSubtotal = () => {
     return cart.items.reduce((sum, item) => sum + item.total, 0);
   };
@@ -208,6 +232,8 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       setTax,
       setNote,
       setLocation,
+      setCustomer,
+      setEditingSale,
       getSubtotal,
       getTotal
     }}>
