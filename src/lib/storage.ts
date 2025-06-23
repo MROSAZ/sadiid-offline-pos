@@ -253,16 +253,47 @@ export const getUnSyncedSales = async () => {
 export const markSaleAsSynced = async (id: number): Promise<boolean> => {
   try {
     const db = await getDB();
-    const sale = await db.get('sales', id);
+    const tx = db.transaction('sales', 'readwrite');
+    const sale = await tx.store.get(id);
     if (sale) {
       sale.is_synced = 1;
-      await db.put('sales', sale);
+      await tx.store.put(sale);
+      await tx.done;
+      return true;
     }
-    return true;
   } catch (error) {
     console.error('Error marking sale as synced:', error);
-    return false;
   }
+  return false;
+};
+
+export const updateSaleWithSyncedData = async (localId: number, syncedData: any): Promise<void> => {
+  const db = await getDB();
+  const tx = db.transaction('sales', 'readwrite');
+  const sale = await tx.store.get(localId);
+  if (sale) {
+    const updatedSale = { ...sale, ...syncedData, is_synced: 1, sync_error: null };
+    await tx.store.put(updatedSale);
+    console.log(`Sale ${localId} updated with synced data.`);
+  } else {
+    console.warn(`Sale with local_id ${localId} not found for updating.`);
+  }
+  await tx.done;
+};
+
+export const markSaleAsSyncFailed = async (localId: number, error: string): Promise<void> => {
+  const db = await getDB();
+  const tx = db.transaction('sales', 'readwrite');
+  const sale = await tx.store.get(localId);
+  if (sale) {
+    sale.is_synced = 0; // Keep it as unsynced
+    sale.sync_error = error;
+    await tx.store.put(sale);
+    console.log(`Sale ${localId} marked as sync failed.`);
+  } else {
+    console.warn(`Sale with local_id ${localId} not found for marking as failed.`);
+  }
+  await tx.done;
 };
 
 export const getSales = async (page = 1, limit = 20) => {

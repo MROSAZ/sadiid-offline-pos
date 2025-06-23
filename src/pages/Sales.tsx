@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from 'react'; // Remove useMemo import if not used
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getSales, markSaleAsSynced } from '@/lib/storage';
 import { queueOperation } from '@/services/syncQueue';
 import { useNetwork } from '@/context/NetworkContext';
+import { useCart } from '@/context/CartContext';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { 
@@ -16,6 +18,8 @@ import { Badge } from "@/components/ui/badge";
 import { formatCurrencySync } from '@/utils/formatting';
 import { getBusinessSettings } from '@/lib/businessSettings';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { MoreVertical } from 'lucide-react';
 
 const Sales = () => {
   const [sales, setSales] = useState<any[]>([]);
@@ -28,6 +32,8 @@ const Sales = () => {
   });
   const [businessSettings, setBusinessSettings] = useState(null);
   const { isOnline } = useNetwork();
+  const navigate = useNavigate();
+  const { clearCart, addItem, setCustomer, setEditingSale } = useCart();
 
   // Load business settings at component mount
   useEffect(() => {
@@ -63,8 +69,6 @@ const Sales = () => {
     }
   };
 
-  // Removed second useEffect that was just calling loadSales()
-
   const handlePageChange = (page: number) => {
     loadSales(page);
   };
@@ -93,17 +97,81 @@ const Sales = () => {
       toast.error('Failed to queue sale for sync');
     }
   };
+  const handleEditSale = (sale: any) => {
+    clearCart();
+    
+    // Handle both local sales (sell_lines) and synced sales structure
+    const saleLines = sale.sell_lines || [];
+    
+    if (saleLines.length === 0) {
+      toast.warning('This sale has no items to edit');
+      return;
+    }
+    
+    saleLines.forEach((line: any) => {
+      // Handle different product name sources
+      const productName = line.product?.name || line.name || `Product ${line.product_id}`;
+      const productSku = line.product?.sku || line.sku || '';
+      
+      addItem({
+        product_id: line.product_id,
+        variation_id: line.variation_id,
+        name: productName,
+        sku: productSku,
+        price: parseFloat(line.unit_price_inc_tax || line.unit_price || 0),
+        quantity: parseInt(line.quantity, 10),
+        discount: parseFloat(line.line_discount_amount || 0),
+        tax: parseFloat(line.item_tax || 0),
+        total: parseFloat(line.unit_price_inc_tax || line.unit_price || 0) * parseInt(line.quantity, 10),
+      });
+    });
+    
+    if (sale.contact) {
+      setCustomer(sale.contact);
+    }
+    
+    setEditingSale(sale.local_id);
+    navigate('/pos');
+  };
+
+  const handlePrintReceipt = (sale: any) => {
+    // This is a placeholder for the actual receipt printing logic
+    // You would typically generate a printable HTML receipt and open it in a new window
+    const receiptContent = `
+      <h1>Receipt for Sale #${sale.invoice_no || sale.local_id}</h1>
+      <p>Date: ${new Date(sale.transaction_date).toLocaleString()}</p>
+      <hr />
+      <h2>Items:</h2>
+      <ul>
+        ${sale.sell_lines.map((item: any) => `<li>${item.product.name} - ${item.quantity} x ${formatAmount(item.unit_price_inc_tax)}</li>`).join('')}
+      </ul>
+      <hr />
+      <h3>Total: ${formatAmount(sale.final_total)}</h3>
+    `;
+    const printWindow = window.open('', '_blank');
+    printWindow?.document.write(receiptContent);
+    printWindow?.document.close();
+    printWindow?.print();
+    toast.info(`Printing receipt for sale #${sale.invoice_no || sale.local_id}`);
+  };
+
+  const handlePrintBill = (invoiceUrl: string) => {
+    if (invoiceUrl) {
+      window.open(invoiceUrl, '_blank');
+    }
+  };
 
   // Create a formatter function - regular function, not using hooks
-  const formatAmount = (payment: any) => {
-    if (!payment || !payment[0]) return 'N/A';
+  const formatAmount = (amount: number | string) => {
+    const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+    if (isNaN(numericAmount)) return 'N/A';
     
     // Use sync version if available or default formatting
-    if (typeof formatCurrencySync === 'function' && businessSettings) {
-      return formatCurrencySync(payment[0].amount, businessSettings);
+    if (businessSettings) {
+      return formatCurrencySync(numericAmount, businessSettings);
     } else {
       // Fallback to simple formatting
-      return `$${parseFloat(payment[0].amount).toFixed(2)}`;
+      return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(numericAmount);
     }
   };
 
@@ -121,66 +189,69 @@ const Sales = () => {
 
       {loading ? (
         <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sadiid-600"></div>
+          <p>Loading sales...</p>
         </div>
       ) : (
         <>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Total</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sales.length > 0 ? (
-                  sales.map((sale) => (
-                    <TableRow key={sale.local_id}>
-                      <TableCell>{sale.local_id}</TableCell>
-                      <TableCell>
-                        {new Date(sale.transaction_date).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        {sale.customer_id || 'Walk-in Customer'}
-                      </TableCell>
-                      <TableCell>
-                        {formatAmount(sale.payment)}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={sale.is_synced ? "success" : "destructive"}>
-                          {sale.is_synced ? 'Synced' : 'Not Synced'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {!sale.is_synced && (
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            disabled={!isOnline}
-                            onClick={() => handleSync(sale)}
-                          >
-                            Sync
-                          </Button>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Invoice No.</TableHead>
+                <TableHead>Customer</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Total</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sales.map((sale) => (
+                <TableRow key={sale.local_id}>
+                  <TableCell>{sale.invoice_no || `Local-${sale.local_id}`}</TableCell>
+                  <TableCell>{sale.contact?.name || 'N/A'}</TableCell>
+                  <TableCell>{new Date(sale.transaction_date).toLocaleDateString()}</TableCell>
+                  <TableCell>{formatAmount(sale.final_total)}</TableCell>
+                  <TableCell>
+                    {sale.is_synced === 1 && !sale.sync_error ? (
+                      <Badge variant="success">Synced</Badge>
+                    ) : sale.sync_error ? (
+                      <Badge variant="destructive">Failed</Badge>
+                    ) : (
+                      <Badge variant="outline">Pending</Badge>
+                    )}
+                    {sale.sync_error && <p className="text-xs text-red-500 mt-1">{sale.sync_error}</p>}
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <span className="sr-only">Open menu</span>
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleEditSale(sale)}>
+                          Edit Sale
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handlePrintReceipt(sale)}>
+                          Print Receipt
+                        </DropdownMenuItem>
+                        {sale.invoice_url && (
+                          <DropdownMenuItem onClick={() => handlePrintBill(sale.invoice_url)}>
+                            Print Bill
+                          </DropdownMenuItem>
                         )}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-4 text-gray-500">
-                      No sales found
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-          
+                        {!sale.is_synced && !sale.sync_error && (
+                           <DropdownMenuItem onClick={() => handleSync(sale)}>
+                             Sync Now
+                           </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
           {pagination.totalPages > 1 && (
             <Pagination className="mt-4">
               <PaginationContent>

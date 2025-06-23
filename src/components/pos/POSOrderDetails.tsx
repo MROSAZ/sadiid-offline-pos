@@ -25,7 +25,7 @@ import { cn } from '@/lib/utils';
 // For product placeholder
 const PLACEHOLDER_SVG = `data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M 20 70 Q 60 20, 100 70' fill='none' stroke='%239e9e9e' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E`;
 
-const POSOrderDetails = () => {  const { cart, getSubtotal, getTotal, updateQuantity, removeItem, clearCart } = useCart();
+const POSOrderDetails = () => {  const { cart, getSubtotal, getTotal, updateQuantity, removeItem, clearCart, setEditingSale } = useCart();
   const { isOnline } = useNetwork();
   const { selectedCustomer, setSelectedCustomer, customers, isLoading: customersLoading } = useCustomer();
   const { settings } = useBusinessSettings();
@@ -35,6 +35,9 @@ const POSOrderDetails = () => {  const { cart, getSubtotal, getTotal, updateQuan
   const [open, setOpen] = useState(false);
   const [customerSearch, setCustomerSearch] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('cash');
+  
+  // Check if we're in editing mode
+  const isEditingMode = cart.editingSaleId !== null;
   
   // Debug: Log customers when they change
   useEffect(() => {
@@ -74,8 +77,7 @@ const POSOrderDetails = () => {  const { cart, getSubtotal, getTotal, updateQuan
   const handleQuantityChange = (id: number, change: number, currentQty: number) => {
     const newQuantity = Math.max(1, currentQty + change);
     updateQuantity(id, newQuantity);
-  };
-    const handleProcessSale = async () => {
+  };    const handleProcessSale = async () => {
     if (cart.items.length === 0) {
       toast.error('Cannot create sale with no items');
       return;
@@ -120,21 +122,32 @@ const POSOrderDetails = () => {  const { cart, getSubtotal, getTotal, updateQuan
       setProcessingProgress(50);
       await new Promise(resolve => setTimeout(resolve, 300));
       
-      // Offline-first: Always store locally first, then queue for sync
-      await saveSale(saleData);
+      if (isEditingMode) {
+        // Update existing sale - store locally and queue for sync
+        await saveSale({ ...saleData, local_id: cart.editingSaleId });
+        await queueOperation('sale', { local_id: cart.editingSaleId, saleData });
+        toast.success('Sale updated successfully');
+      } else {
+        // Create new sale - offline-first: Always store locally first, then queue for sync
+        await saveSale(saleData);
+        await queueOperation('sale', saleData);
+        toast.success('Sale completed successfully');
+      }
+      
       setProcessingProgress(75);
       await new Promise(resolve => setTimeout(resolve, 300));
       
-      await queueOperation('sale', saleData);
       setProcessingProgress(100);
       await new Promise(resolve => setTimeout(resolve, 200));
       
-      // Clear cart and show immediate success
+      // Clear cart and editing state
       clearCart();
-      toast.success('Sale completed successfully');
+      if (isEditingMode) {
+        setEditingSale(null);
+      }
     } catch (error) {
       console.error('Error processing sale:', error);
-      toast.error('Failed to process sale');
+      toast.error(isEditingMode ? 'Failed to update sale' : 'Failed to process sale');
     } finally {
       setProcessing(false);
       setProcessingProgress(0);
@@ -377,8 +390,7 @@ const POSOrderDetails = () => {  const { cart, getSubtotal, getTotal, updateQuan
               <Progress value={processingProgress} className="w-full" />
             </div>
           )}
-          
-          {/* Action Buttons - Always Visible */}          <div className="space-y-2 mt-3">
+            {/* Action Buttons - Always Visible */}          <div className="space-y-2 mt-3">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button 
@@ -387,11 +399,16 @@ const POSOrderDetails = () => {  const { cart, getSubtotal, getTotal, updateQuan
                   onClick={handleProcessSale}
                   disabled={processing || cart.items.length === 0}
                 >
-                  {processing ? 'Processing...' : `Pay ${formatPrice(total)} (${paymentMethod.charAt(0).toUpperCase() + paymentMethod.slice(1)})`}
+                  {processing 
+                    ? (isEditingMode ? 'Updating...' : 'Processing...') 
+                    : isEditingMode 
+                      ? `Modify Sale ${formatPrice(total)}` 
+                      : `Pay ${formatPrice(total)} (${paymentMethod.charAt(0).toUpperCase() + paymentMethod.slice(1)})`
+                  }
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Complete the sale with {paymentMethod} payment</p>
+                <p>{isEditingMode ? 'Update the existing sale' : `Complete the sale with ${paymentMethod} payment`}</p>
               </TooltipContent>
             </Tooltip>
           </div></div>

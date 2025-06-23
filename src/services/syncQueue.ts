@@ -5,6 +5,10 @@
 import { openDB } from 'idb';
 import { toast } from 'sonner';
 import { getLocalItemAsJson, setLocalItem } from '@/lib/storage';
+import { createSale } from './api';
+import { createContact } from './api';
+import { clockIn, clockOut } from './api';
+import { updateSaleWithSyncedData, markSaleAsSyncFailed } from '@/lib/storage';
 
 // Define operation types that can be queued
 export type QueueableOperationType = 'sale' | 'customer' | 'attendance';
@@ -209,22 +213,43 @@ export const processQueue = async (): Promise<void> => {
 
 // Process sale operation
 const processSaleOperation = async (operation: QueuedOperation): Promise<void> => {
-  const { createSale } = await import('@/services/api');
-  const { markSaleAsSynced } = await import('@/lib/storage');
-  
+  const localSaleId = operation.data.local_id;
   try {
-    const { local_id, saleData } = operation.data;
-    const response = await createSale(saleData);
+    // The data for createSale is nested in saleData
+    const saleResponse = await createSale(operation.data.saleData);
     
-    if (response.success) {
-      await markSaleAsSynced(local_id);
+    if (saleResponse.success && saleResponse.data) {
+      // Extract the synced sale data from API response (could be array or single object)
+      let syncedSaleData = saleResponse.data;
+      
+      // If data is an array, take the first element
+      if (Array.isArray(syncedSaleData) && syncedSaleData.length > 0) {
+        syncedSaleData = syncedSaleData[0];
+      }
+      
+      // Store the complete API response data in IndexedDB for future use (receipts, etc.)
+      await updateSaleWithSyncedData(localSaleId, syncedSaleData);
       await updateOperationStatus(operation.id, 'completed');
-      console.log(`Successfully synced sale: ${local_id}`);
+      console.log(`✅ Sale with local_id ${localSaleId} synced successfully and updated locally.`);
+      
+      // Notify user of successful sync
+      toast.success(`Sale synced successfully!`);
     } else {
-      throw new Error(response.error || 'Sale sync failed');
+      const errorMsg = saleResponse.error || 'Sync failed: API did not return sale data';
+      await updateOperationStatus(operation.id, 'failed', errorMsg);
+      await markSaleAsSyncFailed(localSaleId, errorMsg);
+      
+      // Notify user of sync failure with specific error message
+      toast.error(`Sync failed: ${errorMsg}. Please check and edit the sale if needed.`);
     }
   } catch (error: any) {
-    throw new Error(`Sale sync failed: ${error.message}`);
+    console.error(`❌ Failed to sync sale with local_id ${localSaleId}:`, error);
+    const errorMessage = error.response?.data?.message || error.message || 'Unknown error';
+    await updateOperationStatus(operation.id, 'failed', errorMessage);
+    await markSaleAsSyncFailed(localSaleId, errorMessage);
+    
+    // Notify user of error with option to edit
+    toast.error(`Sync error: ${errorMessage}. Please edit the sale and try again.`);
   }
 };
 
