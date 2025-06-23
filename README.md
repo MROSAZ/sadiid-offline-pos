@@ -1,21 +1,32 @@
 # Sadiid Offline POS - Technical Documentation
 
-## Table of Contents
-1. [Overview](#overview)
-2. [Project Status](#project-status)
-3. [Technology Stack](#technology-stack)
-4. [Architecture](#architecture)
-5. [Core Features](#core-features)
-6. [Database Design](#database-design)
-7. [Synchronization System](#synchronization-system)
-8. [Authentication & Security](#authentication--security)
-9. [Offline Capabilities](#offline-capabilities)
-10. [UI Components](#ui-components)
-11. [Code Structure](#code-structure)
-12. [Performance Optimizations](#performance-optimizations)
-13. [PWA Implementation](#pwa-implementation)
-14. [Development & Deployment](#development--deployment)
-15. [Known Issues & Cleanup Plan](#known-issues--cleanup-plan)
+## 📚 Documentation Index
+
+### For New Developers
+- **[🚀 Developer Onboarding Guide](DEVELOPER_ONBOARDING.md)** - **START HERE!** Complete onboarding for new team members
+- **[🛠️ Technical Reference](TECHNICAL_REFERENCE.md)** - Quick reference for experienced developers
+
+### Detailed References
+- **[Developer Guide](DEVELOPER_GUIDE.md)** - Additional development patterns, troubleshooting, and API details
+- **[API Documentation](API_DOCUMENTATION.md)** - Complete API reference with examples
+- **[Deployment Guide](DEPLOYMENT_GUIDE.md)** - Setup, build, and deployment instructions
+- **[Complete Code Documentation](DOCUMENTATION.md)** - Detailed file and function reference
+
+### Technical Overview
+- [Overview](#overview)
+- [Project Status](#project-status) 
+- [Technology Stack](#technology-stack)
+- [Architecture](#architecture)
+- [Core Features](#core-features)
+- [Database Design](#database-design)
+- [Synchronization System](#synchronization-system)
+- [Authentication & Security](#authentication--security)
+- [Offline Capabilities](#offline-capabilities)
+- [UI Components](#ui-components)
+- [Code Structure](#code-structure)
+- [Performance Optimizations](#performance-optimizations)
+- [PWA Implementation](#pwa-implementation)
+- [Development & Deployment](#development--deployment)
 
 ## Overview
 
