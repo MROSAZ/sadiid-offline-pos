@@ -152,7 +152,195 @@ GET /products?page=1&per_page=500
   }
 }
 ```
-
+**Real responce example**
+```json
+{
+            "id": 3345,
+            "name": "LAP HP 15-fd0056nk Core i3-N305 8GB 15.6 FHD 256GB",
+            "business_id": 1,
+            "type": "single",
+            "secondary_unit_id": null,
+            "sub_unit_ids": null,
+            "enable_stock": 1,
+            "alert_quantity": null,
+            "sku": "A2AP2EA",
+            "barcode_type": "C128",
+            "expiry_period": null,
+            "expiry_period_type": null,
+            "enable_sr_no": 0,
+            "weight": null,
+            "product_custom_field1": null,
+            "product_custom_field2": null,
+            "product_custom_field3": null,
+            "product_custom_field4": null,
+            "product_custom_field5": null,
+            "product_custom_field6": null,
+            "product_custom_field7": null,
+            "product_custom_field8": null,
+            "product_custom_field9": null,
+            "product_custom_field10": null,
+            "product_custom_field11": null,
+            "product_custom_field12": null,
+            "product_custom_field13": null,
+            "product_custom_field14": null,
+            "product_custom_field15": null,
+            "product_custom_field16": null,
+            "product_custom_field17": null,
+            "product_custom_field18": null,
+            "product_custom_field19": null,
+            "product_custom_field20": null,
+            "image": null,
+            "woocommerce_media_id": null,
+            "product_description": null,
+            "created_by": 1,
+            "woocommerce_product_id": null,
+            "woocommerce_disable_sync": 0,
+            "preparation_time_in_minutes": null,
+            "warranty_id": null,
+            "is_inactive": 0,
+            "repair_model_id": null,
+            "not_for_selling": 0,
+            "image_url": "https:\/\/erp.sadiid.net\/img\/default.png",
+            "product_variations": [
+                {
+                    "id": 3345,
+                    "variation_template_id": null,
+                    "name": "DUMMY",
+                    "product_id": 3345,
+                    "is_dummy": 1,
+                    "created_at": "2024-09-13T12:25:13.000000Z",
+                    "updated_at": "2024-09-13T12:25:13.000000Z",
+                    "variations": [
+                        {
+                            "id": 3345,
+                            "name": "DUMMY",
+                            "product_id": 3345,
+                            "sub_sku": "A2AP2EA",
+                            "product_variation_id": 3345,
+                            "woocommerce_variation_id": null,
+                            "variation_value_id": null,
+                            "default_purchase_price": "1001.3700",
+                            "dpp_inc_tax": "1071.4660",
+                            "profit_percent": "16.6630",
+                            "default_sell_price": "1168.2240",
+                            "sell_price_inc_tax": "1250.0000",
+                            "created_at": "2024-09-13T12:25:13.000000Z",
+                            "updated_at": "2025-02-28T04:12:05.000000Z",
+                            "deleted_at": null,
+                            "combo_variations": [],
+                            "variation_location_details": [
+                                {
+                                    "id": 2188,
+                                    "product_id": 3345,
+                                    "product_variation_id": 3345,
+                                    "variation_id": 3345,
+                                    "location_id": 1,
+                                    "qty_available": "1.0000",
+                                    "created_at": "2024-09-13T12:44:44.000000Z",
+                                    "updated_at": "2024-09-13T12:44:44.000000Z"
+                                }
+                            ],
+                            "media": [],
+                            "discounts": []
+                        }
+                    ]
+                }
+            ],
+            "brand": null,
+            "unit": {
+                "id": 1,
+                "business_id": 1,
+                "actual_name": "Pieces",
+                "short_name": "Pc(s)",
+                "allow_decimal": 0,
+                "base_unit_id": null,
+                "base_unit_multiplier": null,
+                "created_by": 1,
+                "deleted_at": null,
+                "created_at": "2022-08-01T21:12:15.000000Z",
+                "updated_at": "2022-08-01T21:12:15.000000Z"
+            },
+            "category": {
+                "id": 32,
+                "name": "Computer",
+                "business_id": 1,
+                "short_code": null,
+                "parent_id": 0,
+                "created_by": 1,
+                "woocommerce_cat_id": null,
+                "category_type": "product",
+                "description": null,
+                "slug": null,
+                "deleted_at": null,
+                "created_at": "2022-08-01T20:05:37.000000Z",
+                "updated_at": "2025-02-28T04:11:46.000000Z"
+            },
+            "sub_category": null,
+            "product_tax": {
+                "id": 2,
+                "business_id": 1,
+                "name": "7%",
+                "amount": 7,
+                "is_tax_group": 0,
+                "for_tax_group": 0,
+                "created_by": 1,
+                "woocommerce_tax_rate_id": 1,
+                "deleted_at": null,
+                "created_at": "2022-08-01T20:27:15.000000Z",
+                "updated_at": "2024-04-29T03:29:51.000000Z"
+            },
+            "product_locations": [
+                {
+                    "id": 1,
+                    "business_id": 1,
+                    "location_id": "BL0001",
+                    "name": "Metras.Tech",
+                    "landmark": "46, Avenue Habib Bourguiba",
+                    "country": "Tunisia",
+                    "state": "Sidi Bouzid",
+                    "city": "Regueb",
+                    "zip_code": "9170",
+                    "invoice_scheme_id": 1,
+                    "sale_invoice_scheme_id": 1,
+                    "invoice_layout_id": 1,
+                    "sale_invoice_layout_id": 1,
+                    "selling_price_group_id": 0,
+                    "print_receipt_on_invoice": 1,
+                    "receipt_printer_type": "browser",
+                    "printer_id": null,
+                    "mobile": null,
+                    "alternate_number": null,
+                    "email": "contact@metras.tn",
+                    "website": "https:\/\/metras.tech",
+                    "featured_products": [
+                        "1231",
+                        "1233",
+                        "1237",
+                        "1240",
+                        "1473",
+                        "1532",
+                        "1534",
+                        "1536",
+                        "1537",
+                        "1538"
+                    ],
+                    "is_active": 1,
+                    "default_payment_accounts": "{\"cash\":{\"is_enabled\":\"1\",\"account\":\"2\"},\"card\":{\"is_enabled\":\"1\",\"account\":\"1\"},\"cheque\":{\"is_enabled\":\"1\",\"account\":\"1\"},\"bank_transfer\":{\"is_enabled\":\"1\",\"account\":\"1\"},\"other\":{\"is_enabled\":\"1\",\"account\":\"1\"},\"custom_pay_1\":{\"is_enabled\":\"1\",\"account\":\"1\"},\"custom_pay_2\":{\"account\":\"1\"},\"custom_pay_3\":{\"account\":\"1\"},\"custom_pay_4\":{\"account\":\"1\"},\"custom_pay_5\":{\"account\":\"1\"},\"custom_pay_6\":{\"account\":\"1\"},\"custom_pay_7\":{\"account\":\"1\"}}",
+                    "custom_field1": null,
+                    "custom_field2": null,
+                    "custom_field3": null,
+                    "custom_field4": null,
+                    "deleted_at": null,
+                    "created_at": "2022-08-01T21:12:15.000000Z",
+                    "updated_at": "2024-11-18T16:05:45.000000Z",
+                    "pivot": {
+                        "product_id": 3345,
+                        "location_id": 1
+                    }
+                }
+            ]
+        },
+```
 ## Customers (Contacts)
 
 ### Get Contacts
