@@ -1,8 +1,8 @@
 {
 	"info": {
 		"_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-		"name": "Sadiid Offline POS API",
-		"description": "# 🏪 Sadiid Offline POS API Collection\n\nThis collection contains all API endpoints used by the Sadiid Offline POS application for testing and development.\n\n## 🚀 Getting Started\n\n### Authentication\nAll endpoints require OAuth 2.0 Bearer token authentication. Start by using the Login endpoint to get your access token.\n\n### Base URL\n```\nhttps://erp.sadiid.net/connector/api\n```\n\n### Environment Variables\nSet up these variables in your Postman environment:\n- `baseUrl`: https://erp.sadiid.net/connector/api\n- `authUrl`: https://erp.sadiid.net/oauth/token\n- `accessToken`: (will be set automatically after login)\n- `username`: your_username\n- `password`: your_password\n- `clientId`: your_client_id\n- `clientSecret`: your_client_secret\n\n## 📝 API Features\n\n- **Authentication**: OAuth 2.0 with token refresh\n- **Business Management**: Get business details and locations\n- **Product Management**: CRUD operations for products and categories\n- **Customer Management**: Full customer lifecycle management\n- **Sales Processing**: Create, read, update sales transactions\n- **Attendance Tracking**: Clock in/out functionality\n\n## 🔧 Error Handling\n\nThe API returns standard HTTP status codes:\n- 200: Success\n- 201: Created\n- 400: Bad Request\n- 401: Unauthorized\n- 403: Forbidden\n- 404: Not Found\n- 422: Validation Error\n- 429: Rate Limited\n- 500: Server Error\n\n## 📊 Rate Limits\n\n- Authentication: 5 requests/minute\n- Standard endpoints: 60 requests/minute\n- Heavy operations: 10 requests/minute",
+		"name": "Sadiid Offline POS API - Complete Collection",
+		"description": "# 🏪 Sadiid Offline POS API - Complete Collection\n\nThis collection contains all API endpoints used by the Sadiid Offline POS application, enriched with the complete Sadiid ERP backend API documentation.\n\n## 🚀 Getting Started\n\n### Authentication\nAll endpoints require OAuth 2.0 Bearer token authentication. Start by using the Login endpoint to get your access token.\n\n### Base URL\n```\nhttps://erp.sadiid.net/connector/api\n```\n\n### Environment Variables\nSet up these variables in your Postman environment:\n- `baseUrl`: https://erp.sadiid.net/connector/api\n- `authUrl`: https://erp.sadiid.net/oauth/token\n- `accessToken`: (will be set automatically after login)\n- `username`: your_username\n- `password`: your_password\n- `clientId`: your_client_id\n- `clientSecret`: your_client_secret\n\n## 📝 API Features\n\n- **Authentication**: OAuth 2.0 with token refresh\n- **Business Management**: Get business details and locations\n- **Product Management**: CRUD operations for products and categories\n- **Customer Management**: Full customer lifecycle management\n- **Sales Processing**: Create, read, update sales transactions\n- **Attendance Tracking**: Clock in/out functionality\n- **Expense Management**: Track business expenses\n- **Tax Management**: Handle tax calculations\n- **Brand Management**: Product brand operations\n- **Unit Management**: Measurement units\n- **CRM**: Customer relationship management features\n- **Cash Register**: Register management\n- **Field Force**: Visit tracking\n- **Table Management**: Restaurant table operations\n\n## 🔧 Error Handling\n\nThe API returns standard HTTP status codes:\n- 200: Success\n- 201: Created\n- 400: Bad Request\n- 401: Unauthorized\n- 403: Forbidden\n- 404: Not Found\n- 422: Validation Error\n- 429: Rate Limited\n- 500: Server Error\n\n## 📊 Rate Limits\n\n- Authentication: 5 requests/minute\n- Standard endpoints: 60 requests/minute\n- Heavy operations: 10 requests/minute",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "sadiid-pos-team"
 	},
@@ -946,9 +946,747 @@
 						},
 						"description": "Records clock out time for an employee.\n\n**Required Fields:**\n- user_id: Employee user ID\n- clock_out_time: Date and time of clock out\n\n**Optional Fields:**\n- clock_out_note: Note about clocking out"
 					}
+				}			],
+			"description": "Employee attendance tracking endpoints."
+		},
+		{
+			"name": "Brand Management",
+			"item": [
+				{
+					"name": "List Brands",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/brands",
+							"host": ["{{baseUrl}}"],
+							"path": ["brands"]
+						},
+						"description": "Get list of all product brands."
+					},
+					"response": [
+						{
+							"name": "Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/brands"
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "{\n  \"data\": [\n    {\n      \"id\": 1,\n      \"name\": \"Brand Name\",\n      \"description\": \"Brand description\"\n    }\n  ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Brand Details",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/brands/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["brands", "1"]
+						},
+						"description": "Get details of a specific brand."
+					},
+					"response": []
 				}
 			],
-			"description": "Employee attendance tracking endpoints."
+			"description": "Product brand management endpoints."
+		},
+		{
+			"name": "Business Locations",
+			"item": [
+				{
+					"name": "List Business Locations",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/business-location",
+							"host": ["{{baseUrl}}"],
+							"path": ["business-location"]
+						},
+						"description": "Get list of all business locations."
+					},
+					"response": [
+						{
+							"name": "Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/business-location"
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "{\n  \"data\": [\n    {\n      \"id\": 1,\n      \"name\": \"Main Store\",\n      \"landmark\": \"Downtown\",\n      \"city\": \"New York\",\n      \"state\": \"NY\",\n      \"country\": \"USA\",\n      \"zip_code\": \"10001\"\n    }\n  ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Business Location",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/business-location/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["business-location", "1"]
+						},
+						"description": "Get details of a specific business location."
+					},
+					"response": []
+				}
+			],
+			"description": "Business location management endpoints."
+		},
+		{
+			"name": "CRM",
+			"item": [
+				{
+					"name": "List Follow-ups",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/crm/follow-ups",
+							"host": ["{{baseUrl}}"],
+							"path": ["crm", "follow-ups"]
+						},
+						"description": "Get list of customer follow-ups."
+					},
+					"response": []
+				},
+				{
+					"name": "Add Follow-up",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Meeting with client\",\n  \"contact_id\": 2,\n  \"description\": \"Follow-up meeting discussion\",\n  \"schedule_type\": \"meeting\",\n  \"user_id\": [2, 3, 5],\n  \"notify_before\": 5,\n  \"notify_type\": \"minute\",\n  \"status\": \"open\",\n  \"start_datetime\": \"2025-06-28 13:05:00\",\n  \"end_datetime\": \"2025-06-28 14:05:00\",\n  \"allow_notification\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/crm/follow-ups",
+							"host": ["{{baseUrl}}"],
+							"path": ["crm", "follow-ups"]
+						},
+						"description": "Create a new customer follow-up."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Follow-up",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/crm/follow-ups/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["crm", "follow-ups", "1"]
+						},
+						"description": "Get details of a specific follow-up."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Follow-up",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Updated meeting with client\",\n  \"contact_id\": 2,\n  \"description\": \"Updated follow-up meeting\",\n  \"status\": \"completed\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/crm/follow-ups/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["crm", "follow-ups", "1"]
+						},
+						"description": "Update an existing follow-up."
+					},
+					"response": []
+				},
+				{
+					"name": "List Leads",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/crm/leads",
+							"host": ["{{baseUrl}}"],
+							"path": ["crm", "leads"]
+						},
+						"description": "Get list of sales leads."
+					},
+					"response": []
+				}
+			],
+			"description": "Customer relationship management endpoints."
+		},
+		{
+			"name": "Cash Register Management",
+			"item": [
+				{
+					"name": "List Cash Registers",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/cash-register",
+							"host": ["{{baseUrl}}"],
+							"path": ["cash-register"]
+						},
+						"description": "Get list of all cash registers."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Cash Register",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"location_id\": 1,\n  \"initial_amount\": 100.00,\n  \"created_at\": \"2025-06-28 09:00:00\",\n  \"status\": \"open\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/cash-register",
+							"host": ["{{baseUrl}}"],
+							"path": ["cash-register"]
+						},
+						"description": "Create a new cash register session."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Cash Register",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/cash-register/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["cash-register", "1"]
+						},
+						"description": "Get details of a specific cash register."
+					},
+					"response": []
+				}
+			],
+			"description": "Cash register session management endpoints."
+		},
+		{
+			"name": "Expense Management",
+			"item": [
+				{
+					"name": "List Expenses",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/expense",
+							"host": ["{{baseUrl}}"],
+							"path": ["expense"]
+						},
+						"description": "Get list of business expenses."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Expense",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"location_id\": 1,\n  \"expense_category_id\": 1,\n  \"ref_no\": \"EXP001\",\n  \"transaction_date\": \"2025-06-28\",\n  \"total_before_tax\": 100.00,\n  \"tax_amount\": 10.00,\n  \"final_total\": 110.00,\n  \"payment_status\": \"paid\",\n  \"expense_for\": \"1\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/expense",
+							"host": ["{{baseUrl}}"],
+							"path": ["expense"]
+						},
+						"description": "Create a new business expense."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Expense",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/expense/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["expense", "1"]
+						},
+						"description": "Get details of a specific expense."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Expense",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"final_total\": 120.00,\n  \"payment_status\": \"paid\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/expense/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["expense", "1"]
+						},
+						"description": "Update an existing expense."
+					},
+					"response": []
+				},
+				{
+					"name": "List Expense Categories",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/expense-categories",
+							"host": ["{{baseUrl}}"],
+							"path": ["expense-categories"]
+						},
+						"description": "Get list of expense categories."
+					},
+					"response": []
+				}
+			],
+			"description": "Business expense management endpoints."
+		},
+		{
+			"name": "Tax Management",
+			"item": [
+				{
+					"name": "List Taxes",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/tax",
+							"host": ["{{baseUrl}}"],
+							"path": ["tax"]
+						},
+						"description": "Get list of all tax rates."
+					},
+					"response": [
+						{
+							"name": "Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/tax"
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "{\n  \"data\": [\n    {\n      \"id\": 1,\n      \"name\": \"VAT\",\n      \"amount\": 10.00,\n      \"is_tax_group\": 0\n    }\n  ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Tax",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/tax/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["tax", "1"]
+						},
+						"description": "Get details of a specific tax."
+					},
+					"response": []
+				}
+			],
+			"description": "Tax rate and calculation management endpoints."
+		},
+		{
+			"name": "Unit Management",
+			"item": [
+				{
+					"name": "List Units",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/unit",
+							"host": ["{{baseUrl}}"],
+							"path": ["unit"]
+						},
+						"description": "Get list of measurement units."
+					},
+					"response": [
+						{
+							"name": "Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/unit"
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "{\n  \"data\": [\n    {\n      \"id\": 1,\n      \"actual_name\": \"Pieces\",\n      \"short_name\": \"Pc\",\n      \"allow_decimal\": 0\n    }\n  ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Unit",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/unit/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["unit", "1"]
+						},
+						"description": "Get details of a specific unit."
+					},
+					"response": []
+				}
+			],
+			"description": "Measurement unit management endpoints."
+		},
+		{
+			"name": "Taxonomy Management",
+			"item": [
+				{
+					"name": "List Categories",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/taxonomy?type=product",
+							"host": ["{{baseUrl}}"],
+							"path": ["taxonomy"],
+							"query": [
+								{
+									"key": "type",
+									"value": "product",
+									"description": "Type of taxonomy (product, customer_group, etc.)"
+								}
+							]
+						},
+						"description": "Get list of product categories and other taxonomy items."
+					},
+					"response": [
+						{
+							"name": "Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/taxonomy?type=product"
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "{\n  \"data\": [\n    {\n      \"id\": 1,\n      \"name\": \"Electronics\",\n      \"parent_id\": 0,\n      \"category_type\": \"product\"\n    }\n  ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Category",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/taxonomy/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["taxonomy", "1"]
+						},
+						"description": "Get details of a specific category."
+					},
+					"response": []
+				}
+			],
+			"description": "Product categories and taxonomy management endpoints."
+		},
+		{
+			"name": "Table Management",
+			"item": [
+				{
+					"name": "List Tables",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/table",
+							"host": ["{{baseUrl}}"],
+							"path": ["table"]
+						},
+						"description": "Get list of restaurant tables."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Table",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/table/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["table", "1"]
+						},
+						"description": "Get details of a specific table."
+					},
+					"response": []
+				}
+			],
+			"description": "Restaurant table management endpoints."
+		},
+		{
+			"name": "Field Force",
+			"item": [
+				{
+					"name": "List Visits",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/field-force/visits",
+							"host": ["{{baseUrl}}"],
+							"path": ["field-force", "visits"]
+						},
+						"description": "Get list of field force visits."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Visit",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"contact_id\": 1,\n  \"visited_on\": \"2025-06-28 14:30:00\",\n  \"visit_to\": \"customer\",\n  \"meet_with\": \"Manager\",\n  \"latitude\": \"40.7128\",\n  \"longitude\": \"-74.0060\",\n  \"comments\": \"Visited customer for product demo\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/field-force/visits",
+							"host": ["{{baseUrl}}"],
+							"path": ["field-force", "visits"]
+						},
+						"description": "Create a new field visit record."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Visit Status",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"completed\",\n  \"comments\": \"Visit completed successfully\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/field-force/visits/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["field-force", "visits", "1"]
+						},
+						"description": "Update field visit status."
+					},
+					"response": []
+				}
+			],
+			"description": "Field force visit tracking endpoints."
+		},
+		{
+			"name": "Reports & Analytics",
+			"item": [
+				{
+					"name": "Get Profit & Loss Report",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/profit-loss-report?start_date=2025-06-01&end_date=2025-06-30&location_id=1",
+							"host": ["{{baseUrl}}"],
+							"path": ["profit-loss-report"],
+							"query": [
+								{
+									"key": "start_date",
+									"value": "2025-06-01",
+									"description": "Report start date"
+								},
+								{
+									"key": "end_date",
+									"value": "2025-06-30",
+									"description": "Report end date"
+								},
+								{
+									"key": "location_id",
+									"value": "1",
+									"description": "Business location ID"
+								}
+							]
+						},
+						"description": "Get profit and loss report for specified period."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Product Stock",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/product-stock?location_id=1",
+							"host": ["{{baseUrl}}"],
+							"path": ["product-stock"],
+							"query": [
+								{
+									"key": "location_id",
+									"value": "1",
+									"description": "Business location ID"
+								}
+							]
+						},
+						"description": "Get current stock levels for all products."
+					},
+					"response": []
+				}
+			],
+			"description": "Business reports and analytics endpoints."
+		},
+		{
+			"name": "System & Utilities",
+			"item": [
+				{
+					"name": "Get Notifications",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/notifications",
+							"host": ["{{baseUrl}}"],
+							"path": ["notifications"]
+						},
+						"description": "Get user notifications."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Location from Coordinates",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/get-location?lat=40.7128&lng=-74.0060",
+							"host": ["{{baseUrl}}"],
+							"path": ["get-location"],
+							"query": [
+								{
+									"key": "lat",
+									"value": "40.7128",
+									"description": "Latitude"
+								},
+								{
+									"key": "lng",
+									"value": "-74.0060",
+									"description": "Longitude"
+								}
+							]
+						},
+						"description": "Get location details from GPS coordinates."
+					},
+					"response": []
+				},
+				{
+					"name": "List Payment Accounts",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/payment-account",
+							"host": ["{{baseUrl}}"],
+							"path": ["payment-account"]
+						},
+						"description": "Get list of payment accounts."
+					},
+					"response": []
+				},
+				{
+					"name": "List Payment Methods",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/payment-methods",
+							"host": ["{{baseUrl}}"],
+							"path": ["payment-methods"]
+						},
+						"description": "Get list of available payment methods."
+					},
+					"response": []
+				}
+			],
+			"description": "System utilities and helper endpoints."
 		}
 	],
 	"auth": {
