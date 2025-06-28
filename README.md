@@ -798,6 +798,67 @@ VITE_APP_NAME=Sadiid POS
 VITE_APP_VERSION=1.0.0
 ```
 
+## API Documentation & Integration
+
+### OpenAPI Specification
+
+The project includes a comprehensive OpenAPI specification that documents all 81 API endpoints of the Sadiid ERP backend:
+
+- **📄 OpenAPI Spec**: [`docs/openapi.yaml`](docs/openapi.yaml) - Complete API specification
+- **🔗 Integration Guide**: [`docs/OPENAPI_INTEGRATION_GUIDE.md`](docs/OPENAPI_INTEGRATION_GUIDE.md) - Detailed usage instructions
+- **📝 API Documentation**: [`API_DOCUMENTATION.md`](API_DOCUMENTATION.md) - Human-readable API reference
+- **🧪 Postman Collection**: [`Sadiid_POS_API.postman_collection.json`](Sadiid_POS_API.postman_collection.json) - Interactive testing
+
+### API Categories
+
+The API is organized into functional areas:
+
+| Category | Endpoints | Description |
+|----------|-----------|-------------|
+| 🔐 **Authentication** | 8 | OAuth2, user registration, password management |
+| 🏢 **Business Management** | 7 | Business details, locations, subscriptions |
+| 📦 **Product Management** | 12 | Products, inventory, categories, brands |
+| 💰 **Sales & POS** | 15 | Transactions, payments, returns, cash register |
+| 👥 **Customer Management** | 8 | Contacts, CRM, follow-ups, leads |
+| 💸 **Expense Management** | 4 | Expense tracking, categories, refunds |
+| 📊 **Reporting** | 2 | Sales reports, profit/loss, stock reports |
+| 👨‍💼 **Field Force** | 3 | Visit tracking, status updates |
+| ⚙️ **System Admin** | 15 | Users, settings, attendance |
+| 🔌 **Integration** | 7 | API clients, connectors |
+
+### Type Safety
+
+The project includes comprehensive TypeScript types for all API endpoints:
+
+- **📁 Type Definitions**: [`src/types/api.ts`](src/types/api.ts) - Complete type definitions
+- **🔒 Request/Response Types**: Fully typed API interactions
+- **✅ Validation Support**: Request validation against OpenAPI spec
+- **🎯 IntelliSense**: Full IDE support and autocomplete
+
+### Interactive Documentation
+
+**View the API documentation interactively:**
+
+1. **Swagger UI Online**: Upload [`docs/openapi.yaml`](docs/openapi.yaml) to [Swagger Editor](https://editor.swagger.io/)
+2. **Local Swagger UI**: 
+   ```bash
+   npm install -g swagger-ui-serve
+   swagger-ui-serve docs/openapi.yaml
+   ```
+3. **Postman**: Import the collection for interactive testing and exploration
+
+### Development Integration
+
+The OpenAPI specification enables:
+
+- **🔧 Code Generation**: Generate TypeScript clients and types
+- **🧪 Mock Servers**: Create mock APIs for frontend development
+- **✅ Contract Testing**: Ensure frontend/backend compatibility
+- **📋 Request Validation**: Validate API requests before sending
+- **🎯 Type Safety**: Full TypeScript integration with generated types
+
+See the [OpenAPI Integration Guide](docs/OPENAPI_INTEGRATION_GUIDE.md) for detailed setup instructions and best practices.
+
 ## Conclusion
 
 The Sadiid Offline POS application represents a mature offline-first point-of-sale solution. Its architecture ensures that **users can always complete their work immediately**, regardless of network connectivity, while background synchronization maintains data consistency with the server.

@@ -387,7 +387,142 @@ await queueOperation('customer', { local_id: customerId, customerData });
 
 ---
 
-## 🔧 Build & Deployment
+## � API Documentation & Integration
+
+### OpenAPI Specification
+The project maintains a comprehensive OpenAPI 3.0 specification covering all 81 backend endpoints:
+
+```
+📄 docs/openapi.yaml              # Complete API specification
+📖 docs/OPENAPI_INTEGRATION_GUIDE.md # Integration instructions
+🧪 Sadiid_POS_API.postman_collection.json # Interactive testing
+```
+
+### Type-Safe API Client
+```typescript
+// Structured API client with full TypeScript support
+import { 
+  apiClient, 
+  AuthApi, 
+  ProductsApi, 
+  TransactionsApi, 
+  ContactsApi, 
+  BusinessApi 
+} from '@/lib/api-client';
+
+// Authentication
+await AuthApi.login({ username, password });
+const user = await AuthApi.getCurrentUser();
+
+// Products with pagination and filtering
+const products = await ProductsApi.getProducts({
+  page: 1,
+  per_page: 20,
+  search: 'laptop',
+  category_id: 5
+});
+
+// Type-safe transaction creation
+const sale = await TransactionsApi.createTransaction({
+  location_id: 1,
+  contact_id: customer.id,
+  products: cartItems.map(item => ({
+    product_id: item.product_id,
+    variation_id: item.variation_id,
+    quantity: item.quantity,
+    unit_price: item.price
+  })),
+  payments: [{ method: 'cash', amount: total, paid_on: new Date().toISOString() }]
+});
+```
+
+### API Module Organization
+```
+src/lib/
+├── api-client.ts           # Core client with auth/retry logic
+├── modules/
+│   ├── auth.ts            # AuthApi - 8 endpoints
+│   ├── products.ts        # ProductsApi - 12 endpoints  
+│   ├── transactions.ts    # TransactionsApi - 15 endpoints
+│   ├── contacts.ts        # ContactsApi - 8 endpoints
+│   └── business.ts        # BusinessApi - 15+ endpoints
+└── types/
+    └── api.ts             # Comprehensive TypeScript types
+```
+
+### Development Commands
+```bash
+npm run generate-types     # Generate types from OpenAPI spec
+npm run validate-openapi   # Validate specification
+npm run serve-docs         # Local Swagger UI (port 3200)
+npm run api:mock          # Mock server for development
+npm run api:validate      # Validate client against spec
+```
+
+### API Integration Patterns
+
+#### 1. Offline-First API Usage
+```typescript
+const createCustomer = async (data: ContactCreateRequest) => {
+  // 1. Save locally first (immediate response)
+  const localContact = await saveContactLocally(data);
+  
+  // 2. Queue for background sync
+  await queueOperation('contact', {
+    action: 'create',
+    data,
+    local_id: localContact.id
+  });
+  
+  return localContact;
+};
+```
+
+#### 2. Background Sync Integration
+```typescript
+// Sync operations use the typed API client
+const syncContactToServer = async (operation) => {
+  try {
+    const response = await ContactsApi.createContact(operation.data);
+    await updateLocalContact(operation.local_id, {
+      server_id: response.data.id,
+      sync_status: 'synced'
+    });
+  } catch (error) {
+    await markOperationForRetry(operation.id);
+  }
+};
+```
+
+#### 3. Error Handling with Types
+```typescript
+try {
+  const products = await ProductsApi.getProducts();
+  // products.data is typed as PaginatedResponse<Product>
+} catch (error: ApiError) {
+  console.error(`API Error ${error.status_code}: ${error.message}`);
+  // Handle specific error types
+}
+```
+
+### Interactive Documentation
+- **Swagger UI**: `npm run serve-docs` → http://localhost:3200
+- **Postman**: Import collection for hands-on testing
+- **Mock Server**: `npm run api:mock` → http://localhost:3001
+
+### Endpoint Categories
+| Category | Count | Key Features |
+|----------|-------|--------------|
+| Authentication | 8 | OAuth2, registration, password management |
+| Products | 12 | Catalog, variations, inventory, categories |
+| Transactions | 15 | Sales, payments, returns, cash register |
+| Contacts | 8 | Customers, CRM, follow-ups, leads |
+| Business | 15+ | Settings, locations, users, reports |
+| System | 7+ | Integration, connectors, admin |
+
+---
+
+## �🔧 Build & Deployment
 
 ### Build Process
 ```bash

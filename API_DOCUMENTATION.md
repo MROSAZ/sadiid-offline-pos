@@ -4,6 +4,22 @@
 
 This document provides comprehensive API documentation for the Sadiid Offline POS application, enriched with the complete Sadiid ERP backend API endpoints.
 
+> **📋 Note**: This documentation is also available as an interactive OpenAPI specification. See the [OpenAPI Integration Guide](docs/OPENAPI_INTEGRATION_GUIDE.md) for details on using the specification for development, testing, and code generation.
+
+### Additional Resources
+
+- **🔗 OpenAPI Specification**: [`docs/openapi.yaml`](docs/openapi.yaml) - Complete API spec with 81 endpoints
+- **🎯 TypeScript Types**: [`src/types/api.ts`](src/types/api.ts) - Comprehensive type definitions  
+- **🧪 Postman Collection**: [`Sadiid_POS_API.postman_collection.json`](Sadiid_POS_API.postman_collection.json) - Interactive testing
+- **📖 Integration Guide**: [`docs/OPENAPI_INTEGRATION_GUIDE.md`](docs/OPENAPI_INTEGRATION_GUIDE.md) - Setup and usage instructions
+
+### Interactive Documentation
+
+View the API documentation interactively:
+- **Swagger UI**: Upload the OpenAPI spec to [Swagger Editor](https://editor.swagger.io/)
+- **Local Docs**: Use `swagger-ui-serve docs/openapi.yaml` for local viewing
+- **Postman**: Import the collection for hands-on API testing
+
 ## Base URL
 ```
 https://erp.sadiid.net/connector/api

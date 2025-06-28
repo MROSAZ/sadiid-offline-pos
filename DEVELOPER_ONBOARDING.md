@@ -410,7 +410,149 @@ const products = await getProducts(); // Local first
 
 ---
 
-## 📞 Getting Help
+## � API Integration & Documentation (15 minutes)
+
+### OpenAPI Specification
+The project includes comprehensive API documentation through OpenAPI:
+
+- **📄 OpenAPI Spec**: [`docs/openapi.yaml`](docs/openapi.yaml) - Complete API specification (81 endpoints)
+- **📖 Integration Guide**: [`docs/OPENAPI_INTEGRATION_GUIDE.md`](docs/OPENAPI_INTEGRATION_GUIDE.md) - Detailed setup and usage
+- **🧪 Postman Collection**: [`Sadiid_POS_API.postman_collection.json`](Sadiid_POS_API.postman_collection.json) - Interactive testing
+
+### Type-Safe API Client
+The project provides a comprehensive API client with TypeScript support:
+
+```typescript
+// Import the API client and types
+import { apiClient, ProductsApi, TransactionsApi } from '@/lib/api-client';
+import { Product, Transaction, ApiResponse } from '@/types/api';
+
+// Use specific API modules for organized code
+const products: ApiResponse<Product[]> = await ProductsApi.getProducts({
+  page: 1,
+  per_page: 20,
+  search: 'laptop'
+});
+
+// Create new transactions with full type safety
+const newSale: ApiResponse<Transaction> = await TransactionsApi.createTransaction({
+  location_id: 1,
+  contact_id: customer.id,
+  transaction_date: new Date().toISOString().split('T')[0],
+  products: cartItems.map(item => ({
+    product_id: item.product_id,
+    variation_id: item.variation_id,
+    quantity: item.quantity,
+    unit_price: item.price
+  })),
+  payments: [{
+    method: 'cash',
+    amount: total,
+    paid_on: new Date().toISOString()
+  }]
+});
+```
+
+### API Client Organization
+```
+src/lib/
+├── api-client.ts           # Main API client with auth
+└── modules/
+    ├── auth.ts            # Authentication endpoints
+    ├── products.ts        # Product management
+    ├── transactions.ts    # Sales & POS operations
+    ├── contacts.ts        # Customer management
+    └── business.ts        # Business settings
+```
+
+### Useful Commands
+```bash
+# Generate TypeScript types from OpenAPI spec
+npm run generate-types
+
+# Validate OpenAPI specification
+npm run validate-openapi
+
+# Serve interactive documentation locally
+npm run serve-docs
+
+# Start mock API server for development
+npm run api:mock
+
+# Validate API client against spec
+npm run api:validate
+```
+
+### Interactive Documentation
+View the complete API documentation:
+
+1. **Local Swagger UI**: `npm run serve-docs` → http://localhost:3200
+2. **Online Swagger Editor**: Upload `docs/openapi.yaml` to [editor.swagger.io](https://editor.swagger.io/)
+3. **Postman Collection**: Import the collection for hands-on testing
+
+### API Development Workflow
+1. **Check the OpenAPI spec** first for endpoint structure
+2. **Use the typed API client** for all server communication
+3. **Follow offline-first patterns** - save locally, queue for sync
+4. **Validate requests** against the OpenAPI schema when needed
+5. **Test both online and offline** scenarios
+
+### Example: Adding a New API Feature
+```typescript
+// 1. Check if endpoint exists in OpenAPI spec (docs/openapi.yaml)
+// 2. Use the appropriate API module
+import { ContactsApi } from '@/lib/modules/contacts';
+import { Contact, ContactCreateRequest } from '@/types/api';
+
+// 3. Implement with offline-first pattern
+const createCustomer = async (customerData: ContactCreateRequest) => {
+  try {
+    // Save locally first for instant response
+    const localCustomer = await saveContactLocally(customerData);
+    
+    // Queue for background sync
+    await queueOperation('contact', {
+      action: 'create',
+      data: customerData,
+      local_id: localCustomer.id
+    });
+    
+    toast.success('Customer created');
+    return localCustomer;
+  } catch (error) {
+    console.error('Failed to create customer:', error);
+    toast.error('Failed to create customer');
+    throw error;
+  }
+};
+
+// 4. Background sync handles server communication
+const syncContactToServer = async (queuedOperation) => {
+  try {
+    const serverContact = await ContactsApi.createContact(queuedOperation.data);
+    await updateLocalContact(queuedOperation.local_id, {
+      server_id: serverContact.data.id,
+      sync_status: 'synced'
+    });
+  } catch (error) {
+    // Mark for retry
+    await markOperationForRetry(queuedOperation.id);
+  }
+};
+```
+
+### API Categories Overview
+| Module | Endpoints | Purpose |
+|--------|-----------|---------|
+| **AuthApi** | 8 | Login, registration, password management |
+| **ProductsApi** | 12 | Product catalog, categories, inventory |
+| **TransactionsApi** | 15 | Sales, payments, returns, cash register |
+| **ContactsApi** | 8 | Customers, CRM, follow-ups |
+| **BusinessApi** | 15+ | Settings, locations, users, reports |
+
+---
+
+## �📞 Getting Help
 
 ### Team Resources
 - **Architecture Questions**: Review this guide first
