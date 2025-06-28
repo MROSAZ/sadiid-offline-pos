@@ -111,6 +111,31 @@
 							"header": [],
 							"cookie": [],
 							"body": "{\n  \"access_token\": \"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...\",\n  \"token_type\": \"Bearer\",\n  \"expires_in\": 31536000,\n  \"refresh_token\": \"def50200...\"\n}"
+						},
+						{
+							"name": "Authentication Failed",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "urlencoded",
+									"urlencoded": [
+										{
+											"key": "grant_type",
+											"value": "password"
+										}
+									]
+								},
+								"url": {
+									"raw": ""
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "{\n  \"error\": \"invalid_client\",\n  \"error_description\": \"Client authentication failed\",\n  \"message\": \"Client authentication failed\"\n}"
 						}
 					]
 				}
@@ -127,16 +152,36 @@
 							"listen": "test",
 							"script": {
 								"exec": [
+									"// Test status code",
 									"pm.test('Status code is 200', function () {",
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
-									"pm.test('Response has user data', function () {",
+									"// Test response structure",
+									"pm.test('Response has valid user data structure', function () {",
 									"    const jsonData = pm.response.json();",
 									"    pm.expect(jsonData).to.have.property('data');",
 									"    pm.expect(jsonData.data).to.have.property('id');",
 									"    pm.expect(jsonData.data).to.have.property('email');",
-									"});"
+									"    pm.expect(jsonData.data).to.have.property('first_name');",
+									"    pm.expect(jsonData.data).to.have.property('last_name');",
+									"});",
+									"",
+									"// Test data types",
+									"pm.test('User data has correct types', function () {",
+									"    const userData = pm.response.json().data;",
+									"    pm.expect(userData.id).to.be.a('number');",
+									"    pm.expect(userData.email).to.be.a('string');",
+									"    pm.expect(userData.first_name).to.be.a('string');",
+									"});",
+									"",
+									"// Handle authentication errors",
+									"if (pm.response.code === 401) {",
+									"    pm.test('Authentication error handled', function () {",
+									"        console.log('Authentication required - check access token');",
+									"        pm.expect(pm.response.code).to.equal(401);",
+									"    });",
+									"}"
 								],
 								"type": "text/javascript"
 							}

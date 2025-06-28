@@ -22,13 +22,22 @@ Content-Type: application/x-www-form-urlencoded
 grant_type=password&client_id=CLIENT_ID&client_secret=CLIENT_SECRET&username=USERNAME&password=PASSWORD&scope=*
 ```
 
-**Response:**
+**Success Response (200):**
 ```json
 {
   "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...",
   "token_type": "Bearer",
   "expires_in": 31536000,
   "refresh_token": "def50200..."
+}
+```
+
+**Error Response (401):**
+```json
+{
+  "error": "invalid_client",
+  "error_description": "Client authentication failed",
+  "message": "Client authentication failed"
 }
 ```
 
@@ -683,34 +692,66 @@ GET /payment-methods
 
 ---
 
-## Error Handling
+## 🚨 Error Handling
+
+The API uses standard HTTP status codes and returns consistent error responses:
+
+### HTTP Status Codes
+
+| Code | Status | Description |
+|------|--------|-------------|
+| 200 | OK | Request successful |
+| 201 | Created | Resource created successfully |
+| 400 | Bad Request | Invalid request format or parameters |
+| 401 | Unauthorized | Invalid or missing authentication |
+| 403 | Forbidden | Access denied to resource |
+| 404 | Not Found | Resource not found |
+| 422 | Unprocessable Entity | Validation errors |
+| 429 | Too Many Requests | Rate limit exceeded |
+| 500 | Internal Server Error | Server error |
 
 ### Error Response Format
+
+**Authentication Error (401):**
 ```json
 {
-  "success": false,
-  "message": "Error description",
+  "error": "invalid_client",
+  "error_description": "Client authentication failed",
+  "message": "Client authentication failed"
+}
+```
+
+**Validation Error (422):**
+```json
+{
+  "message": "The given data was invalid.",
   "errors": {
-    "field_name": ["Validation error message"]
+    "field_name": [
+      "This field is required."
+    ]
   }
 }
 ```
 
-### Common HTTP Status Codes
-- **200**: Success
-- **201**: Created
-- **400**: Bad Request (validation errors)
-- **401**: Unauthorized (token invalid/expired)
-- **403**: Forbidden (insufficient permissions)
-- **404**: Not Found
-- **422**: Unprocessable Entity (validation failed)
-- **429**: Too Many Requests (rate limited)
-- **500**: Internal Server Error
+**Not Found Error (404):**
+```json
+{
+  "message": "Resource not found"
+}
+```
 
 ### Rate Limiting
-- Most endpoints: 60 requests per minute
-- Authentication: 5 requests per minute
-- Heavy operations: 10 requests per minute
+
+The API implements rate limiting with the following headers in responses:
+
+```http
+X-Ratelimit-Limit: 60
+X-Ratelimit-Remaining: 59
+```
+
+- **Authentication endpoints**: 5 requests/minute
+- **Standard endpoints**: 60 requests/minute  
+- **Heavy operations**: 10 requests/minute
 
 ---
 
