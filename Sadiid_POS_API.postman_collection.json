@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+		"_postman_id": "685356cf-e0dc-4320-afff-f3b93ec94107",
 		"name": "Sadiid Offline POS API - Complete Collection",
-		"description": "# 🏪 Sadiid Offline POS API - Complete Collection\n\nThis collection contains all API endpoints used by the Sadiid Offline POS application, enriched with the complete Sadiid ERP backend API documentation.\n\n## 🚀 Getting Started\n\n### Authentication\nAll endpoints require OAuth 2.0 Bearer token authentication. Start by using the Login endpoint to get your access token.\n\n### Base URL\n```\nhttps://erp.sadiid.net/connector/api\n```\n\n### Environment Variables\nSet up these variables in your Postman environment:\n- `baseUrl`: https://erp.sadiid.net/connector/api\n- `authUrl`: https://erp.sadiid.net/oauth/token\n- `accessToken`: (will be set automatically after login)\n- `username`: your_username\n- `password`: your_password\n- `clientId`: your_client_id\n- `clientSecret`: your_client_secret\n\n## 📝 API Features\n\n- **Authentication**: OAuth 2.0 with token refresh\n- **Business Management**: Get business details and locations\n- **Product Management**: CRUD operations for products and categories\n- **Customer Management**: Full customer lifecycle management\n- **Sales Processing**: Create, read, update sales transactions\n- **Attendance Tracking**: Clock in/out functionality\n- **Expense Management**: Track business expenses\n- **Tax Management**: Handle tax calculations\n- **Brand Management**: Product brand operations\n- **Unit Management**: Measurement units\n- **CRM**: Customer relationship management features\n- **Cash Register**: Register management\n- **Field Force**: Visit tracking\n- **Table Management**: Restaurant table operations\n\n## 🔧 Error Handling\n\nThe API returns standard HTTP status codes:\n- 200: Success\n- 201: Created\n- 400: Bad Request\n- 401: Unauthorized\n- 403: Forbidden\n- 404: Not Found\n- 422: Validation Error\n- 429: Rate Limited\n- 500: Server Error\n\n## 📊 Rate Limits\n\n- Authentication: 5 requests/minute\n- Standard endpoints: 60 requests/minute\n- Heavy operations: 10 requests/minute",
+		"description": "# 🏪 Sadiid Offline POS API - Complete Collection\n\nThis collection contains all API endpoints used by the Sadiid Offline POS application, enriched with the complete Sadiid ERP backend API documentation.\n\n## 🚀 Getting Started\n\n### Authentication\n\nAll endpoints require OAuth 2.0 Bearer token authentication. Start by using the Login endpoint to get your access token.\n\n### Base URL\n\n```\nhttps://erp.sadiid.net/connector/api\n\n ```\n\n### Environment Variables\n\nSet up these variables in your Postman environment:\n\n- `baseUrl`: [https://erp.sadiid.net/connector/api](https://erp.sadiid.net/connector/api)\n    \n- `authUrl`: [https://erp.sadiid.net/oauth/token](https://erp.sadiid.net/oauth/token)\n    \n- `accessToken`: (will be set automatically after login)\n    \n- `username`: your_username\n    \n- `password`: your_password\n    \n- `clientId`: your_client_id\n    \n- `clientSecret`: your_client_secret\n    \n\n## 📝 API Features\n\n- **Authentication**: OAuth 2.0 with token refresh\n    \n- **Business Management**: Get business details and locations\n    \n- **Product Management**: CRUD operations for products and categories\n    \n- **Customer Management**: Full customer lifecycle management\n    \n- **Sales Processing**: Create, read, update sales transactions\n    \n- **Attendance Tracking**: Clock in/out functionality\n    \n- **Expense Management**: Track business expenses\n    \n- **Tax Management**: Handle tax calculations\n    \n- **Brand Management**: Product brand operations\n    \n- **Unit Management**: Measurement units\n    \n- **CRM**: Customer relationship management features\n    \n- **Cash Register**: Register management\n    \n- **Field Force**: Visit tracking\n    \n- **Table Management**: Restaurant table operations\n    \n\n## 🔧 Error Handling\n\nThe API returns standard HTTP status codes:\n\n- 200: Success\n    \n- 201: Created\n    \n- 400: Bad Request\n    \n- 401: Unauthorized\n    \n- 403: Forbidden\n    \n- 404: Not Found\n    \n- 422: Validation Error\n    \n- 429: Rate Limited\n    \n- 500: Server Error\n    \n\n## 📊 Rate Limits\n\n- Authentication: 5 requests/minute\n    \n- Standard endpoints: 60 requests/minute\n    \n- Heavy operations: 10 requests/minute",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "sadiid-pos-team"
+		"_exporter_id": "40804005"
 	},
 	"item": [
 		{
@@ -102,7 +102,7 @@
 									]
 								},
 								"url": {
-									"raw": "{{authUrl}}"
+									"raw": ""
 								}
 							},
 							"status": "OK",
@@ -163,7 +163,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{baseUrl}}/user"
+									"raw": ""
 								}
 							},
 							"status": "OK",
@@ -224,7 +224,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{baseUrl}}/business-details"
+									"raw": ""
 								}
 							},
 							"status": "OK",
@@ -259,7 +259,8 @@
 									"    pm.expect(jsonData).to.have.property('meta');",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -267,12 +268,12 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/products?page=1&per_page=50",
+							"raw": "{{baseUrl}}/product?page=1&per_page=50",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
-								"products"
+								"product"
 							],
 							"query": [
 								{
@@ -308,7 +309,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{baseUrl}}/products?page=1&per_page=50"
+									"raw": ""
 								}
 							},
 							"status": "OK",
@@ -343,7 +344,8 @@
 									"    pm.expect(Array.isArray(jsonData.data)).to.be.true;",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -351,12 +353,12 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/contacts?type=customer&page=1&per_page=50",
+							"raw": "{{baseUrl}}/contactapi?type=customer&page=1&per_page=50",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
-								"contacts"
+								"contactapi"
 							],
 							"query": [
 								{
@@ -385,7 +387,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{baseUrl}}/contacts?type=customer"
+									"raw": ""
 								}
 							},
 							"status": "OK",
@@ -458,7 +460,7 @@
 									"raw": "{\n  \"type\": \"customer\",\n  \"first_name\": \"Jane\",\n  \"last_name\": \"Smith\"\n}"
 								},
 								"url": {
-									"raw": "{{baseUrl}}/contacts"
+									"raw": ""
 								}
 							},
 							"status": "Created",
@@ -537,7 +539,7 @@
 									"raw": "{\n  \"contact_id\": 1,\n  \"location_id\": 1,\n  \"final_total\": 150.00,\n  \"products\": [{\n    \"product_id\": 1,\n    \"quantity\": 2,\n    \"unit_price\": 75.00\n  }],\n  \"payments\": [{\n    \"amount\": 150.00,\n    \"method\": \"cash\"\n  }]\n}"
 								},
 								"url": {
-									"raw": "{{baseUrl}}/sell"
+									"raw": ""
 								}
 							},
 							"status": "Created",
@@ -627,7 +629,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{baseUrl}}/sell?page=1&per_page=50"
+									"raw": ""
 								}
 							},
 							"status": "OK",
@@ -683,7 +685,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{baseUrl}}/sell/12345"
+									"raw": ""
 								}
 							},
 							"status": "OK",
@@ -696,7 +698,7 @@
 					]
 				},
 				{
-					"name": "Update Sale",
+					"name": "Update Sale (testing)",
 					"event": [
 						{
 							"listen": "test",
@@ -756,7 +758,7 @@
 									"raw": "{\n  \"contact_id\": 1,\n  \"final_total\": 175.00\n}"
 								},
 								"url": {
-									"raw": "{{baseUrl}}/sell/12345"
+									"raw": ""
 								}
 							},
 							"status": "OK",
@@ -823,7 +825,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{baseUrl}}/taxonomy?type=product"
+									"raw": ""
 								}
 							},
 							"status": "OK",
@@ -857,7 +859,8 @@
 							]
 						},
 						"description": "Gets attendance records for a specific user.\n\n**Path Parameters:**\n- userId: The ID of the user to get attendance for"
-					}
+					},
+					"response": []
 				},
 				{
 					"name": "Clock In",
@@ -901,7 +904,8 @@
 							]
 						},
 						"description": "Records clock in time for an employee.\n\n**Required Fields:**\n- user_id: Employee user ID\n- clock_in_time: Date and time of clock in\n\n**Optional Fields:**\n- clock_in_note: Note about clocking in\n- ip_address: IP address of the device\n- latitude/longitude: GPS location data"
-					}
+					},
+					"response": []
 				},
 				{
 					"name": "Clock Out",
@@ -945,8 +949,10 @@
 							]
 						},
 						"description": "Records clock out time for an employee.\n\n**Required Fields:**\n- user_id: Employee user ID\n- clock_out_time: Date and time of clock out\n\n**Optional Fields:**\n- clock_out_note: Note about clocking out"
-					}
-				}			],
+					},
+					"response": []
+				}
+			],
 			"description": "Employee attendance tracking endpoints."
 		},
 		{
@@ -958,9 +964,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/brands",
-							"host": ["{{baseUrl}}"],
-							"path": ["brands"]
+							"raw": "{{baseUrl}}/brand",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"brand"
+							]
 						},
 						"description": "Get list of all product brands."
 					},
@@ -971,7 +981,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{baseUrl}}/brands"
+									"raw": ""
 								}
 							},
 							"status": "OK",
@@ -989,9 +999,14 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/brands/1",
-							"host": ["{{baseUrl}}"],
-							"path": ["brands", "1"]
+							"raw": "{{baseUrl}}/brand/1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"brand",
+								"1"
+							]
 						},
 						"description": "Get details of a specific brand."
 					},
@@ -1010,8 +1025,12 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/business-location",
-							"host": ["{{baseUrl}}"],
-							"path": ["business-location"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"business-location"
+							]
 						},
 						"description": "Get list of all business locations."
 					},
@@ -1022,7 +1041,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{baseUrl}}/business-location"
+									"raw": ""
 								}
 							},
 							"status": "OK",
@@ -1041,8 +1060,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/business-location/1",
-							"host": ["{{baseUrl}}"],
-							"path": ["business-location", "1"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"business-location",
+								"1"
+							]
 						},
 						"description": "Get details of a specific business location."
 					},
@@ -1052,7 +1076,7 @@
 			"description": "Business location management endpoints."
 		},
 		{
-			"name": "CRM",
+			"name": "CRM (testing)",
 			"item": [
 				{
 					"name": "List Follow-ups",
@@ -1061,8 +1085,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/crm/follow-ups",
-							"host": ["{{baseUrl}}"],
-							"path": ["crm", "follow-ups"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"crm",
+								"follow-ups"
+							]
 						},
 						"description": "Get list of customer follow-ups."
 					},
@@ -1084,8 +1113,13 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/crm/follow-ups",
-							"host": ["{{baseUrl}}"],
-							"path": ["crm", "follow-ups"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"crm",
+								"follow-ups"
+							]
 						},
 						"description": "Create a new customer follow-up."
 					},
@@ -1098,8 +1132,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/crm/follow-ups/1",
-							"host": ["{{baseUrl}}"],
-							"path": ["crm", "follow-ups", "1"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"crm",
+								"follow-ups",
+								"1"
+							]
 						},
 						"description": "Get details of a specific follow-up."
 					},
@@ -1121,8 +1161,14 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/crm/follow-ups/1",
-							"host": ["{{baseUrl}}"],
-							"path": ["crm", "follow-ups", "1"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"crm",
+								"follow-ups",
+								"1"
+							]
 						},
 						"description": "Update an existing follow-up."
 					},
@@ -1135,8 +1181,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/crm/leads",
-							"host": ["{{baseUrl}}"],
-							"path": ["crm", "leads"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"crm",
+								"leads"
+							]
 						},
 						"description": "Get list of sales leads."
 					},
@@ -1155,8 +1206,12 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/cash-register",
-							"host": ["{{baseUrl}}"],
-							"path": ["cash-register"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cash-register"
+							]
 						},
 						"description": "Get list of all cash registers."
 					},
@@ -1178,8 +1233,12 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/cash-register",
-							"host": ["{{baseUrl}}"],
-							"path": ["cash-register"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cash-register"
+							]
 						},
 						"description": "Create a new cash register session."
 					},
@@ -1192,8 +1251,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/cash-register/1",
-							"host": ["{{baseUrl}}"],
-							"path": ["cash-register", "1"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cash-register",
+								"1"
+							]
 						},
 						"description": "Get details of a specific cash register."
 					},
@@ -1212,8 +1276,12 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/expense",
-							"host": ["{{baseUrl}}"],
-							"path": ["expense"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"expense"
+							]
 						},
 						"description": "Get list of business expenses."
 					},
@@ -1235,8 +1303,12 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/expense",
-							"host": ["{{baseUrl}}"],
-							"path": ["expense"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"expense"
+							]
 						},
 						"description": "Create a new business expense."
 					},
@@ -1248,9 +1320,14 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/expense/1",
-							"host": ["{{baseUrl}}"],
-							"path": ["expense", "1"]
+							"raw": "{{baseUrl}}/expense/787",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"expense",
+								"787"
+							]
 						},
 						"description": "Get details of a specific expense."
 					},
@@ -1272,8 +1349,13 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/expense/1",
-							"host": ["{{baseUrl}}"],
-							"path": ["expense", "1"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"expense",
+								"1"
+							]
 						},
 						"description": "Update an existing expense."
 					},
@@ -1286,8 +1368,12 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/expense-categories",
-							"host": ["{{baseUrl}}"],
-							"path": ["expense-categories"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"expense-categories"
+							]
 						},
 						"description": "Get list of expense categories."
 					},
@@ -1306,8 +1392,12 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/tax",
-							"host": ["{{baseUrl}}"],
-							"path": ["tax"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"tax"
+							]
 						},
 						"description": "Get list of all tax rates."
 					},
@@ -1318,7 +1408,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{baseUrl}}/tax"
+									"raw": ""
 								}
 							},
 							"status": "OK",
@@ -1337,8 +1427,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/tax/1",
-							"host": ["{{baseUrl}}"],
-							"path": ["tax", "1"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"tax",
+								"1"
+							]
 						},
 						"description": "Get details of a specific tax."
 					},
@@ -1357,8 +1452,12 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/unit",
-							"host": ["{{baseUrl}}"],
-							"path": ["unit"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"unit"
+							]
 						},
 						"description": "Get list of measurement units."
 					},
@@ -1369,7 +1468,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{baseUrl}}/unit"
+									"raw": ""
 								}
 							},
 							"status": "OK",
@@ -1388,8 +1487,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/unit/1",
-							"host": ["{{baseUrl}}"],
-							"path": ["unit", "1"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"unit",
+								"1"
+							]
 						},
 						"description": "Get details of a specific unit."
 					},
@@ -1408,8 +1512,12 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/taxonomy?type=product",
-							"host": ["{{baseUrl}}"],
-							"path": ["taxonomy"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"taxonomy"
+							],
 							"query": [
 								{
 									"key": "type",
@@ -1427,7 +1535,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{baseUrl}}/taxonomy?type=product"
+									"raw": ""
 								}
 							},
 							"status": "OK",
@@ -1445,9 +1553,14 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/taxonomy/1",
-							"host": ["{{baseUrl}}"],
-							"path": ["taxonomy", "1"]
+							"raw": "{{baseUrl}}/taxonomy/18",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"taxonomy",
+								"18"
+							]
 						},
 						"description": "Get details of a specific category."
 					},
@@ -1466,8 +1579,12 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/table",
-							"host": ["{{baseUrl}}"],
-							"path": ["table"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"table"
+							]
 						},
 						"description": "Get list of restaurant tables."
 					},
@@ -1480,8 +1597,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/table/1",
-							"host": ["{{baseUrl}}"],
-							"path": ["table", "1"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"table",
+								"1"
+							]
 						},
 						"description": "Get details of a specific table."
 					},
@@ -1491,7 +1613,7 @@
 			"description": "Restaurant table management endpoints."
 		},
 		{
-			"name": "Field Force",
+			"name": "Field Force (error 404)",
 			"item": [
 				{
 					"name": "List Visits",
@@ -1500,8 +1622,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/field-force/visits",
-							"host": ["{{baseUrl}}"],
-							"path": ["field-force", "visits"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"field-force",
+								"visits"
+							]
 						},
 						"description": "Get list of field force visits."
 					},
@@ -1523,8 +1650,13 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/field-force/visits",
-							"host": ["{{baseUrl}}"],
-							"path": ["field-force", "visits"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"field-force",
+								"visits"
+							]
 						},
 						"description": "Create a new field visit record."
 					},
@@ -1546,8 +1678,14 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/field-force/visits/1",
-							"host": ["{{baseUrl}}"],
-							"path": ["field-force", "visits", "1"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"field-force",
+								"visits",
+								"1"
+							]
 						},
 						"description": "Update field visit status."
 					},
@@ -1566,8 +1704,12 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/profit-loss-report?start_date=2025-06-01&end_date=2025-06-30&location_id=1",
-							"host": ["{{baseUrl}}"],
-							"path": ["profit-loss-report"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"profit-loss-report"
+							],
 							"query": [
 								{
 									"key": "start_date",
@@ -1591,14 +1733,18 @@
 					"response": []
 				},
 				{
-					"name": "Get Product Stock",
+					"name": "Get Product Stock (error 404)",
 					"request": {
 						"method": "GET",
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/product-stock?location_id=1",
-							"host": ["{{baseUrl}}"],
-							"path": ["product-stock"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"product-stock"
+							],
 							"query": [
 								{
 									"key": "location_id",
@@ -1624,8 +1770,12 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/notifications",
-							"host": ["{{baseUrl}}"],
-							"path": ["notifications"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"notifications"
+							]
 						},
 						"description": "Get user notifications."
 					},
@@ -1638,8 +1788,12 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/get-location?lat=40.7128&lng=-74.0060",
-							"host": ["{{baseUrl}}"],
-							"path": ["get-location"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"get-location"
+							],
 							"query": [
 								{
 									"key": "lat",
@@ -1663,9 +1817,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/payment-account",
-							"host": ["{{baseUrl}}"],
-							"path": ["payment-account"]
+							"raw": "{{baseUrl}}/payment-accounts",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"payment-accounts"
+							]
 						},
 						"description": "Get list of payment accounts."
 					},
@@ -1678,8 +1836,12 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/payment-methods",
-							"host": ["{{baseUrl}}"],
-							"path": ["payment-methods"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"payment-methods"
+							]
 						},
 						"description": "Get list of available payment methods."
 					},
@@ -1752,14 +1914,12 @@
 		{
 			"key": "saleId",
 			"value": "12345",
-			"type": "string",
-			"description": "Example sale ID for testing"
+			"type": "string"
 		},
 		{
 			"key": "userId",
 			"value": "1",
-			"type": "string",
-			"description": "Example user ID for testing"
+			"type": "string"
 		}
 	]
 }
