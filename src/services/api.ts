@@ -2,15 +2,41 @@ import axios from 'axios';
 import { toast } from 'sonner';
 import { getToken, removeToken, saveToken } from '@/lib/storage';
 
+// Import new OpenAPI-driven API client and modules
+import { apiClient } from '@/lib/api-client';
+import { AuthApi } from '@/lib/modules/auth';
+import { ProductsApi } from '@/lib/modules/products';
+import { TransactionsApi } from '@/lib/modules/transactions';
+import { ContactsApi } from '@/lib/modules/contacts';
+import { BusinessApi } from '@/lib/modules/business';
+
+// Import types for better type safety
+import type { 
+  LoginRequest, 
+  Product, 
+  Contact, 
+  Transaction, 
+  Business,
+  PaginatedResponse,
+  ApiResponse,
+  TransactionCreateRequest,
+  ContactCreateRequest,
+  AuthTokenResponse
+} from '@/types/api';
+
+// Re-export API modules for easier access throughout the app
+export { apiClient };
+
 const BASE_URL = 'https://erp.sadiid.net';
 
-const api = axios.create({
+// Legacy axios instance for backward compatibility during migration
+const legacyApi = axios.create({
   baseURL: BASE_URL,
   timeout: 10000,
 });
 
 // Request interceptor for API calls
-api.interceptors.request.use(
+legacyApi.interceptors.request.use(
   (config) => {
     const token = getToken();
     if (token) {
@@ -24,7 +50,7 @@ api.interceptors.request.use(
 );
 
 // Response interceptor for API calls
-api.interceptors.response.use(
+legacyApi.interceptors.response.use(
   (response) => {
     return response;
   },
@@ -46,17 +72,20 @@ api.interceptors.response.use(
   }
 );
 
-// ============== AUTHENTICATION ==============
+// ============== NEW OPENAPI-DRIVEN API MODULES ==============
+// Import static API classes - these don't need to be instantiated
+export { AuthApi, ProductsApi, TransactionsApi, ContactsApi, BusinessApi };
+
+// ============== REFACTORED AUTHENTICATION (Using new AuthApi) ==============
 export const login = async (username: string, password: string) => {
   try {
-    const formData = new FormData();
-    formData.append('grant_type', 'password');
-    formData.append('client_id', '48');
-    formData.append('client_secret', 'cEM0njAX1oCo9OK4NDdwjEyWr1KKmjt6545j6zSf');
-    formData.append('username', username);
-    formData.append('password', password);
-
-    const response = await axios.post(`${BASE_URL}/oauth/token`, formData);
+    // Use new type-safe auth API
+    const response = await AuthApi.login({
+      username,
+      password
+    });
+    
+    // Save just the token data, not the entire response
     saveToken(response.data);
     return response.data;
   } catch (error) {
@@ -67,16 +96,78 @@ export const login = async (username: string, password: string) => {
 
 export const getCurrentUser = async () => {
   try {
-    const response = await api.get('/connector/api/user/loggedin');
-    return response.data;
+    // Use new type-safe auth API
+    const response = await AuthApi.getCurrentUser();
+    return response;
   } catch (error) {
     console.error('Error fetching current user:', error);
-    throw error;
+    // Fallback to legacy API for backward compatibility
+    try {
+      const fallbackResponse = await legacyApi.get('/connector/api/user/loggedin');
+      return fallbackResponse.data;
+    } catch (fallbackError) {
+      throw error;
+    }
   }
 };
 
-// ============== PRODUCTS ==============
+// ============== REFACTORED PRODUCTS (Using new ProductsApi) ==============
 export const fetchProducts = async (page = 1, perPage = 500) => {
+  try {
+    // Use new type-safe products API
+    const response = await ProductsApi.getProducts({
+      page: page,
+      per_page: perPage
+    });
+    
+    // If page > 1, just return that specific page
+    if (page > 1) {
+      return response.data;
+    }
+    
+    // If page = 1, fetch all products across all pages for backward compatibility
+    let allProducts = response.data?.data || [];
+    let currentPage = 2;
+    const totalPages = response.data?.last_page || 1;
+    
+    // Fetch remaining pages if needed
+    while (currentPage <= totalPages) {
+      try {
+        const pageResponse = await ProductsApi.getProducts({
+          page: currentPage,
+          per_page: perPage
+        });
+        
+        if (pageResponse.data?.data && pageResponse.data.data.length > 0) {
+          allProducts = [...allProducts, ...pageResponse.data.data];
+        }
+        
+        currentPage++;
+      } catch (pageError) {
+        console.warn(`Failed to fetch page ${currentPage}:`, pageError);
+        break;
+      }
+    }
+    
+    return {
+      data: allProducts,
+      total: response.data?.total || 0,
+      current_page: 1,
+      per_page: allProducts.length,
+      last_page: 1,
+      from: 1,
+      to: allProducts.length
+    };
+    
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    // Fallback to legacy API for backward compatibility
+    return fetchProductsLegacy(page, perPage);
+  }
+};
+
+// Legacy fallback for products
+const fetchProductsLegacy = async (page = 1, perPage = 500) => {
   try {
     let allProducts = [];
     let currentPage = page;
@@ -86,13 +177,13 @@ export const fetchProducts = async (page = 1, perPage = 500) => {
 
     // If page > 1, just fetch that specific page (for backward compatibility)
     if (page > 1) {
-      const response = await api.get(`/connector/api/product?per_page=${perPage}&page=${page}`);
+      const response = await legacyApi.get(`/connector/api/product?per_page=${perPage}&page=${page}`);
       return response.data;
     }
 
     // If page = 1, fetch all products across all pages
     while (hasMorePages) {
-      const response = await api.get(`/connector/api/product?per_page=${perPage}&page=${currentPage}`);
+      const response = await legacyApi.get(`/connector/api/product?per_page=${perPage}&page=${currentPage}`);
       const responseData = response.data;
 
       if (responseData.data && responseData.data.length > 0) {
@@ -136,13 +227,70 @@ export const fetchProducts = async (page = 1, perPage = 500) => {
     };
 
   } catch (error) {
-    console.error('Error fetching products:', error);
+    console.error('Error fetching products (legacy):', error);
     throw error;
   }
 };
 
-// ============== CONTACTS ==============
-export const fetchContacts = async (page = 1, perPage = 500, type = 'customer') => {
+// ============== REFACTORED CONTACTS (Using new ContactsApi) ==============
+export const fetchContacts = async (page = 1, perPage = 500, type: 'customer' | 'supplier' | 'both' = 'customer') => {
+  try {
+    // Use new type-safe contacts API
+    const response = await ContactsApi.getContacts({
+      type,
+      page: page, 
+      per_page: perPage
+    });
+    
+    // If page > 1, just return that specific page
+    if (page > 1) {
+      return response.data;
+    }
+    
+    // If page = 1, fetch all contacts across all pages for backward compatibility
+    let allContacts = response.data?.data || [];
+    let currentPage = 2;
+    const totalPages = response.data?.last_page || 1;
+    
+    // Fetch remaining pages if needed
+    while (currentPage <= totalPages) {
+      try {
+        const pageResponse = await ContactsApi.getContacts({
+          type,
+          page: currentPage,
+          per_page: perPage
+        });
+        
+        if (pageResponse.data?.data && pageResponse.data.data.length > 0) {
+          allContacts = [...allContacts, ...pageResponse.data.data];
+        }
+        
+        currentPage++;
+      } catch (pageError) {
+        console.warn(`Failed to fetch contacts page ${currentPage}:`, pageError);
+        break;
+      }
+    }
+    
+    return {
+      data: allContacts,
+      total: response.data?.total || 0,
+      current_page: 1,
+      per_page: allContacts.length,
+      last_page: 1,
+      from: 1,
+      to: allContacts.length
+    };
+    
+  } catch (error) {
+    console.error('Error fetching contacts:', error);
+    // Fallback to legacy API for backward compatibility
+    return fetchContactsLegacy(page, perPage, type);
+  }
+};
+
+// Legacy fallback for contacts  
+const fetchContactsLegacy = async (page = 1, perPage = 500, type = 'customer') => {
   try {
     let allContacts = [];
     let currentPage = page;
@@ -152,13 +300,13 @@ export const fetchContacts = async (page = 1, perPage = 500, type = 'customer') 
 
     // If page > 1, just fetch that specific page (for backward compatibility)
     if (page > 1) {
-      const response = await api.get(`/connector/api/contactapi?type=${type}&per_page=${perPage}&page=${page}`);
+      const response = await legacyApi.get(`/connector/api/contactapi?type=${type}&per_page=${perPage}&page=${page}`);
       return response.data;
     }
 
     // If page = 1, fetch all contacts across all pages
     while (hasMorePages) {
-      const response = await api.get(`/connector/api/contactapi?type=${type}&per_page=${perPage}&page=${currentPage}`);
+      const response = await legacyApi.get(`/connector/api/contactapi?type=${type}&per_page=${perPage}&page=${currentPage}`);
       const responseData = response.data;
 
       if (responseData.data && responseData.data.length > 0) {
@@ -202,14 +350,14 @@ export const fetchContacts = async (page = 1, perPage = 500, type = 'customer') 
     };
 
   } catch (error) {
-    console.error('Error fetching contacts:', error);
+    console.error('Error fetching contacts (legacy):', error);
     throw error;
   }
 };
 
 export const createContact = async (contactData: any) => {
   try {
-    const response = await api.post('/connector/api/contactapi', contactData);
+    const response = await legacyApi.post('/connector/api/contactapi', contactData);
     return response.data;
   } catch (error) {
     console.error('Error creating contact:', error);
@@ -357,7 +505,7 @@ export const createSale = async (saleData: SaleData) => {
     };
     
     // Make API request
-    const response = await api.post('/connector/api/sell', formattedSaleData);
+    const response = await legacyApi.post('/connector/api/sell', formattedSaleData);
     
     if (response.data && response.data.data) {
       return {
@@ -402,7 +550,7 @@ export const createSale = async (saleData: SaleData) => {
 export const fetchBusinessDetails = async () => {
   try {
     console.log('Fetching business details from API...');
-    const response = await api.get('/connector/api/business-details');
+    const response = await legacyApi.get('/connector/api/business-details');
     
     console.log('API Response status:', response.status);
     console.log('API Response data structure:', {
@@ -432,7 +580,7 @@ export const fetchBusinessDetails = async () => {
 export const fetchSales = async (page = 1, perPage = 50, params = {}) => {
   try {
     const queryParams = { page, per_page: perPage, ...params };
-    const response = await api.get('/connector/api/sell', { params: queryParams });
+    const response = await legacyApi.get('/connector/api/sell', { params: queryParams });
     return response.data;
   } catch (error) {
     console.error('Error fetching sales:', error);
@@ -443,7 +591,7 @@ export const fetchSales = async (page = 1, perPage = 50, params = {}) => {
 // ============== ATTENDANCE MANAGEMENT ==============
 export const getAttendance = async (userId: number) => {
   try {
-    const response = await api.get(`/connector/api/get-attendance/${userId}`);
+    const response = await legacyApi.get(`/connector/api/get-attendance/${userId}`);
     return response.data;
   } catch (error) {
     console.error('Error fetching attendance:', error);
@@ -460,7 +608,7 @@ export const clockIn = async (data: {
   longitude?: string;
 }) => {
   try {
-    const response = await api.post('/connector/api/clock-in', data);
+    const response = await legacyApi.post('/connector/api/clock-in', data);
     return response.data;
   } catch (error) {
     console.error('Error clocking in:', error);
@@ -476,7 +624,7 @@ export const clockOut = async (data: {
   longitude?: string;
 }) => {
   try {
-    const response = await api.post('/connector/api/clock-out', data);
+    const response = await legacyApi.post('/connector/api/clock-out', data);
     return response.data;
   } catch (error) {
     console.error('Error clocking out:', error);
@@ -490,7 +638,7 @@ export const listHolidays = async (params: {
   end_date?: string;
 }) => {
   try {
-    const response = await api.get('/connector/api/holidays', { params });
+    const response = await legacyApi.get('/connector/api/holidays', { params });
     return response.data;
   } catch (error) {
     console.error('Error listing holidays:', error);
@@ -501,7 +649,7 @@ export const listHolidays = async (params: {
 // ============== BRAND MANAGEMENT ==============
 export const listBrands = async () => {
   try {
-    const response = await api.get('/connector/api/brand');
+    const response = await legacyApi.get('/connector/api/brand');
     return response.data;
   } catch (error) {
     console.error('Error listing brands:', error);
@@ -511,7 +659,7 @@ export const listBrands = async () => {
 
 export const getBrand = async (brandId: string | number) => {
   try {
-    const response = await api.get(`/connector/api/brand/${brandId}`);
+    const response = await legacyApi.get(`/connector/api/brand/${brandId}`);
     return response.data;
   } catch (error) {
     console.error('Error fetching brand:', error);
@@ -529,7 +677,7 @@ export const listCashRegisters = async (params: {
   per_page?: number;
 } = {}) => {
   try {
-    const response = await api.get('/connector/api/cash-register', { params });
+    const response = await legacyApi.get('/connector/api/cash-register', { params });
     return response.data;
   } catch (error) {
     console.error('Error listing cash registers:', error);
@@ -550,7 +698,7 @@ export const createCashRegister = async (data: {
   transaction_ids?: string;
 }) => {
   try {
-    const response = await api.post('/connector/api/cash-register', data);
+    const response = await legacyApi.post('/connector/api/cash-register', data);
     return response.data;
   } catch (error) {
     console.error('Error creating cash register:', error);
@@ -560,7 +708,7 @@ export const createCashRegister = async (data: {
 
 export const getCashRegister = async (registerId: string | number) => {
   try {
-    const response = await api.get(`/connector/api/cash-register/${registerId}`);
+    const response = await legacyApi.get(`/connector/api/cash-register/${registerId}`);
     return response.data;
   } catch (error) {
     console.error('Error fetching cash register:', error);
@@ -580,7 +728,7 @@ export const listFollowUps = async (params: {
   per_page?: number;
 } = {}) => {
   try {
-    const response = await api.get('/connector/api/crm/follow-ups', { params });
+    const response = await legacyApi.get('/connector/api/crm/follow-ups', { params });
     return response.data;
   } catch (error) {
     console.error('Error listing follow-ups:', error);
@@ -604,7 +752,7 @@ export const addFollowUp = async (data: {
   allow_notification?: boolean;
 }) => {
   try {
-    const response = await api.post('/connector/api/crm/follow-ups', data);
+    const response = await legacyApi.post('/connector/api/crm/follow-ups', data);
     return response.data;
   } catch (error) {
     console.error('Error adding follow-up:', error);
@@ -614,7 +762,7 @@ export const addFollowUp = async (data: {
 
 export const getFollowUp = async (followUpId: string | number) => {
   try {
-    const response = await api.get(`/connector/api/crm/follow-ups/${followUpId}`);
+    const response = await legacyApi.get(`/connector/api/crm/follow-ups/${followUpId}`);
     return response.data;
   } catch (error) {
     console.error('Error fetching follow-up:', error);
@@ -624,7 +772,7 @@ export const getFollowUp = async (followUpId: string | number) => {
 
 export const updateFollowUp = async (followUpId: string | number, data: any) => {
   try {
-    const response = await api.put(`/connector/api/crm/follow-ups/${followUpId}`, data);
+    const response = await legacyApi.put(`/connector/api/crm/follow-ups/${followUpId}`, data);
     return response.data;
   } catch (error) {
     console.error('Error updating follow-up:', error);
@@ -634,7 +782,7 @@ export const updateFollowUp = async (followUpId: string | number, data: any) => 
 
 export const getFollowUpResources = async () => {
   try {
-    const response = await api.get('/connector/api/crm/follow-up-resources');
+    const response = await legacyApi.get('/connector/api/crm/follow-up-resources');
     return response.data;
   } catch (error) {
     console.error('Error fetching follow-up resources:', error);
@@ -653,7 +801,7 @@ export const listLeads = async (params: {
   per_page?: number;
 } = {}) => {
   try {
-    const response = await api.get('/connector/api/crm/leads', { params });
+    const response = await legacyApi.get('/connector/api/crm/leads', { params });
     return response.data;
   } catch (error) {
     console.error('Error listing leads:', error);
@@ -663,7 +811,7 @@ export const listLeads = async (params: {
 
 export const saveCallLog = async (data: any) => {
   try {
-    const response = await api.post('/connector/api/crm/call-logs', data);
+    const response = await legacyApi.post('/connector/api/crm/call-logs', data);
     return response.data;
   } catch (error) {
     console.error('Error saving call log:', error);
@@ -681,7 +829,7 @@ export const listExpenses = async (params: {
   per_page?: number;
 } = {}) => {
   try {
-    const response = await api.get('/connector/api/expense', { params });
+    const response = await legacyApi.get('/connector/api/expense', { params });
     return response.data;
   } catch (error) {
     console.error('Error listing expenses:', error);
@@ -709,7 +857,7 @@ export const createExpense = async (data: {
   payment?: any[];
 }) => {
   try {
-    const response = await api.post('/connector/api/expense', data);
+    const response = await legacyApi.post('/connector/api/expense', data);
     return response.data;
   } catch (error) {
     console.error('Error creating expense:', error);
@@ -719,7 +867,7 @@ export const createExpense = async (data: {
 
 export const getExpense = async (expenseId: string | number) => {
   try {
-    const response = await api.get(`/connector/api/expense/${expenseId}`);
+    const response = await legacyApi.get(`/connector/api/expense/${expenseId}`);
     return response.data;
   } catch (error) {
     console.error('Error fetching expense:', error);
@@ -729,7 +877,7 @@ export const getExpense = async (expenseId: string | number) => {
 
 export const updateExpense = async (expenseId: string | number, data: any) => {
   try {
-    const response = await api.put(`/connector/api/expense/${expenseId}`, data);
+    const response = await legacyApi.put(`/connector/api/expense/${expenseId}`, data);
     return response.data;
   } catch (error) {
     console.error('Error updating expense:', error);
@@ -746,7 +894,7 @@ export const listExpenseRefunds = async (params: {
   per_page?: number;
 } = {}) => {
   try {
-    const response = await api.get('/connector/api/expense-refund', { params });
+    const response = await legacyApi.get('/connector/api/expense-refund', { params });
     return response.data;
   } catch (error) {
     console.error('Error listing expense refunds:', error);
@@ -756,7 +904,7 @@ export const listExpenseRefunds = async (params: {
 
 export const listExpenseCategories = async () => {
   try {
-    const response = await api.get('/connector/api/expense-categories');
+    const response = await legacyApi.get('/connector/api/expense-categories');
     return response.data;
   } catch (error) {
     console.error('Error listing expense categories:', error);
@@ -775,7 +923,7 @@ export const listVisits = async (params: {
   order_by_date?: string;
 } = {}) => {
   try {
-    const response = await api.get('/connector/api/field-force', { params });
+    const response = await legacyApi.get('/connector/api/field-force', { params });
     return response.data;
   } catch (error) {
     console.error('Error listing visits:', error);
@@ -792,7 +940,7 @@ export const createVisit = async (data: {
   visit_for?: string;
 }) => {
   try {
-    const response = await api.post('/connector/api/field-force/create', data);
+    const response = await legacyApi.post('/connector/api/field-force/create', data);
     return response.data;
   } catch (error) {
     console.error('Error creating visit:', error);
@@ -802,7 +950,7 @@ export const createVisit = async (data: {
 
 export const updateVisitStatus = async (visitId: string | number, data: any) => {
   try {
-    const response = await api.post(`/connector/api/field-force/${visitId}/update-status`, data);
+    const response = await legacyApi.post(`/connector/api/field-force/${visitId}/update-status`, data);
     return response.data;
   } catch (error) {
     console.error('Error updating visit status:', error);
@@ -818,7 +966,7 @@ export const getProfitLossReport = async (params: {
   user_id?: number;
 } = {}) => {
   try {
-    const response = await api.get('/connector/api/profit-loss-report', { params });
+    const response = await legacyApi.get('/connector/api/profit-loss-report', { params });
     return response.data;
   } catch (error) {
     console.error('Error fetching profit/loss report:', error);
@@ -828,7 +976,7 @@ export const getProfitLossReport = async (params: {
 
 export const getProductStockReport = async (params: any = {}) => {
   try {
-    const response = await api.get('/connector/api/product-stock-report', { params });
+    const response = await legacyApi.get('/connector/api/product-stock-report', { params });
     return response.data;
   } catch (error) {
     console.error('Error fetching product stock report:', error);
@@ -838,7 +986,7 @@ export const getProductStockReport = async (params: any = {}) => {
 
 export const getNotifications = async () => {
   try {
-    const response = await api.get('/connector/api/notifications');
+    const response = await legacyApi.get('/connector/api/notifications');
     return response.data;
   } catch (error) {
     console.error('Error fetching notifications:', error);
@@ -848,7 +996,7 @@ export const getNotifications = async () => {
 
 export const getLocationFromCoordinates = async (data: { lat: string; lon: string }) => {
   try {
-    const response = await api.get('/connector/api/get-location', { params: data });
+    const response = await legacyApi.get('/connector/api/get-location', { params: data });
     return response.data;
   } catch (error) {
     console.error('Error fetching location from coordinates:', error);
@@ -858,7 +1006,7 @@ export const getLocationFromCoordinates = async (data: { lat: string; lon: strin
 
 export const getPaymentAccounts = async () => {
   try {
-    const response = await api.get('/connector/api/payment-accounts');
+    const response = await legacyApi.get('/connector/api/payment-accounts');
     return response.data;
   } catch (error) {
     console.error('Error fetching payment accounts:', error);
@@ -868,7 +1016,7 @@ export const getPaymentAccounts = async () => {
 
 export const getPaymentMethods = async () => {
   try {
-    const response = await api.get('/connector/api/payment-methods');
+    const response = await legacyApi.get('/connector/api/payment-methods');
     return response.data;
   } catch (error) {
     console.error('Error fetching payment methods:', error);
@@ -898,7 +1046,7 @@ export const contactPayment = async (data: {
   note?: string;
 }) => {
   try {
-    const response = await api.post('/connector/api/contactapi-payment', data);
+    const response = await legacyApi.post('/connector/api/contactapi-payment', data);
     return response.data;
   } catch (error) {
     console.error('Error processing contact payment:', error);
@@ -906,4 +1054,4 @@ export const contactPayment = async (data: {
   }
 };
 
-export default api;
+export default legacyApi;

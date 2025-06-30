@@ -206,35 +206,47 @@ export const syncData = async (showToast = false, forceSync = false): Promise<bo
     // Check if we need to sync products
     if (forceSync || isDataSyncNeeded('products', SYNC_PRODUCT_THRESHOLD_HOURS)) {
       try {
+        console.log('📦 Sync: Starting products sync...');
         const productsResponse = await fetchProducts(1, 1000); // Adjust limits as needed
+        console.log('📦 Sync: Products fetched:', productsResponse?.data?.length || 0);
+        
         if (productsResponse.data) {
+          console.log('💾 Sync: Saving products to storage...');
           await saveProducts(productsResponse.data);
           updateSyncTimestamp('products');
-          console.log(`Synced ${productsResponse.data.length} products`);
+          console.log(`✅ Sync: Synced ${productsResponse.data.length} products`);
+        } else {
+          console.warn('⚠️ Sync: No products data received');
         }
       } catch (error) {
-        console.error('Error syncing products:', error);
+        console.error('❌ Sync: Error syncing products:', error);
         if (showToast) toast.error('Failed to sync products');
       }
     } else {
-      console.log('Products sync skipped - data is fresh');
+      console.log('⏭️ Sync: Products sync skipped - data is fresh');
     }
     
     // Check if we need to sync contacts
     if (forceSync || isDataSyncNeeded('contacts', SYNC_CONTACT_THRESHOLD_HOURS)) {
       try {
+        console.log('👥 Sync: Starting contacts sync...');
         const contactsResponse = await fetchContacts(1, 1000); // Adjust limits as needed
+        console.log('👥 Sync: Contacts fetched:', contactsResponse?.data?.length || 0);
+        
         if (contactsResponse.data) {
+          console.log('💾 Sync: Saving contacts to storage...');
           await saveContacts(contactsResponse.data);
           updateSyncTimestamp('contacts');
-          console.log(`Synced ${contactsResponse.data.length} contacts`);
+          console.log(`✅ Sync: Synced ${contactsResponse.data.length} contacts`);
+        } else {
+          console.warn('⚠️ Sync: No contacts data received');
         }
       } catch (error) {
-        console.error('Error syncing contacts:', error);
+        console.error('❌ Sync: Error syncing contacts:', error);
         if (showToast) toast.error('Failed to sync contacts');
       }
     } else {
-      console.log('Contacts sync skipped - data is fresh');
+      console.log('⏭️ Sync: Contacts sync skipped - data is fresh');
     }
     
     // Sync settings

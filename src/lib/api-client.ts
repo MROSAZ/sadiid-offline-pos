@@ -89,9 +89,9 @@ export class SadiidApiClient {
           if (this.isRefreshing) {
             // If refresh is in progress, queue the request
             return new Promise((resolve, reject) => {
-              this.retryQueue.push(() => {
+              this.retryQueue.push(async () => {
                 originalRequest.headers.Authorization = `Bearer ${this.accessToken}`;
-                resolve(this.client(originalRequest));
+                return resolve(this.client(originalRequest));
               });
             });
           }
@@ -112,9 +112,10 @@ export class SadiidApiClient {
               return this.client(originalRequest);
             }
           } catch (refreshError) {
-            // Refresh failed, redirect to login
+            // Refresh failed, clear tokens but don't redirect
+            // Let the app handle the redirect through AuthContext
             this.clearTokens();
-            window.location.href = '/login';
+            throw refreshError;
           } finally {
             this.isRefreshing = false;
           }
@@ -155,8 +156,13 @@ export class SadiidApiClient {
    */
   private loadTokensFromStorage(): void {
     try {
-      this.accessToken = localStorage.getItem('sadiid_access_token');
-      this.refreshToken = localStorage.getItem('sadiid_refresh_token');
+      // Use the same token storage as the rest of the app
+      const authTokenString = localStorage.getItem('auth_token');
+      if (authTokenString) {
+        const authToken = JSON.parse(authTokenString);
+        this.accessToken = authToken.access_token;
+        this.refreshToken = authToken.refresh_token;
+      }
     } catch (error) {
       console.warn('Failed to load tokens from storage:', error);
     }
@@ -168,10 +174,12 @@ export class SadiidApiClient {
   private saveTokensToStorage(): void {
     try {
       if (this.accessToken) {
-        localStorage.setItem('sadiid_access_token', this.accessToken);
-      }
-      if (this.refreshToken) {
-        localStorage.setItem('sadiid_refresh_token', this.refreshToken);
+        const tokenData = {
+          access_token: this.accessToken,
+          refresh_token: this.refreshToken,
+          token_type: 'Bearer'
+        };
+        localStorage.setItem('auth_token', JSON.stringify(tokenData));
       }
     } catch (error) {
       console.warn('Failed to save tokens to storage:', error);
@@ -185,8 +193,7 @@ export class SadiidApiClient {
     this.accessToken = null;
     this.refreshToken = null;
     try {
-      localStorage.removeItem('sadiid_access_token');
-      localStorage.removeItem('sadiid_refresh_token');
+      localStorage.removeItem('auth_token');
     } catch (error) {
       console.warn('Failed to clear tokens from storage:', error);
     }
@@ -200,8 +207,8 @@ export class SadiidApiClient {
   async login(credentials: LoginRequest): Promise<ApiResponse<AuthTokenResponse>> {
     const formData = new URLSearchParams();
     formData.append('grant_type', 'password');
-    formData.append('client_id', process.env.REACT_APP_OAUTH_CLIENT_ID || '');
-    formData.append('client_secret', process.env.REACT_APP_OAUTH_CLIENT_SECRET || '');
+    formData.append('client_id', import.meta.env.VITE_OAUTH_CLIENT_ID || '48');
+    formData.append('client_secret', import.meta.env.VITE_OAUTH_CLIENT_SECRET || 'cEM0njAX1oCo9OK4NDdwjEyWr1KKmjt6545j6zSf');
     formData.append('username', credentials.username);
     formData.append('password', credentials.password);
     formData.append('scope', '*');
@@ -238,8 +245,8 @@ export class SadiidApiClient {
     const formData = new URLSearchParams();
     formData.append('grant_type', 'refresh_token');
     formData.append('refresh_token', this.refreshToken);
-    formData.append('client_id', process.env.REACT_APP_OAUTH_CLIENT_ID || '');
-    formData.append('client_secret', process.env.REACT_APP_OAUTH_CLIENT_SECRET || '');
+    formData.append('client_id', import.meta.env.VITE_OAUTH_CLIENT_ID || '48');
+    formData.append('client_secret', import.meta.env.VITE_OAUTH_CLIENT_SECRET || 'cEM0njAX1oCo9OK4NDdwjEyWr1KKmjt6545j6zSf');
 
     const response = await this.client.post<AuthTokenResponse>(
       `${API_CONFIG.OAUTH_PATH}/token`,

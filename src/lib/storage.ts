@@ -111,10 +111,19 @@ export const getDB = async () => {
 
 // Token management
 export const saveToken = async (tokenData: any) => {
-  localStorage.setItem('auth_token', JSON.stringify(tokenData));
-  const db = await getDB();
-  await db.put('token', tokenData, 'auth_token');
-  return true;
+  try {
+    console.log('💾 Storage: Saving token...', !!tokenData);
+    localStorage.setItem('auth_token', JSON.stringify(tokenData));
+    console.log('💾 Storage: Token saved to localStorage');
+    
+    const db = await getDB();
+    await db.put('token', tokenData, 'auth_token');
+    console.log('✅ Storage: Token saved to IndexedDB');
+    return true;
+  } catch (error) {
+    console.error('❌ Storage: Error saving token:', error);
+    throw error;
+  }
 };
 
 export const getToken = () => {
@@ -142,9 +151,16 @@ export const removeToken = () => {
 
 // User management
 export const saveUser = async (user: any) => {
-  const db = await getDB();
-  await db.put('user', user, 'current_user');
-  return true;
+  try {
+    console.log('💾 Storage: Saving user...', user?.name || user?.email || 'unknown');
+    const db = await getDB();
+    await db.put('user', user, 'current_user');
+    console.log('✅ Storage: User saved successfully');
+    return true;
+  } catch (error) {
+    console.error('❌ Storage: Error saving user:', error);
+    throw error;
+  }
 };
 
 export const getUser = async () => {
@@ -159,13 +175,22 @@ export const getUser = async () => {
 
 // Product management
 export const saveProducts = async (products: any[]) => {
-  const db = await getDB();
-  const tx = db.transaction('products', 'readwrite');
-  for (const product of products) {
-    await tx.store.put(product);
+  try {
+    console.log('💾 Storage: Saving products...', products.length);
+    const db = await getDB();
+    const tx = db.transaction('products', 'readwrite');
+    
+    for (const product of products) {
+      await tx.store.put(product);
+    }
+    
+    await tx.done;
+    console.log('✅ Storage: Products saved successfully');
+    return true;
+  } catch (error) {
+    console.error('❌ Storage: Error saving products:', error);
+    throw error;
   }
-  await tx.done;
-  return true;
 };
 
 export const getProducts = async () => {
@@ -209,13 +234,22 @@ export const getProductsByCategory = async (categoryId: number): Promise<any[]> 
 
 // Contact management
 export const saveContacts = async (contacts: any[]) => {
-  const db = await getDB();
-  const tx = db.transaction('contacts', 'readwrite');
-  for (const contact of contacts) {
-    await tx.store.put(contact);
+  try {
+    console.log('💾 Storage: Saving contacts...', contacts.length);
+    const db = await getDB();
+    const tx = db.transaction('contacts', 'readwrite');
+    
+    for (const contact of contacts) {
+      await tx.store.put(contact);
+    }
+    
+    await tx.done;
+    console.log('✅ Storage: Contacts saved successfully');
+    return true;
+  } catch (error) {
+    console.error('❌ Storage: Error saving contacts:', error);
+    throw error;
   }
-  await tx.done;
-  return true;
 };
 
 export const getContacts = async () => {

@@ -7,13 +7,17 @@
  * and validates the API client against the spec.
  */
 
-const fs = require('fs');
-const path = require('path');
-const yaml = require('js-yaml');
+import fs from 'fs';
+import path from 'path';
+import yaml from 'js-yaml';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Configuration
-const OPENAPI_FILE = path.join(__dirname, '../../docs/openapi.yaml');
-const OUTPUT_DIR = path.join(__dirname, '../types');
+const OPENAPI_FILE = path.join(__dirname, '../docs/openapi.yaml');
+const OUTPUT_DIR = path.join(__dirname, '../src/types');
 const GENERATED_TYPES_FILE = path.join(OUTPUT_DIR, 'generated-api.ts');
 
 /**
@@ -288,11 +292,11 @@ function main() {
 }
 
 // Run if called directly
-if (require.main === module) {
+if (import.meta.url === new URL(process.argv[1], 'file:').href) {
   main();
 }
 
-module.exports = {
+export {
   loadOpenAPISpec,
   generateTypesFile,
   validateApiClient,

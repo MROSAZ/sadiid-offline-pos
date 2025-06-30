@@ -58,19 +58,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const checkAuth = async () => {
     try {
+      console.log('🔍 CheckAuth: Starting authentication check...');
+      
       // First check local storage for token
       const token = getToken();
+      console.log('🔑 CheckAuth: Token found:', !!token);
+      
       if (!token) {
+        console.log('❌ CheckAuth: No token found, setting not authenticated');
         setIsLoading(false);
         return false;
-      }      // Then check IndexedDB for user data
+      }
+
+      // Then check IndexedDB for user data
       const localUser = await getUser();
+      console.log('👤 CheckAuth: Local user found:', !!localUser);
+      
       if (localUser) {
+        console.log('✅ CheckAuth: Setting user and authenticated state');
         setUser(localUser);
         setIsLoading(false);
         
         // If online, queue background refresh of user data
         if (navigator.onLine) {
+          console.log('🌐 CheckAuth: Online, queueing background user refresh');
           queueBackgroundUserRefresh();
         }
         
@@ -79,6 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // If no local user data, create default user profile from token
       // This allows the app to work offline even without initial user data
+      console.log('⚠️ CheckAuth: No local user data, creating default user profile');
       const defaultUser = {
         id: token.user_id || 1,
         name: 'User',
@@ -86,27 +98,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Add other default fields as needed
       };
       
+      console.log('💾 CheckAuth: Saving default user profile');
       setUser(defaultUser);
       await saveUser(defaultUser);
       
       // If online, queue background fetch of real user data
       if (navigator.onLine) {
+        console.log('🌐 CheckAuth: Online, queueing background fetch of real user data');
         queueBackgroundUserRefresh();
       }
       
       setIsLoading(false);
       return true;
     } catch (error) {
-      console.error('Authentication check failed:', error);
+      console.error('❌ CheckAuth: Authentication check failed:', error);
       
       // Keep user logged in if we have a token but API failed
       const localUser = await getUser();
+      console.log('🔄 CheckAuth: API failed, checking local user backup:', !!localUser);
+      
       if (localUser) {
+        console.log('✅ CheckAuth: Using local user backup');
         setUser(localUser);
         setIsLoading(false);
         return true;
       }
       
+      console.log('❌ CheckAuth: No local user backup, clearing auth');
       removeToken();
       setUser(null);
       setIsLoading(false);
@@ -120,22 +138,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (username: string, password: string) => {
     try {
+      console.log('🔐 Login: Starting login process for:', username);
       setIsLoading(true);
+      
       const tokenData = await apiLogin(username, password);
+      console.log('🔑 Login: Token received:', !!tokenData);
       
       // Save token to localStorage for quick access
-      saveToken(tokenData);
+      await saveToken(tokenData);
+      console.log('💾 Login: Token saved to storage');
       
       // Get user data
+      console.log('👤 Login: Fetching user data...');
       const userData = await getCurrentUser();
+      console.log('📋 Login: User data received:', !!userData?.data);
+      
       setUser(userData.data);
       await saveUser(userData.data);
+      console.log('💾 Login: User data saved to storage');
       
       // Start background sync and auto-select location
+      console.log('🔄 Login: Starting background sync...');
       startBackgroundSync();
       await autoSelectLocation();
+      console.log('📍 Login: Location auto-selected');
       
       toast.success('Login successful');
+      console.log('✅ Login: Complete, navigating to dashboard');
       navigate('/dashboard');
     } catch (error: any) {
       console.error('Login error:', error);
