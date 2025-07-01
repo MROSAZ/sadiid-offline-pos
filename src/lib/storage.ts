@@ -176,16 +176,30 @@ export const getUser = async () => {
 // Product management
 export const saveProducts = async (products: any[]) => {
   try {
-    console.log('💾 Storage: Saving products...', products.length);
+    console.log('💾 Storage: saveProducts called with:', products.length, 'products');
+    console.log('💾 Storage: Sample products:', products.slice(0, 2));
+    
     const db = await getDB();
     const tx = db.transaction('products', 'readwrite');
     
+    // Clear existing products first
+    await tx.store.clear();
+    
     for (const product of products) {
+      // Ensure each product has an id (keyPath requirement)
+      if (!product.id) {
+        product.id = product.product_id || `product_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      }
       await tx.store.put(product);
     }
     
     await tx.done;
-    console.log('✅ Storage: Products saved successfully');
+    console.log('✅ Storage: Products saved successfully to IndexedDB');
+    
+    // Verify data was saved
+    const savedProducts = await getProducts();
+    console.log('✅ Storage: Verification - Products in DB after save:', savedProducts.length);
+    
     return true;
   } catch (error) {
     console.error('❌ Storage: Error saving products:', error);
@@ -235,16 +249,30 @@ export const getProductsByCategory = async (categoryId: number): Promise<any[]> 
 // Contact management
 export const saveContacts = async (contacts: any[]) => {
   try {
-    console.log('💾 Storage: Saving contacts...', contacts.length);
+    console.log('💾 Storage: saveContacts called with:', contacts.length, 'contacts');
+    console.log('💾 Storage: Sample contacts:', contacts.slice(0, 2));
+    
     const db = await getDB();
     const tx = db.transaction('contacts', 'readwrite');
     
+    // Clear existing contacts first
+    await tx.store.clear();
+    
     for (const contact of contacts) {
+      // Ensure each contact has an id (keyPath requirement)
+      if (!contact.id) {
+        contact.id = contact.contact_id || `contact_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      }
       await tx.store.put(contact);
     }
     
     await tx.done;
-    console.log('✅ Storage: Contacts saved successfully');
+    console.log('✅ Storage: Contacts saved successfully to IndexedDB');
+    
+    // Verify data was saved
+    const savedContacts = await getContacts();
+    console.log('✅ Storage: Verification - Contacts in DB after save:', savedContacts.length);
+    
     return true;
   } catch (error) {
     console.error('❌ Storage: Error saving contacts:', error);

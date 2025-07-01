@@ -207,16 +207,24 @@ export const syncData = async (showToast = false, forceSync = false): Promise<bo
     if (forceSync || isDataSyncNeeded('products', SYNC_PRODUCT_THRESHOLD_HOURS)) {
       try {
         console.log('📦 Sync: Starting products sync...');
-        const productsResponse = await fetchProducts(1, 1000); // Adjust limits as needed
+        const productsResponse = await fetchProducts(1, 500); // Use 500 per page to minimize requests
+        console.log('📦 Sync: Products response structure:', {
+          type: typeof productsResponse,
+          keys: productsResponse ? Object.keys(productsResponse) : 'null',
+          dataType: typeof productsResponse?.data,
+          dataIsArray: Array.isArray(productsResponse?.data),
+          dataLength: productsResponse?.data?.length || 0
+        });
         console.log('📦 Sync: Products fetched:', productsResponse?.data?.length || 0);
         
-        if (productsResponse.data) {
+        if (productsResponse && productsResponse.data && Array.isArray(productsResponse.data)) {
           console.log('💾 Sync: Saving products to storage...');
           await saveProducts(productsResponse.data);
           updateSyncTimestamp('products');
           console.log(`✅ Sync: Synced ${productsResponse.data.length} products`);
         } else {
-          console.warn('⚠️ Sync: No products data received');
+          console.warn('⚠️ Sync: No products data received or data is not an array');
+          console.warn('⚠️ Sync: productsResponse structure:', JSON.stringify(productsResponse, null, 2));
         }
       } catch (error) {
         console.error('❌ Sync: Error syncing products:', error);
@@ -230,16 +238,24 @@ export const syncData = async (showToast = false, forceSync = false): Promise<bo
     if (forceSync || isDataSyncNeeded('contacts', SYNC_CONTACT_THRESHOLD_HOURS)) {
       try {
         console.log('👥 Sync: Starting contacts sync...');
-        const contactsResponse = await fetchContacts(1, 1000); // Adjust limits as needed
+        const contactsResponse = await fetchContacts(1, 500); // Use 500 per page to minimize requests
+        console.log('👥 Sync: Contacts response structure:', {
+          type: typeof contactsResponse,
+          keys: contactsResponse ? Object.keys(contactsResponse) : 'null',
+          dataType: typeof contactsResponse?.data,
+          dataIsArray: Array.isArray(contactsResponse?.data),
+          dataLength: contactsResponse?.data?.length || 0
+        });
         console.log('👥 Sync: Contacts fetched:', contactsResponse?.data?.length || 0);
         
-        if (contactsResponse.data) {
+        if (contactsResponse && contactsResponse.data && Array.isArray(contactsResponse.data)) {
           console.log('💾 Sync: Saving contacts to storage...');
           await saveContacts(contactsResponse.data);
           updateSyncTimestamp('contacts');
           console.log(`✅ Sync: Synced ${contactsResponse.data.length} contacts`);
         } else {
-          console.warn('⚠️ Sync: No contacts data received');
+          console.warn('⚠️ Sync: No contacts data received or data is not an array');
+          console.warn('⚠️ Sync: contactsResponse structure:', JSON.stringify(contactsResponse, null, 2));
         }
       } catch (error) {
         console.error('❌ Sync: Error syncing contacts:', error);
