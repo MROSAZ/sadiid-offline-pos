@@ -29,7 +29,7 @@ export class ContactsApi {
     contact_id?: string;
     order_by?: 'name' | 'supplier_business_name' | 'created_at';
     direction?: 'asc' | 'desc';
-  }): Promise<ApiResponse<PaginatedResponse<Contact>>> {
+  }): Promise<PaginatedResponse<Contact>> {
     return apiClient.get<PaginatedResponse<Contact>>('contactapi', params);
   }
 
@@ -57,14 +57,14 @@ export class ContactsApi {
   /**
    * Delete contact
    */
-  static async deleteContact(id: number): Promise<ApiResponse<void>> {
+  static async deleteContact(id: number): Promise<void> {
     return apiClient.delete<void>(`contactapi/${id}`);
   }
 
   /**
    * Search contacts by name, business name, or mobile
    */
-  static async searchContacts(query: string, type?: 'customer' | 'supplier' | 'both'): Promise<ApiResponse<Contact[]>> {
+  static async searchContacts(query: string, type?: 'customer' | 'supplier' | 'both'): Promise<Contact[]> {
     return apiClient.get<Contact[]>('contactapi', {
       name: query,
       type: type || 'customer',
@@ -79,7 +79,7 @@ export class ContactsApi {
     page?: number;
     per_page?: number;
     search?: string;
-  }): Promise<ApiResponse<PaginatedResponse<Contact>>> {
+  }): Promise<PaginatedResponse<Contact>> {
     return this.getContacts({
       type: 'customer',
       name: params?.search,
@@ -94,7 +94,7 @@ export class ContactsApi {
     page?: number;
     per_page?: number;
     search?: string;
-  }): Promise<ApiResponse<PaginatedResponse<Contact>>> {
+  }): Promise<PaginatedResponse<Contact>> {
     return this.getContacts({
       type: 'supplier',
       biz_name: params?.search,
@@ -142,7 +142,7 @@ export class ContactsApi {
     end_date?: string;
     page?: number;
     per_page?: number;
-  }): Promise<ApiResponse<any[]>> {
+  }): Promise<any[]> {
     return apiClient.get<any[]>(`contactapi/${contactId}/payments`, params);
   }
 
@@ -174,14 +174,14 @@ export class ContactsApi {
     direction?: 'asc' | 'desc';
     per_page?: number;
     page?: number;
-  }): Promise<ApiResponse<PaginatedResponse<CRMLead>>> {
+  }): Promise<PaginatedResponse<CRMLead>> {
     return apiClient.get<PaginatedResponse<CRMLead>>('crm/leads', params);
   }
 
   /**
    * Convert lead to customer
    */
-  static async convertLeadToCustomer(leadId: number, customerData?: Partial<ContactCreateRequest>): Promise<ApiResponse<Contact>> {
+  static async convertLeadToCustomer(leadId: number, customerData?: Partial<ContactCreateRequest>): Promise<Contact> {
     return apiClient.post<Contact>(`crm/leads/${leadId}/convert`, customerData);
   }
 
@@ -200,14 +200,14 @@ export class ContactsApi {
     direction?: 'desc' | 'asc';
     per_page?: number;
     page?: number;
-  }): Promise<ApiResponse<PaginatedResponse<CRMFollowUp>>> {
+  }): Promise<PaginatedResponse<CRMFollowUp>> {
     return apiClient.get<PaginatedResponse<CRMFollowUp>>('crm/follow-ups', params);
   }
 
   /**
    * Get follow-up by ID
    */
-  static async getFollowUp(id: number): Promise<ApiResponse<CRMFollowUp>> {
+  static async getFollowUp(id: number): Promise<CRMFollowUp> {
     return apiClient.get<CRMFollowUp>(`crm/follow-ups/${id}`);
   }
 
@@ -231,7 +231,7 @@ export class ContactsApi {
     end_datetime: string;
     followup_additional_info?: any;
     allow_notification?: boolean;
-  }): Promise<ApiResponse<CRMFollowUp>> {
+  }): Promise<CRMFollowUp> {
     return apiClient.post<CRMFollowUp>('crm/follow-ups', followUpData);
   }
 
@@ -252,14 +252,14 @@ export class ContactsApi {
     end_datetime: string;
     followup_additional_info?: any;
     allow_notification?: boolean;
-  }>): Promise<ApiResponse<CRMFollowUp>> {
+  }>): Promise<CRMFollowUp> {
     return apiClient.put<CRMFollowUp>(`crm/follow-ups/${id}`, followUpData);
   }
 
   /**
    * Delete follow-up
    */
-  static async deleteFollowUp(id: number): Promise<ApiResponse<void>> {
+  static async deleteFollowUp(id: number): Promise<void> {
     return apiClient.delete<void>(`crm/follow-ups/${id}`);
   }
 
@@ -286,7 +286,7 @@ export class ContactsApi {
     call_date_time: string;
     mobile_number: string;
     description?: string;
-  }>): Promise<ApiResponse<void>> {
+  }>): Promise<void> {
     return apiClient.post<void>('crm/call-logs', { call_logs: callLogs });
   }
 

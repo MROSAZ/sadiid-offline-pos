@@ -427,11 +427,97 @@ export class SadiidApiClient {
    * Create new transaction
    */
   async createTransaction(transactionData: any): Promise<ApiResponse<Transaction>> {
-    const response = await this.client.post<ApiResponse<Transaction>>(
-      `${API_CONFIG.CONNECTOR_PATH}/new_sell`,
-      transactionData
+    // Helper function to remove null/undefined/empty values
+    const removeEmptyValues = (obj: any): any => {
+      const result = {} as any;
+      Object.entries(obj).forEach(([key, value]) => {
+        // Skip null, undefined, empty strings
+        if (value === null || value === undefined || value === '') {
+          return;
+        }
+        
+        // For arrays, filter each item
+        if (Array.isArray(value)) {
+          const filteredArray = value.map(item => 
+            typeof item === 'object' && item !== null ? removeEmptyValues(item) : item
+          ).filter(item => item !== null && item !== undefined);
+          
+          if (filteredArray.length > 0) {
+            result[key] = filteredArray;
+          }
+        } 
+        // For objects, recurse
+        else if (typeof value === 'object' && value !== null) {
+          const cleaned = removeEmptyValues(value);
+          if (Object.keys(cleaned).length > 0) {
+            result[key] = cleaned;
+          }
+        } 
+        // For primitive values, include directly
+        else {
+          result[key] = value;
+        }
+      });
+      return result;
+    };
+
+    // Format transaction date to API expected format (YYYY-MM-DD HH:MM:SS)
+    let formattedDate = transactionData.transaction_date;
+    if (formattedDate && formattedDate.includes('T')) {
+      formattedDate = formattedDate.replace('T', ' ').substring(0, 19);
+    }
+
+    // Create sale data in the format expected by the API
+    const sellData: any = {
+      location_id: transactionData.location_id,
+      contact_id: transactionData.contact_id,
+      transaction_date: formattedDate || new Date().toISOString().replace('T', ' ').substring(0, 19),
+      status: transactionData.status || 'final',
+      products: transactionData.products.map((product: any) => ({
+        product_id: product.product_id,
+        variation_id: product.variation_id,
+        quantity: product.quantity,
+        unit_price: product.unit_price, // Legacy API expects 'unit_price' not 'price'
+        ...(product.tax_amount && { tax_amount: product.tax_amount }),
+        ...(product.discount_amount && { discount_amount: product.discount_amount, discount_type: 'fixed' }),
+        ...(product.note && { note: product.note })
+      })),
+      // Only include optional fields that have values
+      ...(transactionData.discount_amount && { discount_amount: transactionData.discount_amount, discount_type: 'fixed' }),
+      ...(transactionData.tax_amount && { tax_amount: transactionData.tax_amount }),
+      ...(transactionData.sale_note && { sale_note: transactionData.sale_note }),
+      ...(transactionData.is_quotation && { is_quotation: transactionData.is_quotation })
+    };
+
+    // Add payments if they exist
+    if (transactionData.payments && transactionData.payments.length > 0) {
+      sellData.payments = transactionData.payments.map((payment: any) => ({
+        amount: payment.amount,
+        method: payment.method,
+        ...(payment.account_id && { account_id: payment.account_id }),
+        ...(payment.note && { note: payment.note })
+      }));
+    }
+
+    // Clean the data to remove any remaining null/undefined values
+    const cleanedSellData = removeEmptyValues(sellData);
+    
+    // Wrap in sells array as required by API (this was the key missing piece!)
+    const formattedSaleData = {
+      sells: [cleanedSellData]
+    };
+
+    const response = await this.client.post<any>(
+      `${API_CONFIG.CONNECTOR_PATH}/sell`,
+      formattedSaleData
     );
-    return response.data;
+    
+    // The sell API returns transaction data directly, not wrapped in ApiResponse format
+    // Response is either: [transaction] or transaction object
+    return {
+      data: response.data,
+      success: true
+    };
   }
 
   /**
@@ -498,10 +584,10 @@ export class SadiidApiClient {
   // Utility Methods
 
   /**
-   * Generic GET request
+   * Generic GET request with Laravel pagination support
    */
-  async get<T>(endpoint: string, params?: any): Promise<ApiResponse<T>> {
-    const response = await this.client.get<ApiResponse<T>>(
+  async get<T>(endpoint: string, params?: any): Promise<T> {
+    const response = await this.client.get<T>(
       endpoint.startsWith('/') ? endpoint : `${API_CONFIG.CONNECTOR_PATH}/${endpoint}`,
       { params }
     );
@@ -509,10 +595,10 @@ export class SadiidApiClient {
   }
 
   /**
-   * Generic POST request
+   * Generic POST request with Laravel response support
    */
-  async post<T>(endpoint: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
-    const response = await this.client.post<ApiResponse<T>>(
+  async post<T>(endpoint: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+    const response = await this.client.post<T>(
       endpoint.startsWith('/') ? endpoint : `${API_CONFIG.CONNECTOR_PATH}/${endpoint}`,
       data,
       config
@@ -521,10 +607,10 @@ export class SadiidApiClient {
   }
 
   /**
-   * Generic PUT request
+   * Generic PUT request with Laravel response support
    */
-  async put<T>(endpoint: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
-    const response = await this.client.put<ApiResponse<T>>(
+  async put<T>(endpoint: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+    const response = await this.client.put<T>(
       endpoint.startsWith('/') ? endpoint : `${API_CONFIG.CONNECTOR_PATH}/${endpoint}`,
       data,
       config
@@ -533,10 +619,10 @@ export class SadiidApiClient {
   }
 
   /**
-   * Generic DELETE request
+   * Generic DELETE request with Laravel response support
    */
-  async delete<T>(endpoint: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
-    const response = await this.client.delete<ApiResponse<T>>(
+  async delete<T>(endpoint: string, config?: AxiosRequestConfig): Promise<T> {
+    const response = await this.client.delete<T>(
       endpoint.startsWith('/') ? endpoint : `${API_CONFIG.CONNECTOR_PATH}/${endpoint}`,
       config
     );

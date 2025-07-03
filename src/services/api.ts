@@ -87,15 +87,15 @@ export const fetchProducts = async (page = 1, perPage = 500) => {
       location_id: selectedLocationId ? parseInt(selectedLocationId) : undefined
     });
     
-    const paginatedData = response.data;
+    // Response is now a Laravel pagination response directly
     return {
-      data: paginatedData?.data || [],
-      total: paginatedData?.total || 0,
-      current_page: paginatedData?.current_page || page,
-      per_page: paginatedData?.per_page || perPage,
-      last_page: paginatedData?.last_page || 1,
+      data: response.data || [],
+      total: response.meta?.total || 0,
+      current_page: response.meta?.current_page || page,
+      per_page: response.meta?.per_page || perPage,
+      last_page: response.meta?.last_page || 1,
       from: ((page - 1) * perPage) + 1,
-      to: Math.min(page * perPage, paginatedData?.total || 0)
+      to: Math.min(page * perPage, response.meta?.total || 0)
     };
   }
   
@@ -114,15 +114,15 @@ export const fetchProducts = async (page = 1, perPage = 500) => {
         location_id: selectedLocationId ? parseInt(selectedLocationId) : undefined
       });
       
-      const paginatedData = response.data;
-      const pageProducts = paginatedData?.data || [];
+      // Response is now a Laravel pagination response directly
+      const pageProducts = response.data || [];
       
       if (pageProducts.length > 0) {
         allProducts = [...allProducts, ...pageProducts];
         console.log(`🔍 Added ${pageProducts.length} products from page ${currentPage}. Total: ${allProducts.length}`);
         
         // Check if we have more pages
-        const lastPage = paginatedData?.last_page || 1;
+        const lastPage = response.meta?.last_page || 1;
         if (currentPage >= lastPage) {
           console.log('🔍 Reached last page:', lastPage);
           hasMorePages = false;
@@ -190,7 +190,16 @@ export const fetchContacts = async (
       per_page: perPage
     });
     
-    return response.data;
+    // Convert Laravel pagination response to consistent format
+    return {
+      data: response.data || [],
+      total: response.meta?.total || 0,
+      current_page: response.meta?.current_page || page,
+      per_page: response.meta?.per_page || perPage,
+      last_page: response.meta?.last_page || 1,
+      from: ((page - 1) * perPage) + 1,
+      to: Math.min(page * perPage, response.meta?.total || 0)
+    };
   }
   
   // For page = 1, fetch all pages to get complete data set for offline sync
@@ -208,15 +217,15 @@ export const fetchContacts = async (
         per_page: perPage
       });
       
-      const paginatedData = response.data;
-      const pageContacts = paginatedData?.data || [];
+      // Response is now a Laravel pagination response directly
+      const pageContacts = response.data || [];
       
       if (pageContacts.length > 0) {
         allContacts = [...allContacts, ...pageContacts];
         console.log(`🔍 Added ${pageContacts.length} contacts from page ${currentPage}. Total: ${allContacts.length}`);
         
         // Check if we have more pages
-        const lastPage = paginatedData?.last_page || 1;
+        const lastPage = response.meta?.last_page || 1;
         if (currentPage >= lastPage) {
           console.log('🔍 Reached last page:', lastPage);
           hasMorePages = false;
@@ -352,7 +361,7 @@ export const fetchAllPages = async <T>(
         allItems = [...allItems, ...pageItems];
         
         // Check if we have more pages
-        const lastPage = response.last_page || 1;
+        const lastPage = response.meta?.last_page || 1;
         if (currentPage >= lastPage) {
           hasMorePages = false;
         } else {

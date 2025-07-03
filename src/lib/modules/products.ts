@@ -33,7 +33,7 @@ export class ProductsApi {
     not_for_selling?: boolean;
     order_by?: string;
     direction?: 'asc' | 'desc';
-  }): Promise<ApiResponse<PaginatedResponse<Product>>> {
+  }): Promise<PaginatedResponse<Product>> {
     return apiClient.get<PaginatedResponse<Product>>('product', params);
   }
 
@@ -97,42 +97,42 @@ export class ProductsApi {
   /**
    * Delete product
    */
-  static async deleteProduct(id: number): Promise<ApiResponse<void>> {
+  static async deleteProduct(id: number): Promise<void> {
     return apiClient.delete<void>(`product/${id}`);
   }
 
   /**
    * Get product variations
    */
-  static async getProductVariations(productId: number): Promise<ApiResponse<ProductVariation[]>> {
+  static async getProductVariations(productId: number): Promise<ProductVariation[]> {
     return apiClient.get<ProductVariation[]>(`variation?product_id=${productId}`);
   }
 
   /**
    * Get variation by ID
    */
-  static async getVariation(id: number): Promise<ApiResponse<ProductVariation>> {
+  static async getVariation(id: number): Promise<ProductVariation> {
     return apiClient.get<ProductVariation>(`variation/${id}`);
   }
 
   /**
    * Create product variation
    */
-  static async createVariation(variationData: any): Promise<ApiResponse<ProductVariation>> {
+  static async createVariation(variationData: any): Promise<ProductVariation> {
     return apiClient.post<ProductVariation>('variation', variationData);
   }
 
   /**
    * Update product variation
    */
-  static async updateVariation(id: number, variationData: any): Promise<ApiResponse<ProductVariation>> {
+  static async updateVariation(id: number, variationData: any): Promise<ProductVariation> {
     return apiClient.put<ProductVariation>(`variation/${id}`, variationData);
   }
 
   /**
    * Delete product variation
    */
-  static async deleteVariation(id: number): Promise<ApiResponse<void>> {
+  static async deleteVariation(id: number): Promise<void> {
     return apiClient.delete<void>(`variation/${id}`);
   }
 
@@ -143,14 +143,14 @@ export class ProductsApi {
    */
   static async getCategories(params?: {
     category_type?: 'product' | 'expense';
-  }): Promise<ApiResponse<Category[]>> {
+  }): Promise<Category[]> {
     return apiClient.get<Category[]>('taxonomy', params);
   }
 
   /**
    * Get category by ID
    */
-  static async getCategory(id: number): Promise<ApiResponse<Category>> {
+  static async getCategory(id: number): Promise<Category> {
     return apiClient.get<Category>(`taxonomy/${id}`);
   }
 
@@ -162,7 +162,7 @@ export class ProductsApi {
     description?: string;
     category_type: 'product' | 'expense';
     parent_id?: number;
-  }): Promise<ApiResponse<Category>> {
+  }): Promise<Category> {
     return apiClient.post<Category>('taxonomy', categoryData);
   }
 
@@ -173,14 +173,14 @@ export class ProductsApi {
     name: string;
     description?: string;
     parent_id?: number;
-  }>): Promise<ApiResponse<Category>> {
+  }>): Promise<Category> {
     return apiClient.put<Category>(`taxonomy/${id}`, categoryData);
   }
 
   /**
    * Delete category
    */
-  static async deleteCategory(id: number): Promise<ApiResponse<void>> {
+  static async deleteCategory(id: number): Promise<void> {
     return apiClient.delete<void>(`taxonomy/${id}`);
   }
 
@@ -189,14 +189,14 @@ export class ProductsApi {
   /**
    * Get all brands
    */
-  static async getBrands(): Promise<ApiResponse<Brand[]>> {
+  static async getBrands(): Promise<Brand[]> {
     return apiClient.get<Brand[]>('brand');
   }
 
   /**
    * Get brand by ID
    */
-  static async getBrand(id: number): Promise<ApiResponse<Brand>> {
+  static async getBrand(id: number): Promise<Brand> {
     return apiClient.get<Brand>(`brand/${id}`);
   }
 
@@ -206,7 +206,7 @@ export class ProductsApi {
   static async createBrand(brandData: {
     name: string;
     description?: string;
-  }): Promise<ApiResponse<Brand>> {
+  }): Promise<Brand> {
     return apiClient.post<Brand>('brand', brandData);
   }
 
@@ -216,14 +216,14 @@ export class ProductsApi {
   static async updateBrand(id: number, brandData: Partial<{
     name: string;
     description?: string;
-  }>): Promise<ApiResponse<Brand>> {
+  }>): Promise<Brand> {
     return apiClient.put<Brand>(`brand/${id}`, brandData);
   }
 
   /**
    * Delete brand
    */
-  static async deleteBrand(id: number): Promise<ApiResponse<void>> {
+  static async deleteBrand(id: number): Promise<void> {
     return apiClient.delete<void>(`brand/${id}`);
   }
 
@@ -232,14 +232,14 @@ export class ProductsApi {
   /**
    * Get all units
    */
-  static async getUnits(): Promise<ApiResponse<Unit[]>> {
+  static async getUnits(): Promise<Unit[]> {
     return apiClient.get<Unit[]>('unit');
   }
 
   /**
    * Get unit by ID
    */
-  static async getUnit(id: number): Promise<ApiResponse<Unit>> {
+  static async getUnit(id: number): Promise<Unit> {
     return apiClient.get<Unit>(`unit/${id}`);
   }
 
@@ -250,7 +250,7 @@ export class ProductsApi {
     actual_name: string;
     short_name: string;
     allow_decimal: boolean;
-  }): Promise<ApiResponse<Unit>> {
+  }): Promise<Unit> {
     return apiClient.post<Unit>('unit', unitData);
   }
 
@@ -261,14 +261,14 @@ export class ProductsApi {
     actual_name: string;
     short_name: string;
     allow_decimal: boolean;
-  }>): Promise<ApiResponse<Unit>> {
+  }>): Promise<Unit> {
     return apiClient.put<Unit>(`unit/${id}`, unitData);
   }
 
   /**
    * Delete unit
    */
-  static async deleteUnit(id: number): Promise<ApiResponse<void>> {
+  static async deleteUnit(id: number): Promise<void> {
     return apiClient.delete<void>(`unit/${id}`);
   }
 
@@ -277,14 +277,14 @@ export class ProductsApi {
   /**
    * Get all taxes
    */
-  static async getTaxes(): Promise<ApiResponse<Tax[]>> {
+  static async getTaxes(): Promise<Tax[]> {
     return apiClient.get<Tax[]>('tax');
   }
 
   /**
    * Get tax by ID
    */
-  static async getTax(id: number): Promise<ApiResponse<Tax>> {
+  static async getTax(id: number): Promise<Tax> {
     return apiClient.get<Tax>(`tax/${id}`);
   }
 
@@ -295,7 +295,7 @@ export class ProductsApi {
     name: string;
     amount: number;
     is_tax_group?: boolean;
-  }): Promise<ApiResponse<Tax>> {
+  }): Promise<Tax> {
     return apiClient.post<Tax>('tax', taxData);
   }
 
@@ -306,14 +306,14 @@ export class ProductsApi {
     name: string;
     amount: number;
     is_tax_group?: boolean;
-  }>): Promise<ApiResponse<Tax>> {
+  }>): Promise<Tax> {
     return apiClient.put<Tax>(`tax/${id}`, taxData);
   }
 
   /**
    * Delete tax
    */
-  static async deleteTax(id: number): Promise<ApiResponse<void>> {
+  static async deleteTax(id: number): Promise<void> {
     return apiClient.delete<void>(`tax/${id}`);
   }
 
@@ -327,7 +327,7 @@ export class ProductsApi {
     category_id?: number;
     brand_id?: number;
     unit_id?: number;
-  }): Promise<ApiResponse<StockReport[]>> {
+  }): Promise<StockReport[]> {
     return apiClient.get<StockReport[]>('product-stock-report', params);
   }
 
@@ -338,7 +338,7 @@ export class ProductsApi {
     location_id?: number;
     category_id?: number;
     limit?: number;
-  }): Promise<ApiResponse<Product[]>> {
+  }): Promise<Product[]> {
     return apiClient.get<Product[]>('product', { 
       search: query,
       not_for_selling: false,

@@ -106,11 +106,11 @@ const POSOrderDetails = () => {  const { cart, getSubtotal, getTotal, updateQuan
           product_id: item.product_id,
           variation_id: item.variation_id || undefined,
           quantity: item.quantity,
-          unit_price: item.price,
+          unit_price: item.price, // API expects 'unit_price' not 'price'
           tax_amount: item.tax,
           discount_amount: item.discount,
         })),
-        payment: [{
+        payments: [{
           amount: getTotal(),
           method: paymentMethod,
         }],

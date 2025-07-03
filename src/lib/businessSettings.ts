@@ -85,32 +85,50 @@ export const getBusinessSettings = async (forceRefresh = false): Promise<Busines
   if (navigator.onLine) {
     try {
       console.log('Fetching business details from API...');
-      const apiData = await fetchBusinessDetails();
+      const apiResponse = await fetchBusinessDetails();
+      const apiData = apiResponse.data;
+      console.log('API response data:', apiData);
+      console.log('Full API response structure:', JSON.stringify(apiData, null, 2));
 
-      if (!apiData || !apiData.name || !apiData.currency) {
+      if (!apiData || !apiData.name) {
         throw new Error('Invalid API response for business details');
       }
 
+      // Extract currency information from the response
+      // Note: API response has currency_id but not full currency object
+      // We'll use defaults and the business settings for formatting
+      const currencyInfo = (apiData.currency as any) || {};
+      console.log('Currency info from API:', currencyInfo);
+      
+      // Use currency_symbol_placement from API response if available
+      const symbolPlacement = apiData.currency_symbol_placement || 'after';
+      console.log('Currency symbol placement:', symbolPlacement);
+      
       const settings: BusinessSettings = {
         name: apiData.name,
         currency: {
-          symbol: apiData.currency.symbol || '$',
-          code: apiData.currency.code || 'USD',
-          thousand_separator: apiData.currency.thousand_separator || ',',
-          decimal_separator: apiData.currency.decimal_separator || '.'
+          symbol: currencyInfo.symbol || 'TND', // Default to Tunisian Dinar based on API response
+          code: currencyInfo.code || 'TND',
+          thousand_separator: currencyInfo.thousand_separator || ',',
+          decimal_separator: currencyInfo.decimal_separator || '.'
         },
-        currency_symbol_placement: apiData.currency_symbol_placement || 'before',
-        currency_precision: apiData.currency_precision || 2,
+        currency_symbol_placement: symbolPlacement,
+        currency_precision: apiData.currency_precision || 3, // API shows 3 decimal places
         quantity_precision: apiData.quantity_precision || 2,
-        timezone: apiData.time_zone || 'UTC',
+        timezone: apiData.time_zone || 'Africa/Tunis', // From API response
         pos_settings: apiData.pos_settings || { amount_rounding_method: null },
-        locations: Array.isArray(apiData.locations) ? apiData.locations : []
+        locations: Array.isArray(apiData.locations) ? apiData.locations.map(loc => ({
+          ...loc,
+          is_active: loc.is_active ? 1 : 0 // Convert boolean to number
+        })) : []
       };
+
+      console.log('Final business settings:', settings);
 
       // Update cache and save to DB
       businessSettingsCache = settings;
       await saveBusinessSettingsToDB(settings);
-      console.log('Fetched and updated business settings');
+      console.log('Fetched and updated business settings:', settings);
       return settings;
     } catch (apiError) {
       console.error('Error fetching business settings from API:', apiError);
@@ -138,23 +156,34 @@ export const getBusinessSettings = async (forceRefresh = false): Promise<Busines
 const queueBackgroundSettingsRefresh = async (): Promise<void> => {
   const refreshTask = performWhenOnline(async () => {
     console.log('Performing background settings refresh...');
-    const apiData = await fetchBusinessDetails();
+    const apiResponse = await fetchBusinessDetails();
+    const apiData = apiResponse.data;
 
-    if (apiData && apiData.name && apiData.currency) {
+    if (apiData && apiData.name) {
+      // Extract currency information from the response
+      // Note: API response has currency_id but not full currency object
+      const currencyInfo = (apiData.currency as any) || {};
+      
+      // Use currency_symbol_placement from API response if available
+      const symbolPlacement = apiData.currency_symbol_placement || 'after';
+      
       const settings: BusinessSettings = {
         name: apiData.name,
         currency: {
-          symbol: apiData.currency.symbol || '$',
-          code: apiData.currency.code || 'USD',
-          thousand_separator: apiData.currency.thousand_separator || ',',
-          decimal_separator: apiData.currency.decimal_separator || '.'
+          symbol: currencyInfo.symbol || 'TND', // Default to Tunisian Dinar
+          code: currencyInfo.code || 'TND',
+          thousand_separator: currencyInfo.thousand_separator || ',',
+          decimal_separator: currencyInfo.decimal_separator || '.'
         },
-        currency_symbol_placement: apiData.currency_symbol_placement || 'before',
-        currency_precision: apiData.currency_precision || 2,
+        currency_symbol_placement: symbolPlacement,
+        currency_precision: apiData.currency_precision || 3,
         quantity_precision: apiData.quantity_precision || 2,
-        timezone: apiData.time_zone || 'UTC',
+        timezone: apiData.time_zone || 'Africa/Tunis',
         pos_settings: apiData.pos_settings || { amount_rounding_method: null },
-        locations: Array.isArray(apiData.locations) ? apiData.locations : []
+        locations: Array.isArray(apiData.locations) ? apiData.locations.map(loc => ({
+          ...loc,
+          is_active: loc.is_active ? 1 : 0 // Convert boolean to number
+        })) : []
       };
 
       // Update cache and storage
@@ -175,21 +204,21 @@ export const getLocalBusinessSettings = (): BusinessSettings | null => {
   return businessSettingsCache;
 };
 
-// Mock business settings for testing/debugging
+// Mock business settings for testing/debugging  
 export const createMockBusinessSettings = (): BusinessSettings => ({
-  name: "Test Business",
+  name: "Ste SAMMOUDI L. SUARL",
   currency: {
-    symbol: "$",
-    code: "USD",
-    thousand_separator: ",",
-    decimal_separator: "."
+    symbol: "DT",
+    code: "TND",
+    thousand_separator: ".",
+    decimal_separator: ","
   },
-  currency_symbol_placement: "before",
-  currency_precision: 2,
-  quantity_precision: 2,
-  timezone: "UTC",
+  currency_symbol_placement: "after",
+  currency_precision: 3,
+  quantity_precision: 3,
+  timezone: "Africa/Tunis",
   pos_settings: {
-    amount_rounding_method: null
+    amount_rounding_method: "0.1"
   },
   locations: []
 });

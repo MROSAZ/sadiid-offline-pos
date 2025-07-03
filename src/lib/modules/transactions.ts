@@ -70,7 +70,7 @@ export class TransactionsApi {
    * Create quotation
    */
   static async createQuotation(transactionData: TransactionCreateRequest): Promise<ApiResponse<Transaction>> {
-    return apiClient.post<Transaction>('new_sell', {
+    return apiClient.post<Transaction>('sell', {
       ...transactionData,
       is_quotation: true
     });
@@ -91,7 +91,7 @@ export class TransactionsApi {
    * Suspend sale (draft)
    */
   static async suspendSale(transactionData: TransactionCreateRequest): Promise<ApiResponse<Transaction>> {
-    return apiClient.post<Transaction>('new_sell', {
+    return apiClient.post<Transaction>('sell', {
       ...transactionData,
       is_suspend: true,
       status: 'draft'

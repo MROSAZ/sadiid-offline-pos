@@ -21,12 +21,26 @@ export interface ApiError {
 
 export interface PaginatedResponse<T> {
   data: T[];
-  current_page: number;
-  per_page: number;
-  total: number;
-  last_page: number;
-  next_page_url?: string;
-  prev_page_url?: string;
+  links: {
+    first: string | null;
+    last: string | null;
+    prev: string | null;
+    next: string | null;
+  };
+  meta: {
+    current_page: number;
+    from: number;
+    last_page: number;
+    links: Array<{
+      url: string | null;
+      label: string;
+      active: boolean;
+    }>;
+    path: string;
+    per_page: number;
+    to: number;
+    total: number;
+  };
 }
 
 // Authentication Types
@@ -69,6 +83,7 @@ export interface User {
   email: string;
   first_name: string;
   last_name: string;
+  name?: string; // Computed field for UI compatibility
   business_id: number;
   created_at: string;
   updated_at: string;
@@ -95,18 +110,77 @@ export interface Permission {
 export interface Business {
   id: number;
   name: string;
-  description?: string;
+  currency_id: number;
+  start_date: string;
+  tax_number_1?: string;
+  tax_label_1?: string;
+  tax_number_2?: string;
+  tax_label_2?: string;
+  code_label_1?: string;
+  code_1?: string;
+  code_label_2?: string;
+  code_2?: string;
+  default_sales_tax?: string;
+  default_profit_percent: number;
+  owner_id: number;
+  time_zone: string;
+  fy_start_month: number;
+  accounting_method: string;
+  default_sales_discount: string;
+  sell_price_tax: string;
   logo?: string;
-  website?: string;
-  email?: string;
-  phone?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  country?: string;
-  postal_code?: string;
-  created_at: string;
-  updated_at: string;
+  sku_prefix?: string;
+  enable_product_expiry: number;
+  expiry_type: string;
+  on_product_expiry: string;
+  stop_selling_before: number;
+  enable_tooltip: number;
+  purchase_in_diff_currency: number;
+  purchase_currency_id?: number;
+  p_exchange_rate: string;
+  transaction_edit_days: number;
+  stock_expiry_alert_days: number;
+  keyboard_shortcuts?: any;
+  pos_settings?: any;
+  manufacturing_settings?: any;
+  weighing_scale_setting?: any;
+  essentials_settings?: any;
+  enable_brand: number;
+  enable_category: number;
+  enable_sub_category: number;
+  enable_price_tax: number;
+  enable_purchase_status: number;
+  enable_lot_number: number;
+  default_unit: number;
+  enable_sub_units: number;
+  enable_racks: number;
+  enable_row: number;
+  enable_position: number;
+  enable_editing_product_from_purchase: number;
+  sales_cmsn_agnt?: string;
+  item_addition_method: number;
+  enable_inline_tax: number;
+  currency_symbol_placement: 'before' | 'after';
+  enabled_modules: string[];
+  date_format: string;
+  time_format: string;
+  currency_precision: number;
+  quantity_precision?: number;
+  ref_no_prefixes?: any;
+  locations?: BusinessLocation[];
+  currency?: {
+    id: number;
+    country: string;
+    currency: string;
+    code: string;
+    symbol: string;
+    thousand_separator: string;
+    decimal_separator: string;
+    created_at?: string;
+    updated_at?: string;
+  };
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface BusinessLocation {
@@ -131,39 +205,104 @@ export interface Product {
   business_id: number;
   name: string;
   type: 'single' | 'variable' | 'modifier' | 'combo';
-  unit_id: number;
+  secondary_unit_id?: number;
+  sub_unit_ids?: string;
+  enable_stock: number;
+  unit_id?: number;
   category_id?: number;
   sub_category_id?: number;
   brand_id?: number;
   tax_id?: number;
   barcode_type?: string;
   sku?: string;
-  alert_quantity?: number;
-  description?: string;
+  alert_quantity?: string;
+  expiry_period?: number;
+  expiry_period_type?: string;
+  enable_sr_no: number;
+  weight?: string;
+  product_custom_field1?: string;
+  product_custom_field2?: string;
+  product_custom_field3?: string;
+  product_custom_field4?: string;
+  product_custom_field5?: string;
+  product_custom_field6?: string;
+  product_custom_field7?: string;
+  product_custom_field8?: string;
+  product_custom_field9?: string;
+  product_custom_field10?: string;
+  product_custom_field11?: string;
+  product_custom_field12?: string;
+  product_custom_field13?: string;
+  product_custom_field14?: string;
+  product_custom_field15?: string;
+  product_custom_field16?: string;
+  product_custom_field17?: string;
+  product_custom_field18?: string;
+  product_custom_field19?: string;
+  product_custom_field20?: string;
   image?: string;
-  weight?: number;
-  is_inactive: boolean;
-  not_for_selling: boolean;
+  woocommerce_media_id?: number;
+  product_description?: string;
+  created_by: number;
+  woocommerce_product_id?: number;
+  woocommerce_disable_sync: number;
+  preparation_time_in_minutes?: number;
+  warranty_id?: number;
+  is_inactive: number;
+  repair_model_id?: number;
+  not_for_selling: number;
+  image_url?: string;
   created_at: string;
   updated_at: string;
-  variations?: ProductVariation[];
+  product_variations?: ProductVariation[];
   unit?: Unit;
   category?: Category;
+  sub_category?: Category;
   brand?: Brand;
-  tax?: Tax;
+  product_tax?: Tax;
+  product_locations?: BusinessLocation[];
 }
 
 export interface ProductVariation {
   id: number;
-  product_id: number;
+  variation_template_id?: number;
   name: string;
-  variation_value_id?: number;
+  product_id: number;
+  is_dummy: number;
+  created_at: string;
+  updated_at: string;
+  variations: ProductVariationDetail[];
+}
+
+export interface ProductVariationDetail {
+  id: number;
+  name: string;
+  product_id: number;
   sub_sku?: string;
-  default_purchase_price: number;
-  dpp_inc_tax: number;
-  profit_percent: number;
-  default_sell_price: number;
-  sell_price_inc_tax: number;
+  product_variation_id: number;
+  woocommerce_variation_id?: number;
+  variation_value_id?: number;
+  default_purchase_price: string;
+  dpp_inc_tax: string;
+  profit_percent: string;
+  default_sell_price: string;
+  sell_price_inc_tax: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at?: string;
+  combo_variations: any[];
+  variation_location_details: VariationLocationDetail[];
+  media: any[];
+  discounts: any[];
+}
+
+export interface VariationLocationDetail {
+  id: number;
+  product_id: number;
+  product_variation_id: number;
+  variation_id: number;
+  location_id: number;
+  qty_available: string;
   created_at: string;
   updated_at: string;
 }

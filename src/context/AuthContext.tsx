@@ -6,6 +6,7 @@ import { getToken, removeToken, saveToken, getUser, saveUser } from '@/lib/stora
 import { queueBackgroundTask, BackgroundTasks, performWhenOnline } from '../utils/backgroundSync';
 import { startBackgroundSync } from '@/services/syncService';
 import { autoSelectLocation } from '@/services/locationService';
+import { User } from '@/types/api';
 
 /**
  * Queue a background refresh of user data without blocking the UI
@@ -23,13 +24,6 @@ const queueBackgroundUserRefresh = async (): Promise<void> => {
 
   queueBackgroundTask(BackgroundTasks.USER_REFRESH, refreshTask, 200);
 };
-
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  [key: string]: any;
-}
 
 interface AuthContextType {
   user: User | null;
@@ -76,7 +70,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (localUser) {
         console.log('✅ CheckAuth: Setting user and authenticated state');
-        setUser(localUser);
+        // Ensure the user object has a computed name field
+        const userWithName = {
+          ...localUser,
+          name: localUser.name || `${localUser.first_name} ${localUser.last_name}`.trim() || localUser.username
+        };
+        setUser(userWithName);
         setIsLoading(false);
         
         // If online, queue background refresh of user data
@@ -91,11 +90,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // If no local user data, create default user profile from token
       // This allows the app to work offline even without initial user data
       console.log('⚠️ CheckAuth: No local user data, creating default user profile');
-      const defaultUser = {
+      const defaultUser: User = {
         id: token.user_id || 1,
-        name: 'User',
+        username: token.username || 'user',
         email: token.username || 'user@example.com',
-        // Add other default fields as needed
+        first_name: 'User',
+        last_name: '',
+        name: 'User', // Add computed name
+        business_id: token.business_id || 1,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        is_active: true,
       };
       
       console.log('💾 CheckAuth: Saving default user profile');
@@ -153,8 +158,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const userData = await getCurrentUser();
       console.log('📋 Login: User data received:', !!userData?.data);
       
-      setUser(userData.data);
-      await saveUser(userData.data);
+      // Create compatible user object with computed name
+      const userWithName = {
+        ...userData.data,
+        name: `${userData.data.first_name} ${userData.data.last_name}`.trim() || userData.data.username
+      };
+      
+      setUser(userWithName);
+      await saveUser(userWithName);
       console.log('💾 Login: User data saved to storage');
       
       // Start background sync and auto-select location
