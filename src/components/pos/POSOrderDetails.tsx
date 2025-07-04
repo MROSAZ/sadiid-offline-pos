@@ -15,17 +15,16 @@ import { saveSale } from '@/lib/storage';
 import { toast } from 'sonner';
 import { useNetwork } from '@/context/NetworkContext';
 import { Package, X, Plus, Minus, ChevronDown, User, Check, ChevronsUpDown, CreditCard, Banknote, Smartphone } from 'lucide-react';
-import { formatCurrencySync } from '@/utils/formatting';
+import { formatCurrencySync, getBusinessTimestamp } from '@/utils/formatting';
 import { useBusinessSettings } from '@/context/BusinessSettingsContext';
 import { useCustomer } from '@/context/CustomerContext';
-import { getBusinessTimestamp } from '@/utils/dateUtils';
 import { queueOperation } from '@/services/syncQueue';
 import { cn } from '@/lib/utils';
 
 // For product placeholder
 const PLACEHOLDER_SVG = `data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M 20 70 Q 60 20, 100 70' fill='none' stroke='%239e9e9e' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E`;
 
-const POSOrderDetails = () => {  const { cart, getSubtotal, getTotal, updateQuantity, removeItem, clearCart, setEditingSale } = useCart();
+const POSOrderDetails = () => {  const { cart, getSubtotal, getTotal, updateQuantity, removeItem, clearCart, setEditingSale, setEditingServerId } = useCart();
   const { isOnline } = useNetwork();
   const { selectedCustomer, setSelectedCustomer, customers, isLoading: customersLoading } = useCustomer();
   const { settings } = useBusinessSettings();
@@ -125,12 +124,21 @@ const POSOrderDetails = () => {  const { cart, getSubtotal, getTotal, updateQuan
         // Update existing sale - update the existing sale record and queue for sync
         const { updateSale } = await import('@/lib/storage');
         await updateSale(cart.editingSaleId, saleData);
-        await queueOperation('sale', { local_id: cart.editingSaleId, saleData });
+        await queueOperation('sale', { 
+          local_id: cart.editingSaleId, 
+          saleData, 
+          operation_type: 'update',
+          sale_id: cart.editingSaleId 
+        });
         toast.success('Sale updated successfully');
       } else {
         // Create new sale - offline-first: Always store locally first, then queue for sync
         const savedSale = await saveSale(saleData);
-        await queueOperation('sale', { local_id: savedSale, saleData });
+        await queueOperation('sale', { 
+          local_id: savedSale, 
+          saleData, 
+          operation_type: 'create' 
+        });
         toast.success('Sale completed successfully');
       }
       

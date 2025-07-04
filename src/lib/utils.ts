@@ -2,27 +2,17 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
+/**
+ * 🎨 Sadiid Offline POS - Core Utilities
+ * 
+ * Essential utility functions for the application core.
+ * For formatting utilities, see @/utils/formatting
+ */
+
+/**
+ * Combine class names with conditional logic
+ * Uses clsx for conditional classes and tailwind-merge for deduplication
+ */
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
-}
-
-// Parse API errors for user-friendly messages
-export function parseApiError(error: any): string {
-  if (typeof error === 'string') {
-    return error;
-  }
-  
-  if (error.response?.data?.message) {
-    return error.response.data.message;
-  }
-  
-  if (error.response?.data?.error) {
-    return error.response.data.error;
-  }
-  
-  if (error.message) {
-    return error.message;
-  }
-  
-  return 'An unknown error occurred';
 }

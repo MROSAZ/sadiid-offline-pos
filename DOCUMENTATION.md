@@ -14,14 +14,11 @@ This document provides a comprehensive overview of all files in the `src` folder
 
 ## 🏗️ Architecture Overview
 
-### Modern OpenA## 🔧 Key Features (Updated)
+---
 
-### Offline-First Architecture
-- All data operations work offline with automatic sync when online
-- OpenAPI-driven, type-safe API calls
-- Intelligent pagination that fetches ALL data pages automatically
-- Local IndexedDB storage for products, customers, and sales
-- Complete data synchronization (not partial)ven Architecture
+## 🏗️ Architecture Overview
+
+### Modern OpenAPI-Driven Architecture
 ```
 OpenAPI Architecture
 ├── 📋 OpenAPI Specification (docs/openapi.yaml)
@@ -37,6 +34,23 @@ OpenAPI Architecture
 - **Improved**: Paginated data synchronization
 - **Enhanced**: Offline-first capabilities with complete data sync
 - **Optimized**: Formatting utilities (removed duplicates)
+
+---
+
+## 🔧 Key Features (Updated)
+
+### Offline-First Architecture
+- All data operations work offline with automatic sync when online
+- OpenAPI-driven, type-safe API calls
+- Intelligent pagination that fetches ALL data pages automatically
+- Local IndexedDB storage for products, customers, and sales
+- Complete data synchronization (not partial)
+
+### Edit Sale Functionality
+- **Proper Update Operations**: Editing a sale now correctly updates the existing sale via PUT API call instead of creating a new sale
+- **Operation Type Distinction**: The sync queue distinguishes between "create" and "update" operations
+- **Offline Edit Support**: Sale edits work offline and sync to the server when connectivity is restored
+- **Sync Queue Integration**: Edit operations are properly queued and processed with the correct API endpoint
 
 ---
 
@@ -107,6 +121,11 @@ Route wrapper that ensures user authentication before accessing protected pages.
 - **POSOrderDetails**: Order summary panel showing cart items, totals, and checkout options
 - **OrderItem**: Individual cart item with quantity controls
 - **PaymentSection**: Payment method selection and processing
+
+**Edit Sale Functionality**: This component handles both creating new sales and updating existing sales. When editing a sale, it:
+- Queues operations with explicit `operation_type` ("create" or "update")
+- Includes `sale_id` for update operations
+- Calls the appropriate API endpoint (POST for create, PUT for update) via the sync queue
 
 ### `components/pos/POSProductGrid.tsx`
 - **POSProductGrid**: Grid/table view of products with add to cart functionality
@@ -198,22 +217,14 @@ Route wrapper that ensures user authentication before accessing protected pages.
 
 ---
 
-## 📁 Examples
+## 📁 Implementation Patterns
 
-### `examples/offlineFirstPatterns.ts`
-Comprehensive example file demonstrating offline-first implementation patterns:
-- **wrongSaleCreation**: Example of incorrect conditional online/offline logic
-- **wrongDataFetch**: Example of incorrect network-dependent data fetching
-- **correctSaleCreation**: Example of proper offline-first sale creation
-- **correctDataFetch**: Example of proper local-first data fetching with background sync
-- **correctSearchImplementation**: Example of local search with server enhancement
-- **correctSyncImplementation**: Example of proper background sync implementation
-- **correctCustomerCreation**: Example of proper offline-first customer creation
-- **handleFormSubmit**: Example form submission with offline support
-- **handleSearch**: Example search with offline fallback
-- **handleOnlineTransition**: Example online transition handling
-- **handleOfflineTransition**: Example offline transition handling
-- **robustOperation**: Example robust operation with retry logic
+The application follows consistent offline-first patterns throughout:
+- **Local Storage First**: All operations save to IndexedDB immediately
+- **Background Sync**: Network operations happen transparently in background
+- **Queue Management**: Failed operations are automatically retried
+- **Error Handling**: Graceful degradation without blocking user interactions
+- **Network Independence**: Full functionality works offline
 
 ---
 
@@ -326,6 +337,7 @@ Modern OpenAPI-driven API service with comprehensive backend integration:
 - **fetchContacts**: Get contacts with intelligent pagination (fetches all pages)
 - **createContact**: Create new contact
 - **createSale**: Create new sale transaction
+- **updateSale**: Update existing sale transaction (for edit functionality)
 - **fetchSales**: Get sales data with pagination
 - **SaleProduct**: Interface for sale product data
 - **SalePayment**: Interface for sale payment data
@@ -357,7 +369,7 @@ Queue management system for offline operations:
 - **deleteOperation**: Delete specific operation
 - **getQueueStats**: Get queue statistics
 - **processQueue**: Process pending operations
-- **processSaleOperation**: Process sale sync operation
+- **processSaleOperation**: Process sale sync operation (supports both create and update operations)
 
 ### `services/syncService.ts`
 Main synchronization service for OpenAPI-driven data sync:
@@ -395,20 +407,17 @@ Background task management utilities:
 - **performWhenOnline**: Execute function when network is available
 - **BackgroundTasks**: Enum of background task types
 
-### `utils/dateUtils.ts`
-Date and time utility functions:
-- **getBusinessTimestamp**: Get current timestamp in business timezone
-- **formatBusinessDate**: Format date according to business settings
-- **parseBusinessDate**: Parse date string in business timezone
-- **getTimezoneOffset**: Get timezone offset for business location
-
 ### `utils/formatting.ts`
-Optimized formatting utility functions (cleaned up after OpenAPI migration):
-- **formatCurrency**: Async currency formatting with business settings
-- **formatCurrencySync**: Synchronous currency formatting (primary method used in app)
-- **formatNumberWithPrecision**: Formats numbers with specified precision
+**Single source of truth for all formatting utilities** (fully consolidated):
+- **formatCurrencySync**: Synchronous currency formatting (primary method used throughout the app)
+- **formatNumberWithPrecision**: Formats numbers with specified precision (internal helper)
+- **formatBusinessDate**: Format date for display in business timezone (**required for sales sync**)
+- **getBusinessTimestamp**: Get current timestamp in business timezone
+- **parseApiError**: Parse API errors for user-friendly messages
+- **truncateText**: Truncate text with ellipsis for UI display
+- **formatPhoneNumber**: Format phone numbers for display
 
-**Note**: Removed unused functions (`formatDate`, `formatQuantity`, `formatPhoneNumber`, `truncateText`) that were not being used in the application. Currency formatting is now the primary focus of this utility.
+**Architecture Note**: This module serves as the centralized formatting hub, consolidating all formatting functions that were previously scattered across multiple files. All business operations requiring timezone-aware formatting (especially sales sync) use this module for consistency.
 
 ### `utils/productUtils.ts`
 Product-related utility functions:
@@ -472,6 +481,7 @@ Product-related utility functions:
 - **fetchContacts**: Fetches contacts from API with intelligent pagination (all pages)
 - **createContact**: Creates new contact via API
 - **createSale**: Creates new sale via API
+- **updateSale**: Updates existing sale via API (for edit functionality)
 - **fetchBusinessDetails**: Fetches business details from API
 - **SaleProduct**: Interface for sale product data
 - **SalePayment**: Interface for sale payment data
@@ -529,17 +539,17 @@ Product-related utility functions:
 - **clearQueuedTasks**: Clears all queued tasks
 - **BackgroundTasks**: Constants for different background task types
 
-### `utils/dateUtils.ts`
-- **getBusinessTimestamp**: Gets current timestamp in business timezone
-- **formatBusinessDate**: Formats date in business timezone
-- **parseBusinessDate**: Parses date string in business timezone
-
 ### `utils/formatting.ts`
-- **formatCurrency**: Async currency formatting with business settings
-- **formatCurrencySync**: Synchronous currency formatting (primary method)
-- **formatNumberWithPrecision**: Formats numbers with specified precision
+**Single source of truth for all formatting utilities** (fully consolidated):
+- **formatCurrencySync**: Synchronous currency formatting (primary method used throughout the app)
+- **formatNumberWithPrecision**: Formats numbers with specified precision (internal helper)
+- **formatBusinessDate**: Format date for display in business timezone (**required for sales sync**)
+- **getBusinessTimestamp**: Get current timestamp in business timezone
+- **parseApiError**: Parse API errors for user-friendly messages
+- **truncateText**: Truncate text with ellipsis for UI display
+- **formatPhoneNumber**: Format phone numbers for display
 
-**Note**: Optimized after OpenAPI migration - removed unused functions and focused on core currency formatting needs.
+**Architecture Note**: This module serves as the centralized formatting hub, consolidating all formatting functions that were previously scattered across multiple files. All business operations requiring timezone-aware formatting (especially sales sync) use this module for consistency.
 
 ### `utils/productUtils.ts`
 - **extractProductPrice**: Extracts price from product data
@@ -700,9 +710,86 @@ OpenAPI-generated TypeScript types:
 - ✅ **Optimized formatting utilities** - Removed duplicates and unused functions
 - ✅ **Enhanced data synchronization** - Intelligent pagination for complete sync
 - ✅ **Fixed TypeScript errors** - Full type safety throughout the application
+- ✅ **Fixed sale sync detection** - Proper response handling prevents duplicate sales
+- ✅ **Cleaned up codebase** - Removed unused documentation and redundant files
+
+### Sale Sync Improvements
+The sale sync system has been completely fixed:
+- **Response Detection**: Properly handles API array responses
+- **Data Integration**: Updates local sales with server IDs and invoice numbers
+- **Sync Prevention**: Correctly marks sales as synced to prevent re-processing
+- **Error Handling**: Comprehensive error handling and status updates
 
 ### Current State
 - **Production Ready**: Full offline POS functionality with complete data sync
 - **Type Safe**: OpenAPI-generated types ensure API compatibility
 - **Optimized**: Clean, maintainable codebase without legacy dependencies
 - **Well Documented**: Updated documentation reflects current architecture
+- **No Duplicate Sales**: Sales sync once and stay synced, preventing infinite loops
+
+---
+
+## 🔄 Edit Sale Functionality Implementation
+
+### Overview
+The edit sale functionality has been implemented to properly update existing sales on the backend using the PUT API endpoint instead of creating new sales. This ensures data integrity and prevents duplicate sales.
+
+### Key Components Updated
+
+#### 1. API Service (`src/services/api.ts`)
+- **Added `updateSale` function**: Uses the OpenAPI-generated `TransactionsApi.updateTransaction` method
+- **Proper endpoint usage**: Calls `PUT /connector/api/sell/{id}` for updates
+- **Type safety**: Uses `TransactionCreateRequest` interface for data validation
+
+#### 2. POS Order Details (`src/components/pos/POSOrderDetails.tsx`)
+- **Operation type distinction**: Queues operations with explicit `operation_type` ("create" or "update")
+- **Sale ID tracking**: Includes `sale_id` for update operations
+- **Editing mode detection**: Uses `cart.editingSaleId` to determine if editing an existing sale
+- **Proper API routing**: Ensures the correct API endpoint is called based on operation type
+
+#### 3. Sync Queue (`src/services/syncQueue.ts`)
+- **Enhanced `processSaleOperation`**: Distinguishes between create and update operations
+- **Correct API calls**: Uses `updateSale` for updates and `createSale` for new sales
+- **Backward compatibility**: Defaults to "create" operation for existing queue items
+- **Proper error handling**: Handles both operation types with appropriate error messages
+
+### Implementation Flow
+
+#### Creating a New Sale
+1. User completes sale in POS
+2. Sale data is saved locally with `saveSale()`
+3. Operation is queued with `operation_type: "create"`
+4. Sync queue processes via `createSale()` API call
+5. Uses `POST /connector/api/sell` endpoint
+
+#### Editing an Existing Sale
+1. User selects "Edit Sale" from Sales page
+2. Sale data is loaded into cart context
+3. User makes changes and saves
+4. Sale data is updated locally with `updateSale()`
+5. Operation is queued with `operation_type: "update"` and `sale_id`
+6. Sync queue processes via `updateSale()` API call
+7. Uses `PUT /connector/api/sell/{id}` endpoint
+
+### Error Handling
+- **Network independence**: Both create and update operations work offline
+- **Graceful degradation**: Operations queue for sync when connectivity is restored
+- **User feedback**: Clear messaging for different operation states
+- **Validation**: Proper data validation before API calls
+
+### Data Flow
+```
+Edit Sale → Load Cart → User Changes → Save Locally → Queue Update → Sync to Server
+   ↓              ↓             ↓           ↓             ↓              ↓
+Sales Page   POS Component   Cart Context   Storage      Sync Queue    API Service
+```
+
+### Testing
+The implementation has been tested with:
+- ✅ Creating new sales (POST endpoint)
+- ✅ Editing existing sales (PUT endpoint)
+- ✅ Offline operation with sync queue
+- ✅ Network recovery scenarios
+- ✅ Error handling and user feedback
+
+---

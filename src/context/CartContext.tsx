@@ -22,6 +22,7 @@ interface CartState {
   location_id: number | null;
   customer: any | null;
   editingSaleId: string | null;
+  editingServerId: number | null; // Server-side ID for synced sales
 }
 
 type CartAction =
@@ -34,7 +35,8 @@ type CartAction =
   | { type: 'SET_NOTE'; payload: string }
   | { type: 'SET_LOCATION'; payload: number }
   | { type: 'SET_CUSTOMER'; payload: any | null }
-  | { type: 'SET_EDITING_SALE'; payload: string | null };
+  | { type: 'SET_EDITING_SALE'; payload: string | null }
+  | { type: 'SET_EDITING_SERVER_ID'; payload: number | null };
 
 const initialState: CartState = {
   items: [],
@@ -44,6 +46,7 @@ const initialState: CartState = {
   location_id: null,
   customer: null,
   editingSaleId: null,
+  editingServerId: null,
 };
 
 const cartReducer = (state: CartState, action: CartAction): CartState => {
@@ -97,6 +100,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
         location_id: state.location_id,
         customer: null,
         editingSaleId: null,
+        editingServerId: null,
       };
     
     case 'SET_DISCOUNT':
@@ -117,6 +121,9 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
     case 'SET_EDITING_SALE':
       return { ...state, editingSaleId: action.payload };
 
+    case 'SET_EDITING_SERVER_ID':
+      return { ...state, editingServerId: action.payload };
+
     default:
       return state;
   }
@@ -134,6 +141,7 @@ interface CartContextType {
   setLocation: (id: number) => void;
   setCustomer: (customer: any | null) => void;
   setEditingSale: (id: string | null) => void;
+  setEditingServerId: (id: number | null) => void;
   getSubtotal: () => number;
   getTotal: () => number;
 }
@@ -196,6 +204,10 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     dispatch({ type: 'SET_EDITING_SALE', payload: id });
   };
 
+  const setEditingServerId = (id: number | null) => {
+    dispatch({ type: 'SET_EDITING_SERVER_ID', payload: id });
+  };
+
   const getSubtotal = () => {
     return cart.items.reduce((sum, item) => sum + item.total, 0);
   };
@@ -234,6 +246,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       setLocation,
       setCustomer,
       setEditingSale,
+      setEditingServerId,
       getSubtotal,
       getTotal
     }}>

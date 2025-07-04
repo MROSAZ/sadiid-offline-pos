@@ -34,7 +34,7 @@ export class TransactionsApi {
     type?: 'sell' | 'sell_return';
     order_by?: string;
     direction?: 'asc' | 'desc';
-  }): Promise<ApiResponse<PaginatedResponse<Transaction>>> {
+  }): Promise<PaginatedResponse<Transaction>> {
     return apiClient.get<PaginatedResponse<Transaction>>('sell', params);
   }
 
@@ -62,14 +62,14 @@ export class TransactionsApi {
   /**
    * Delete transaction
    */
-  static async deleteTransaction(id: number): Promise<ApiResponse<void>> {
+  static async deleteTransaction(id: number): Promise<void> {
     return apiClient.delete<void>(`sell/${id}`);
   }
 
   /**
    * Create quotation
    */
-  static async createQuotation(transactionData: TransactionCreateRequest): Promise<ApiResponse<Transaction>> {
+  static async createQuotation(transactionData: TransactionCreateRequest): Promise<Transaction> {
     return apiClient.post<Transaction>('sell', {
       ...transactionData,
       is_quotation: true
@@ -79,7 +79,7 @@ export class TransactionsApi {
   /**
    * Convert quotation to final sale
    */
-  static async convertQuotationToSale(id: number, paymentData?: any): Promise<ApiResponse<Transaction>> {
+  static async convertQuotationToSale(id: number, paymentData?: any): Promise<Transaction> {
     return apiClient.put<Transaction>(`sell/${id}`, {
       is_quotation: false,
       status: 'final',
@@ -90,7 +90,7 @@ export class TransactionsApi {
   /**
    * Suspend sale (draft)
    */
-  static async suspendSale(transactionData: TransactionCreateRequest): Promise<ApiResponse<Transaction>> {
+  static async suspendSale(transactionData: TransactionCreateRequest): Promise<Transaction> {
     return apiClient.post<Transaction>('sell', {
       ...transactionData,
       is_suspend: true,
@@ -101,7 +101,7 @@ export class TransactionsApi {
   /**
    * Resume suspended sale
    */
-  static async resumeSuspendedSale(id: number): Promise<ApiResponse<Transaction>> {
+  static async resumeSuspendedSale(id: number): Promise<Transaction> {
     return apiClient.get<Transaction>(`sell/${id}`);
   }
 
@@ -117,7 +117,7 @@ export class TransactionsApi {
     end_date?: string;
     contact_id?: number;
     location_id?: number;
-  }): Promise<ApiResponse<PaginatedResponse<Transaction>>> {
+  }): Promise<PaginatedResponse<Transaction>> {
     return apiClient.get<PaginatedResponse<Transaction>>('list-sell-return', params);
   }
 
@@ -134,7 +134,7 @@ export class TransactionsApi {
     invoice_no?: string;
     return_date: string;
     additional_notes?: string;
-  }): Promise<ApiResponse<Transaction>> {
+  }): Promise<Transaction> {
     return apiClient.post<Transaction>('sell-return', returnData);
   }
 
@@ -150,14 +150,14 @@ export class TransactionsApi {
     start_date?: string;
     end_date?: string;
     per_page?: number;
-  }): Promise<ApiResponse<PaginatedResponse<CashRegister>>> {
+  }): Promise<PaginatedResponse<CashRegister>> {
     return apiClient.get<PaginatedResponse<CashRegister>>('cash-register', params);
   }
 
   /**
    * Get cash register by ID
    */
-  static async getCashRegister(id: number): Promise<ApiResponse<CashRegister>> {
+  static async getCashRegister(id: number): Promise<CashRegister> {
     return apiClient.get<CashRegister>(`cash-register/${id}`);
   }
 
@@ -169,7 +169,7 @@ export class TransactionsApi {
     initial_amount?: number;
     denominations?: any;
     opening_note?: string;
-  }): Promise<ApiResponse<CashRegister>> {
+  }): Promise<CashRegister> {
     return apiClient.post<CashRegister>('cash-register', data);
   }
 
@@ -182,7 +182,7 @@ export class TransactionsApi {
     total_cheques?: number;
     denominations?: any;
     closing_note?: string;
-  }): Promise<ApiResponse<CashRegister>> {
+  }): Promise<CashRegister> {
     return apiClient.put<CashRegister>(`cash-register/${id}`, {
       ...data,
       status: 'close',
@@ -195,14 +195,14 @@ export class TransactionsApi {
   /**
    * Get available payment methods
    */
-  static async getPaymentMethods(): Promise<ApiResponse<PaymentMethod[]>> {
+  static async getPaymentMethods(): Promise<PaymentMethod[]> {
     return apiClient.get<PaymentMethod[]>('payment-methods');
   }
 
   /**
    * Get payment accounts
    */
-  static async getPaymentAccounts(): Promise<ApiResponse<PaymentAccount[]>> {
+  static async getPaymentAccounts(): Promise<PaymentAccount[]> {
     return apiClient.get<PaymentAccount[]>('payment-accounts');
   }
 
@@ -218,7 +218,7 @@ export class TransactionsApi {
     shipping_details?: string;
     shipping_address?: string;
     shipping_charges?: number;
-  }): Promise<ApiResponse<Transaction>> {
+  }): Promise<Transaction> {
     return apiClient.post<Transaction>('update-shipping-status', data);
   }
 
@@ -236,7 +236,7 @@ export class TransactionsApi {
     start_date?: string;
     end_date?: string;
     limit?: number;
-  }): Promise<ApiResponse<Transaction[]>> {
+  }): Promise<Transaction[]> {
     return apiClient.get<Transaction[]>('sell', params);
   }
 
@@ -248,7 +248,7 @@ export class TransactionsApi {
     end_date: string;
     location_id?: number;
     contact_id?: number;
-  }): Promise<ApiResponse<{
+  }): Promise<{
     total_sales: number;
     total_amount: number;
     total_tax: number;
@@ -259,7 +259,7 @@ export class TransactionsApi {
       quantity_sold: number;
       total_amount: number;
     }>;
-  }>> {
+  }> {
     // This would typically be a custom endpoint
     return apiClient.get('transaction-summary', params);
   }

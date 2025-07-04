@@ -318,6 +318,13 @@ export const createSale = async (saleData: TransactionCreateRequest): Promise<Ap
 };
 
 /**
+ * Update existing sale transaction
+ */
+export const updateSale = async (id: number, saleData: Partial<TransactionCreateRequest>): Promise<ApiResponse<Transaction>> => {
+  return await TransactionsApi.updateTransaction(id, saleData);
+};
+
+/**
  * Fetch sales/transactions with pagination
  */
 export const fetchSales = async (page = 1, perPage = 50, params = {}) => {

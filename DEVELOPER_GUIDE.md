@@ -63,6 +63,30 @@ const createSale = async (saleData) => {
 3. **Never Block UI**: Users get immediate feedback, sync happens later
 4. **Consistent Behavior**: App works identically online and offline
 
+### Edit Sale Pattern
+The application supports editing existing sales with proper backend integration:
+
+```typescript
+// ✅ CORRECT - Edit sale pattern
+const editSale = async (saleId: string, updatedData: Sale) => {
+  // 1. Update local storage immediately
+  await updateSale(saleId, updatedData);
+  
+  // 2. Queue for background sync with operation type
+  await queueOperation('sale', updatedData, {
+    operation_type: 'update',
+    sale_id: saleId
+  });
+  
+  // 3. Update UI immediately
+  toast.success('Sale updated successfully');
+};
+
+// The sync queue will automatically use:
+// - POST /connector/api/sell for new sales
+// - PUT /connector/api/sell/{id} for existing sales
+```
+
 ## 🗂️ Project Structure
 
 ```
@@ -93,8 +117,7 @@ src/
 └── utils/               # Helper utilities
     ├── apiUtils.ts      # API utility functions
     ├── backgroundSync.ts # Background task management
-    ├── dateUtils.ts     # Date/time utilities
-    ├── formatting.ts    # Number/currency formatting
+    ├── formatting.ts    # All formatting utilities (consolidated)
     └── productUtils.ts  # Product-specific utilities
 ```
 
@@ -333,6 +356,7 @@ api.defaults.headers.Authorization = `Bearer ${token.access_token}`;
 
 ### Endpoints
 - **POST** `/connector/api/sell` - Create sale
+- **PUT** `/connector/api/sell/{id}` - Update existing sale
 - **GET** `/connector/api/sell` - Fetch sales
 - **GET** `/connector/api/products` - Fetch products
 - **GET** `/connector/api/contacts` - Fetch customers
