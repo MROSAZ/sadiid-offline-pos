@@ -48,9 +48,10 @@ OpenAPI Architecture
 
 ### Edit Sale Functionality
 - **Proper Update Operations**: Editing a sale now correctly updates the existing sale via PUT API call instead of creating a new sale
-- **Operation Type Distinction**: The sync queue distinguishes between "create" and "update" operations
+- **Edit Detection**: Sales are tagged with `is_edited: true` when modified to distinguish them from new sales  
+- **API Endpoint Selection**: Sync service uses PUT `/connector/api/sell/{id}` for edited sales and POST for new sales
+- **Server ID Preservation**: Synced sales preserve server IDs for correct API operations
 - **Offline Edit Support**: Sale edits work offline and sync to the server when connectivity is restored
-- **Sync Queue Integration**: Edit operations are properly queued and processed with the correct API endpoint
 
 ---
 
@@ -736,16 +737,17 @@ The edit sale functionality has been implemented to properly update existing sal
 
 ### Key Components Updated
 
-#### 1. API Service (`src/services/api.ts`)
-- **Added `updateSale` function**: Uses the OpenAPI-generated `TransactionsApi.updateTransaction` method
-- **Proper endpoint usage**: Calls `PUT /connector/api/sell/{id}` for updates
-- **Type safety**: Uses `TransactionCreateRequest` interface for data validation
+#### 1. Storage Layer (`src/lib/storage.ts`)
+- **Enhanced `updateSale` function**: Tags edited sales with `is_edited: true` flag
+- **Server ID preservation**: Maintains original server ID for API operations
+- **Audit trail**: Adds `edited_at` timestamp for tracking
+- **Sync reset**: Sets `is_synced: 0` to trigger re-synchronization
 
-#### 2. POS Order Details (`src/components/pos/POSOrderDetails.tsx`)
-- **Operation type distinction**: Queues operations with explicit `operation_type` ("create" or "update")
-- **Sale ID tracking**: Includes `sale_id` for update operations
-- **Editing mode detection**: Uses `cart.editingSaleId` to determine if editing an existing sale
-- **Proper API routing**: Ensures the correct API endpoint is called based on operation type
+#### 2. Sync Service (`src/services/syncService.ts`)
+- **API selection logic**: Checks `is_edited` flag to determine API endpoint
+- **PUT for updates**: Uses `updateSale(id, data)` for edited sales with server IDs
+- **POST for new**: Uses `createSale(data)` for new sales
+- **Enhanced logging**: Clear console logs for debugging API operations
 
 #### 3. Sync Queue (`src/services/syncQueue.ts`)
 - **Enhanced `processSaleOperation`**: Distinguishes between create and update operations

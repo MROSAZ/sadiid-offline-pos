@@ -452,11 +452,21 @@ export const updateSale = async (saleId: string | number, updatedData: any): Pro
     );
     
     if (sale) {
-      // Update the sale with new data
-      const updated = { ...sale, ...updatedData, is_synced: 0, sync_error: null };
+      // Update the sale with new data and mark as edited
+      // Preserve the original server ID for API operations
+      const updated = { 
+        ...sale, 
+        ...updatedData, 
+        is_synced: 0, 
+        sync_error: null,
+        is_edited: true, // Tag as edited for sync service
+        edited_at: new Date().toISOString(),
+        // Preserve original server ID if it exists
+        id: sale.id // Keep the original server ID
+      };
       await tx.store.put(updated);
       await tx.done;
-      console.log(`Sale ${saleId} updated successfully`);
+      console.log(`Sale ${saleId} updated successfully and marked as edited`);
       return true;
     } else {
       console.warn(`Sale with ID ${saleId} not found for updating`);

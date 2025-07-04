@@ -15,7 +15,8 @@
 import { 
   fetchProducts, 
   fetchContacts, 
-  createSale 
+  createSale,
+  updateSale 
 } from '@/services/api';
 import { 
   saveProducts, 
@@ -260,8 +261,17 @@ const syncPendingSales = async (): Promise<{ total: number; synced: number; fail
         // Update status to processing
         await updateOperationStatus(operationId, 'processing');
         
-        // Send clean data to API
-        const response = await createSale(cleanSaleData);
+        // Send clean data to API - check if sale is edited
+        let response;
+        if (sale.is_edited && sale.server_id) {
+          // This is an edited sale with server ID - use PUT to update
+          console.log(`🔄 Updating existing sale with ID: ${sale.server_id}`);
+          response = await updateSale(sale.server_id, cleanSaleData);
+        } else {
+          // This is a new sale - use POST to create
+          console.log(`🆕 Creating new sale with local_id: ${local_id}`);
+          response = await createSale(cleanSaleData);
+        }
         
         // Handle the API response - the sell API returns transaction data directly as array
         let transactionData = null;
