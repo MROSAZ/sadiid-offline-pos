@@ -273,25 +273,32 @@ const syncPendingSales = async (): Promise<{ total: number; synced: number; fail
           response = await createSale(cleanSaleData);
         }
         
-        // Handle the API response - the sell API returns transaction data directly as array
+        // Handle the API response - different endpoints return different structures
         let transactionData = null;
         
         if (response?.success && response?.data) {
-          // Our API client wraps the raw response in {success: true, data: [...]}
-          // The data contains the array of transactions from the API
+          // createSale returns an array of transactions: {success: true, data: [...]}
+          // updateSale returns a single transaction: {success: true, data: {...}}
           if (Array.isArray(response.data) && response.data.length > 0) {
             transactionData = response.data[0]; // Get first transaction from array
+            console.log(`📦 Got transaction array response, using first item:`, transactionData);
           } else if (response.data && typeof response.data === 'object' && 'id' in response.data) {
             transactionData = response.data; // Single transaction object
+            console.log(`📦 Got single transaction response:`, transactionData);
           }
+        } else if (response && typeof response === 'object' && 'id' in response) {
+          // Handle raw object response (updateSale API returns Transaction object directly)
+          transactionData = response;
+          console.log(`📦 Got raw transaction response:`, transactionData);
         }
         
         // Validate that we got a valid transaction with required fields
-        if (transactionData && transactionData.id && transactionData.invoice_no) {
+        // Note: invoice_no is optional for update operations, so we only require id
+        if (transactionData && transactionData.id) {
           // Update local sale with synced data from server
           await updateSaleWithSyncedData(local_id, {
             server_id: transactionData.id,
-            invoice_no: transactionData.invoice_no,
+            invoice_no: transactionData.invoice_no, // May be undefined for updates
             invoice_url: transactionData.invoice_url,
             payment_ref_no: transactionData.payment_lines?.[0]?.payment_ref_no,
             synced_at: new Date().toISOString()
@@ -305,9 +312,10 @@ const syncPendingSales = async (): Promise<{ total: number; synced: number; fail
           console.log(`✅ Sale synced successfully:`, {
             local_id,
             server_id: transactionData.id,
-            invoice_no: transactionData.invoice_no,
+            invoice_no: transactionData.invoice_no || 'N/A',
             final_total: transactionData.final_total,
-            invoice_url: transactionData.invoice_url
+            invoice_url: transactionData.invoice_url || 'N/A',
+            operation_type: sale.is_edited ? 'UPDATE' : 'CREATE'
           });
         } else {
           await updateOperationStatus(operationId, 'failed', 'API returned no data');
