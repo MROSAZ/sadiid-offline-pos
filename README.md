@@ -33,6 +33,7 @@ A modern, offline-first Point of Sale (POS) system built with React, TypeScript,
 - **Product management** - Categories, variants, inventory tracking with full pagination
 - **Customer management** - Complete contact database with CRM features
 - **Sales processing** - Quick checkout, payment methods, receipts
+- **Edit sale functionality** - ✅ Full sales editing with proper backend updates
 - **Real-time inventory** - Stock levels, alerts, location-based tracking
 
 ### 🔒 Enterprise-Ready

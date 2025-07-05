@@ -4,11 +4,12 @@
 
 This document provides a comprehensive overview of all files in the `src` folder and their functions.
 
-> **📋 Documentation Status**: Last updated on July 1, 2025
+> **📋 Documentation Status**: Last updated on July 5, 2025
 > - All files in `src` folder have been verified after OpenAPI migration
 > - All functions and their purposes are documented
 > - UI component functions are excluded as requested
 > - Legacy API code has been removed and replaced with OpenAPI-driven architecture
+> - **Edit Sale Functionality**: ✅ FULLY WORKING - Properly updates existing sales via PUT API
 
 ---
 
@@ -46,12 +47,45 @@ OpenAPI Architecture
 - Local IndexedDB storage for products, customers, and sales
 - Complete data synchronization (not partial)
 
-### Edit Sale Functionality
-- **Proper Update Operations**: Editing a sale now correctly updates the existing sale via PUT API call instead of creating a new sale
+### Edit Sale Functionality ✅ WORKING
+- **Proper Update Operations**: Editing a sale correctly updates the existing sale via PUT API call instead of creating a new sale
 - **Edit Detection**: Sales are tagged with `is_edited: true` when modified to distinguish them from new sales  
 - **API Endpoint Selection**: Sync service uses PUT `/connector/api/sell/{id}` for edited sales and POST for new sales
 - **Server ID Preservation**: Synced sales preserve server IDs for correct API operations
 - **Offline Edit Support**: Sale edits work offline and sync to the server when connectivity is restored
+- **Raw API Response Handling**: Properly handles both wrapped and raw API responses from different endpoints
+
+### Sales Management
+- Create, edit, and manage sales transactions
+- Support for cash and card payments
+- Receipt generation and printing
+- Invoice URL integration with backend
+- Comprehensive sale history with search and filters
+
+### Product Management
+- Complete product catalog with categories
+- Real-time inventory tracking
+- Product search and filtering
+- Barcode support (future enhancement)
+
+### Customer Management
+- Customer database with contact information
+- Customer selection during checkout
+- Walk-in customer support
+- Customer history and preferences
+
+### Business Configuration
+- Multi-location support
+- Currency formatting based on business settings
+- Tax configuration and calculation
+- Payment method configuration
+
+### Sync & Data Management
+- Intelligent background sync with retry logic
+- Conflict resolution for concurrent operations
+- Data integrity validation
+- Comprehensive error handling and reporting
+- Queue-based operation processing
 
 ---
 
@@ -123,10 +157,12 @@ Route wrapper that ensures user authentication before accessing protected pages.
 - **OrderItem**: Individual cart item with quantity controls
 - **PaymentSection**: Payment method selection and processing
 
-**Edit Sale Functionality**: This component handles both creating new sales and updating existing sales. When editing a sale, it:
-- Queues operations with explicit `operation_type` ("create" or "update")
-- Includes `sale_id` for update operations
-- Calls the appropriate API endpoint (POST for create, PUT for update) via the sync queue
+**Edit Sale Functionality ✅ WORKING**: This component handles both creating new sales and updating existing sales:
+- **Edit Mode Detection**: Uses `cart.editingSaleId` to determine if in edit mode
+- **Operation Queuing**: Queues operations with explicit `operation_type` ("create" or "update")
+- **API Endpoint Selection**: Includes `sale_id` for update operations to ensure proper API routing
+- **User Feedback**: Provides different messages for create vs update operations
+- **Offline Support**: Works offline with automatic sync when connectivity is restored
 
 ### `components/pos/POSProductGrid.tsx`
 - **POSProductGrid**: Grid/table view of products with add to cart functionality
@@ -272,7 +308,7 @@ The application follows consistent offline-first patterns throughout:
 - **getUnSyncedSales**: Gets sales not yet synced to server
 - **getSales**: Retrieves sales from IndexedDB
 - **getSaleById**: Retrieves specific sale by ID
-- **updateSale**: Updates existing sale data
+- **updateSale**: Updates existing sale data and tags edited sales with `is_edited: true` flag
 - **updateSaleWithSyncedData**: Updates sale with synced API data
 - **markSaleAsSynced**: Marks sale as successfully synced
 - **markSaleAsSyncFailed**: Marks sale as sync failed with error
@@ -380,8 +416,16 @@ Main synchronization service for OpenAPI-driven data sync:
 - **syncDataOnLogin**: Sync data when user logs in
 - **startBackgroundSync**: Start background sync process
 - **stopBackgroundSync**: Stop background sync process
+- **syncPendingSales**: Syncs local sales to server with proper API endpoint selection
 
-**Note**: Completely rewritten for OpenAPI architecture with robust pagination support.
+**Edit Sale API Integration**: Enhanced to properly handle both new and edited sales:
+- **API Selection Logic**: Uses `is_edited` flag and `server_id` to determine API endpoint
+- **PUT for Updates**: Calls `updateSale(server_id, data)` for edited sales with server IDs
+- **POST for New**: Calls `createSale(data)` for new sales without server IDs
+- **Response Handling**: Properly handles both wrapped (`{success: true, data: ...}`) and raw object responses
+- **Error Recovery**: Comprehensive error handling with retry logic
+
+**Note**: Completely rewritten for OpenAPI architecture with robust pagination support and edit sale functionality.
 
 ---
 
@@ -518,12 +562,19 @@ Product-related utility functions:
 ### `services/syncService.ts`
 - **syncProducts**: Syncs products using paginated API with complete data fetching
 - **syncContacts**: Syncs contacts using paginated API with complete data fetching
+- **syncPendingSales**: Syncs local sales to server with proper API endpoint selection (POST for new, PUT for edited)
 - **syncData**: Main sync function for all data types with intelligent pagination
 - **syncDataOnLogin**: Syncs data when user logs in
 - **startBackgroundSync**: Starts background sync interval
 - **stopBackgroundSync**: Stops background sync interval
 
-**Note**: Rewritten for OpenAPI architecture with robust pagination and error handling.
+**Edit Sale API Integration**: Enhanced to properly handle both new and edited sales:
+- **New Sales**: Uses POST `/connector/api/sell` to create new sales
+- **Edited Sales**: Uses PUT `/connector/api/sell/{id}` to update existing sales
+- **Response Handling**: Supports both wrapped (`{success: true, data: ...}`) and raw object responses
+- **Sync Status**: Correctly marks edited sales as synced after successful backend update
+
+**Note**: Completely rewritten for OpenAPI architecture with robust pagination support and edit sale functionality.
 
 ---
 
@@ -721,12 +772,14 @@ The sale sync system has been completely fixed:
 - **Sync Prevention**: Correctly marks sales as synced to prevent re-processing
 - **Error Handling**: Comprehensive error handling and status updates
 
-### Current State
+### Current State - July 2025
 - **Production Ready**: Full offline POS functionality with complete data sync
 - **Type Safe**: OpenAPI-generated types ensure API compatibility
 - **Optimized**: Clean, maintainable codebase without legacy dependencies
 - **Well Documented**: Updated documentation reflects current architecture
-- **No Duplicate Sales**: Sales sync once and stay synced, preventing infinite loops
+- **Edit Sale Functionality**: ✅ WORKING - Properly updates existing sales via PUT API
+- **No Duplicate Sales**: Sales sync correctly and stay synced, preventing infinite loops
+- **Raw API Response Support**: Handles both wrapped and raw API responses correctly
 
 ---
 
