@@ -160,11 +160,20 @@ interface CartProviderProps {
   children: ReactNode;
 }
 
+// Counter to ensure unique IDs even within the same millisecond
+// This needs to be outside the component to persist across re-renders
+let idCounter = 0;
+
+// Generate a unique ID for cart items
+const generateUniqueId = (): number => {
+  return Date.now() * 1000 + (idCounter++);
+};
+
 export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   const [cart, dispatch] = useReducer(cartReducer, initialState);
   
   const addItem = (item: Omit<CartItem, 'id'>) => {
-    const newItem = { ...item, id: Date.now() };
+    const newItem = { ...item, id: generateUniqueId() };
     dispatch({ type: 'ADD_ITEM', payload: newItem as CartItem });
   };
   

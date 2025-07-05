@@ -1053,6 +1053,112 @@ The OpenAPI specification enables:
 
 See the [OpenAPI Integration Guide](docs/OPENAPI_INTEGRATION_GUIDE.md) for detailed setup instructions and best practices.
 
+---
+
+## 🛠️ Development Guide
+
+### Quick Start for Developers
+
+```bash
+# Clone and setup
+git clone <repository-url>
+cd sadiid-offline-pos
+npm install
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Run TypeScript checks
+npm run type-check
+
+# Run linting
+npm run lint
+```
+
+### Key Development Patterns
+
+#### Offline-First Architecture
+- **Local Storage First**: All operations save to IndexedDB immediately
+- **Background Sync**: Server communication happens transparently
+- **Never Block UI**: Network operations are always async and non-blocking
+- **Eventual Consistency**: Local data syncs to server when available
+
+#### Data Flow
+```
+User Action → IndexedDB → UI Update → Background Sync → Server → Local Update
+```
+
+#### Context Usage
+- **AuthContext**: User authentication and session management
+- **CartContext**: Shopping cart state and edit sale functionality
+- **NetworkContext**: Online/offline status detection
+- **BusinessSettingsContext**: Business configuration and currency settings
+
+#### API Integration
+- **Type-safe clients**: OpenAPI-generated TypeScript clients
+- **Automatic retries**: Built-in retry logic for failed requests
+- **Request validation**: Schema validation before API calls
+- **Response handling**: Unified error handling across all endpoints
+
+### Development Tools
+
+#### VS Code Extensions (Recommended)
+- TypeScript and JavaScript Language Features
+- Tailwind CSS IntelliSense
+- ES7+ React/Redux/React-Native snippets
+- Prettier - Code formatter
+
+#### Build Tools
+- **Vite**: Fast development server with HMR
+- **TypeScript**: Strict type checking
+- **ESLint**: Code linting with React rules
+- **Prettier**: Code formatting
+
+#### Testing
+- **Component Testing**: React Testing Library
+- **API Testing**: OpenAPI contract testing
+- **E2E Testing**: Playwright (configured but not implemented)
+
+### Project Structure
+```
+src/
+├── components/          # Reusable UI components
+├── context/            # React Context providers
+├── hooks/              # Custom React hooks
+├── lib/                # Core utilities and API clients
+├── pages/              # Page components
+├── services/           # Business logic and API services
+├── types/              # TypeScript type definitions
+└── utils/              # Utility functions
+```
+
+### Best Practices
+
+#### State Management
+- Use React Context for global state
+- Keep component state local when possible
+- Implement optimistic updates for better UX
+
+#### Error Handling
+- Always provide user feedback for errors
+- Log errors for debugging but don't expose sensitive info
+- Implement retry logic for transient failures
+
+#### Performance
+- Lazy load components when appropriate
+- Use React.memo for expensive renders
+- Implement virtual scrolling for large lists
+
+#### TypeScript
+- Use strict TypeScript configuration
+- Define proper interfaces for all data structures
+- Leverage OpenAPI-generated types
+
+---
+
 ## Conclusion
 
 The Sadiid Offline POS application represents a mature offline-first point-of-sale solution. Its architecture ensures that **users can always complete their work immediately**, regardless of network connectivity, while background synchronization maintains data consistency with the server.
