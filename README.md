@@ -8,16 +8,16 @@ A modern, offline-first Point of Sale (POS) system built with React, TypeScript,
 
 ## 📋 Quick Navigation
 
-### 🎯 For New Developers
-- 🚀 **[Developer Onboarding Guide](DEVELOPER_ONBOARDING.md)** - Get started in 15 minutes
-- 🛠️ **[Technical Reference](TECHNICAL_REFERENCE.md)** - Architecture & patterns
-- 🔧 **[Setup & Installation](DEPLOYMENT_GUIDE.md)** - Environment configuration
+### 🎯 For Developers
+- 🚀 **[Quick Start](#-quick-start)** - Get started in 15 minutes
+- 🏗️ **[Technology Stack](#️-technology-stack)** - Architecture & patterns
+- � **[Project Structure](#-project-structure)** - Codebase organization
 
 ### 📚 Documentation & Guides  
 - 🏗️ **[Complete Documentation](DOCUMENTATION.md)** - Detailed file and function reference
 - 🔌 **[OpenAPI Integration](docs/OPENAPI_INTEGRATION_GUIDE.md)** - Type-safe API usage
 - 🌐 **[API Documentation](API_DOCUMENTATION.md)** - Complete endpoint reference
-- 🚀 **[Deployment Guide](DEPLOYMENT_GUIDE.md)** - Production deployment
+- 🚀 **[Deployment](#-deployment)** - Production deployment instructions
 
 ---
 
@@ -970,11 +970,11 @@ VITE_CLIENT_SECRET=cEM0njAX1oCo9OK4NDdwjEyWr1KKmjt6545j6zSf
 ### Getting Started
 For new developers joining the team, follow this sequence:
 
-1. **Start Here**: [`DEVELOPER_ONBOARDING.md`](DEVELOPER_ONBOARDING.md) - Complete setup and onboarding guide
-2. **Quick Reference**: [`TECHNICAL_REFERENCE.md`](TECHNICAL_REFERENCE.md) - Architecture patterns and critical files
+1. **Start Here**: Follow the [Quick Start](#-quick-start) section above
+2. **Architecture**: Review the [Technology Stack](#️-technology-stack) and [Project Structure](#-project-structure)
 3. **Detailed Reference**: [`DOCUMENTATION.md`](DOCUMENTATION.md) - Complete file and function reference
 4. **API Integration**: [`API_DOCUMENTATION.md`](API_DOCUMENTATION.md) - Backend endpoints and examples
-5. **Deployment**: [`DEPLOYMENT_GUIDE.md`](DEPLOYMENT_GUIDE.md) - Build and deployment instructions
+5. **OpenAPI Usage**: [`docs/OPENAPI_INTEGRATION_GUIDE.md`](docs/OPENAPI_INTEGRATION_GUIDE.md) - Type-safe API development
 
 ### Build Commands
 ```bash
@@ -1156,6 +1156,48 @@ src/
 - Use strict TypeScript configuration
 - Define proper interfaces for all data structures
 - Leverage OpenAPI-generated types
+
+---
+
+## 🚀 Deployment
+
+### Production Build
+```bash
+# Build for production
+npm run build
+
+# Preview production build locally
+npm run preview
+
+# The build output will be in the 'dist' folder
+```
+
+### Environment Configuration
+Create a `.env.local` file with your production settings:
+```env
+VITE_API_BASE_URL=https://erp.sadiid.net/connector/api
+VITE_OAUTH_CLIENT_ID=your_client_id
+VITE_OAUTH_CLIENT_SECRET=your_client_secret
+```
+
+### Deployment Options
+
+**Static Hosting (Recommended)**
+- Deploy the `dist` folder to any static hosting service
+- Configure your web server to serve `index.html` for all routes (SPA routing)
+- Enable HTTPS for PWA features
+
+**Popular Hosting Services**
+- **Netlify**: Automatic deployments from Git
+- **Vercel**: Optimized for React applications
+- **GitHub Pages**: Free hosting for open source projects
+- **Traditional Web Servers**: Apache, Nginx with proper SPA configuration
+
+### PWA Installation
+Once deployed with HTTPS:
+1. Users can install the app from their browser
+2. Offline functionality works automatically
+3. App updates are handled by the service worker
 
 ---
 
