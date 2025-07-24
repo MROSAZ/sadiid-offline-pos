@@ -33,7 +33,7 @@ const Sales = () => {
   const [businessSettings, setBusinessSettings] = useState(null);
   const { isOnline } = useNetwork();
   const navigate = useNavigate();
-  const { clearCart, addItem, setCustomer, setEditingSale } = useCart();
+  const { clearCart, addItem, setCustomer, setEditingSale, setEditingServerId } = useCart();
 
   // Load business settings at component mount
   useEffect(() => {
@@ -102,10 +102,10 @@ const Sales = () => {
     try {
       clearCart();
       
-      // Handle both local sales (sell_lines) and synced sales structure
-      const saleLines = sale.sell_lines || [];
+      // Handle both local sales (products) and synced sales (sell_lines) structure
+      const saleItems = sale.products || sale.sell_lines || [];
       
-      if (!saleLines || saleLines.length === 0) {
+      if (!saleItems || saleItems.length === 0) {
         toast.warning('This sale has no items to edit');
         return;
       }
@@ -114,30 +114,36 @@ const Sales = () => {
       const { getProducts } = await import('@/lib/storage');
       const allProducts = await getProducts();
       
-      saleLines.forEach((line: any) => {
+      saleItems.forEach((item: any) => {
         // Try to find product info from stored products
-        const productInfo = allProducts.find(p => p.id === line.product_id);
+        const productInfo = allProducts.find(p => p.id === item.product_id);
         
         // Handle different product name sources with fallbacks
-        const productName = line.product?.name || 
+        const productName = item.product?.name || 
                            productInfo?.name || 
-                           line.name || 
-                           `Product ${line.product_id}`;
-        const productSku = line.product?.sku || 
+                           item.name || 
+                           `Product ${item.product_id}`;
+        const productSku = item.product?.sku || 
                           productInfo?.sku || 
-                          line.sku || 
+                          item.sku || 
                           '';
         
+        // Handle different price field names between local and synced sales
+        const unitPrice = item.unit_price_inc_tax || 
+                         item.unit_price || 
+                         item.price || 
+                         0;
+        
         addItem({
-          product_id: line.product_id,
-          variation_id: line.variation_id,
+          product_id: item.product_id,
+          variation_id: item.variation_id,
           name: productName,
           sku: productSku,
-          price: parseFloat(line.unit_price_inc_tax || line.unit_price || 0),
-          quantity: parseFloat(line.quantity) || 1,
-          discount: parseFloat(line.line_discount_amount || 0),
-          tax: parseFloat(line.item_tax || 0),
-          total: parseFloat(line.unit_price_inc_tax || line.unit_price || 0) * (parseFloat(line.quantity) || 1),
+          price: parseFloat(unitPrice),
+          quantity: parseFloat(item.quantity) || 1,
+          discount: parseFloat(item.line_discount_amount || item.discount_amount || 0),
+          tax: parseFloat(item.item_tax || item.tax_amount || 0),
+          total: parseFloat(unitPrice) * (parseFloat(item.quantity) || 1),
         });
       });
       
@@ -146,9 +152,20 @@ const Sales = () => {
         setCustomer(sale.contact);
       }
       
-      // Set editing mode with the sale's ID (use id for synced sales, local_id for local sales)
-      const saleId = sale.id || sale.local_id;
-      setEditingSale(saleId);
+      // Set editing mode with the proper IDs
+      // For synced sales: use server ID for API calls, local_id for local storage
+      // For local sales: use local_id for both
+      const localId = sale.local_id || sale.id; // For local storage operations
+      const serverId = sale.id; // For API calls (null for local-only sales)
+      
+      setEditingSale(localId);
+      
+      // Store the server ID in cart context for API operations if available
+      if (serverId) {
+        setEditingServerId(serverId);
+      } else {
+        setEditingServerId(null);
+      }
       
       navigate('/pos');
       toast.success('Sale loaded for editing');
@@ -159,12 +176,12 @@ const Sales = () => {
   };
   const handlePrintReceipt = (sale: any) => {
     try {
-      // Generate HTML receipt content
-      const saleLines = sale.sell_lines || [];
-      const itemsHtml = saleLines.map((item: any) => {
+      // Generate HTML receipt content - handle both local and synced sales
+      const saleItems = sale.products || sale.sell_lines || [];
+      const itemsHtml = saleItems.map((item: any) => {
         const productName = item.product?.name || item.name || `Product ${item.product_id}`;
         const quantity = item.quantity || 1;
-        const price = item.unit_price_inc_tax || item.unit_price || 0;
+        const price = item.unit_price_inc_tax || item.unit_price || item.price || 0;
         return `<li>${productName} - ${quantity} x ${formatAmount(price)}</li>`;
       }).join('');
 

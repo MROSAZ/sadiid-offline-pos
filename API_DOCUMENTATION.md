@@ -1,8 +1,24 @@
-# API Documentation
+# 🏪 Sadiid Offline POS - Complete API Documentation
 
 ## Overview
 
-This document describes the API endpoints used by the Sadiid Offline POS application. All endpoints require authentication via OAuth 2.0 Bearer tokens.
+This document provides comprehensive API documentation for the Sadiid Offline POS application, enriched with the complete Sadiid ERP backend API endpoints.
+
+> **📋 Note**: This documentation is also available as an interactive OpenAPI specification. See the [OpenAPI Integration Guide](docs/OPENAPI_INTEGRATION_GUIDE.md) for details on using the specification for development, testing, and code generation.
+
+### Additional Resources
+
+- **🔗 OpenAPI Specification**: [`docs/openapi.yaml`](docs/openapi.yaml) - Complete API spec with 81 endpoints
+- **🎯 TypeScript Types**: [`src/types/api.ts`](src/types/api.ts) - Comprehensive type definitions  
+- **🧪 Postman Collection**: [`Sadiid_POS_API.postman_collection.json`](Sadiid_POS_API.postman_collection.json) - Interactive testing
+- **📖 Integration Guide**: [`docs/OPENAPI_INTEGRATION_GUIDE.md`](docs/OPENAPI_INTEGRATION_GUIDE.md) - Setup and usage instructions
+
+### Interactive Documentation
+
+View the API documentation interactively:
+- **Swagger UI**: Upload the OpenAPI spec to [Swagger Editor](https://editor.swagger.io/)
+- **Local Docs**: Use `swagger-ui-serve docs/openapi.yaml` for local viewing
+- **Postman**: Import the collection for hands-on API testing
 
 ## Base URL
 ```
@@ -11,7 +27,10 @@ https://erp.sadiid.net/connector/api
 
 ## Authentication
 
-### Login
+### OAuth 2.0 Token Authentication
+All endpoints require Bearer token authentication using OAuth 2.0.
+
+#### Login
 ```http
 POST /oauth/token
 Content-Type: application/x-www-form-urlencoded
@@ -19,7 +38,7 @@ Content-Type: application/x-www-form-urlencoded
 grant_type=password&client_id=CLIENT_ID&client_secret=CLIENT_SECRET&username=USERNAME&password=PASSWORD&scope=*
 ```
 
-**Response:**
+**Success Response (200):**
 ```json
 {
   "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...",
@@ -29,14 +48,25 @@ grant_type=password&client_id=CLIENT_ID&client_secret=CLIENT_SECRET&username=USE
 }
 ```
 
-### Headers for Authenticated Requests
+**Error Response (401):**
+```json
+{
+  "error": "invalid_client",
+  "error_description": "Client authentication failed",
+  "message": "Client authentication failed"
+}
+```
+
+#### Headers for Authenticated Requests
 ```http
 Authorization: Bearer {access_token}
 Content-Type: application/json
 Accept: application/json
 ```
 
-## User Management
+---
+
+## 👤 User Management
 
 ### Get Current User
 ```http
@@ -57,7 +87,9 @@ GET /user
 }
 ```
 
-## Business Configuration
+---
+
+## 🏢 Business Configuration
 
 ### Get Business Details
 ```http
@@ -92,7 +124,9 @@ GET /business-details
 }
 ```
 
-## Products
+---
+
+## 📦 Product Management
 
 ### Get Products
 ```http
@@ -139,12 +173,6 @@ GET /products?page=1&per_page=500
       ]
     }
   ],
-  "links": {
-    "first": "...",
-    "last": "...",
-    "prev": null,
-    "next": "..."
-  },
   "meta": {
     "current_page": 1,
     "per_page": 500,
@@ -153,9 +181,16 @@ GET /products?page=1&per_page=500
 }
 ```
 
-## Customers (Contacts)
+### Get Single Product
+```http
+GET /products/{id}
+```
 
-### Get Contacts
+---
+
+## 👥 Customer Management
+
+### Get Customers
 ```http
 GET /contacts?type=customer&page=1&per_page=500
 ```
@@ -189,7 +224,7 @@ GET /contacts?type=customer&page=1&per_page=500
 }
 ```
 
-### Create Contact
+### Create Customer
 ```http
 POST /contacts
 ```
@@ -210,18 +245,19 @@ POST /contacts
 }
 ```
 
-**Response:**
-```json
-{
-  "data": {
-    "id": 2,
-    "contact_id": "CO0002",
-    // ... other contact fields
-  }
-}
+### Update Customer
+```http
+PUT /contacts/{id}
 ```
 
-## Sales
+### Get Single Customer
+```http
+GET /contacts/{id}
+```
+
+---
+
+## 💰 Sales Management
 
 ### Create Sale
 ```http
@@ -233,7 +269,7 @@ POST /sell
 {
   "contact_id": 1,
   "location_id": 1,
-  "transaction_date": "2025-06-23 14:30:00",
+  "transaction_date": "2025-06-28 14:30:00",
   "final_total": 150.00,
   "tax_amount": 0,
   "discount_amount": 0,
@@ -264,32 +300,9 @@ POST /sell
     "location_id": 1,
     "contact_id": 1,
     "invoice_no": "2025-12345",
-    "transaction_date": "2025-06-23 14:30:00",
+    "transaction_date": "2025-06-28 14:30:00",
     "final_total": 150.00,
-    "invoice_url": "https://erp.sadiid.net/invoice/abc123",
-    "payment_lines": [
-      {
-        "id": 1001,
-        "amount": "150.00",
-        "method": "cash",
-        "paid_on": "2025-06-23 14:30:00"
-      }
-    ],
-    "sell_lines": [
-      {
-        "id": 2001,
-        "product_id": 1,
-        "variation_id": 1,
-        "quantity": 2,
-        "unit_price": "75.00",
-        "unit_price_inc_tax": "75.00"
-      }
-    ],
-    "contact": {
-      "id": 1,
-      "name": "John Doe",
-      "email": "john@example.com"
-    }
+    "invoice_url": "https://erp.sadiid.net/invoice/12345"
   }
 ]
 ```
@@ -307,51 +320,9 @@ GET /sell?page=1&per_page=50
 - `start_date` (optional): Filter by date range (YYYY-MM-DD)
 - `end_date` (optional): Filter by date range (YYYY-MM-DD)
 
-**Response:**
-```json
-{
-  "data": [
-    {
-      "id": 12345,
-      "invoice_no": "2025-12345",
-      "contact": {
-        "name": "John Doe"
-      },
-      "transaction_date": "2025-06-23 14:30:00",
-      "final_total": "150.00",
-      "payment_status": "paid"
-    }
-  ]
-}
-```
-
 ### Get Single Sale
 ```http
 GET /sell/{id}
-```
-
-**Response:**
-```json
-{
-  "data": [
-    {
-      "id": 12345,
-      "invoice_no": "2025-12345",
-      "transaction_date": "2025-06-23 14:30:00",
-      "final_total": "150.00",
-      "sell_lines": [
-        // ... sale line items
-      ],
-      "payment_lines": [
-        // ... payment details
-      ],
-      "contact": {
-        // ... customer details
-      },
-      "invoice_url": "https://erp.sadiid.net/invoice/abc123"
-    }
-  ]
-}
 ```
 
 ### Update Sale
@@ -360,30 +331,14 @@ PUT /sell/{id}
 PATCH /sell/{id}
 ```
 
-**Request Body:** (Same structure as Create Sale)
-
-## Categories (Taxonomy)
-
-### Get Categories
+### Delete Sale
 ```http
-GET /taxonomy?type=product
+DELETE /sell/{id}
 ```
 
-**Response:**
-```json
-{
-  "data": [
-    {
-      "id": 1,
-      "name": "Electronics",
-      "description": "Electronic products",
-      "category_type": "product"
-    }
-  ]
-}
-```
+---
 
-## Attendance Management
+## ⏰ Attendance Management
 
 ### Get Attendance
 ```http
@@ -399,7 +354,7 @@ POST /clock-in
 ```json
 {
   "user_id": 1,
-  "clock_in_time": "2025-06-23 09:00:00",
+  "clock_in_time": "2025-06-28 09:00:00",
   "clock_in_note": "Starting work",
   "ip_address": "192.168.1.100",
   "latitude": "40.7128",
@@ -416,63 +371,423 @@ POST /clock-out
 ```json
 {
   "user_id": 1,
-  "clock_out_time": "2025-06-23 17:00:00",
+  "clock_out_time": "2025-06-28 17:00:00",
   "clock_out_note": "End of shift"
 }
 ```
 
-## Error Handling
+---
 
-### Error Response Format
+## 🏷️ Brand Management
+
+### List Brands
+```http
+GET /brands
+```
+
+### Get Brand Details
+```http
+GET /brands/{id}
+```
+
+---
+
+## 🏢 Business Location Management
+
+### List Business Locations
+```http
+GET /business-location
+```
+
+### Get Business Location
+```http
+GET /business-location/{id}
+```
+
+---
+
+## 💼 CRM (Customer Relationship Management)
+
+### List Follow-ups
+```http
+GET /crm/follow-ups
+```
+
+### Add Follow-up
+```http
+POST /crm/follow-ups
+```
+
+**Request Body:**
 ```json
 {
-  "success": false,
-  "message": "Error description",
+  "title": "Meeting with client",
+  "contact_id": 2,
+  "description": "Follow-up meeting discussion",
+  "schedule_type": "meeting",
+  "user_id": [2, 3, 5],
+  "notify_before": 5,
+  "notify_type": "minute",
+  "status": "open",
+  "start_datetime": "2025-06-28 13:05:00",
+  "end_datetime": "2025-06-28 14:05:00",
+  "allow_notification": true
+}
+```
+
+### Get Follow-up
+```http
+GET /crm/follow-ups/{id}
+```
+
+### Update Follow-up
+```http
+PUT /crm/follow-ups/{id}
+```
+
+### List Leads
+```http
+GET /crm/leads
+```
+
+---
+
+## 💰 Cash Register Management
+
+### List Cash Registers
+```http
+GET /cash-register
+```
+
+### Create Cash Register
+```http
+POST /cash-register
+```
+
+**Request Body:**
+```json
+{
+  "location_id": 1,
+  "initial_amount": 100.00,
+  "created_at": "2025-06-28 09:00:00",
+  "status": "open"
+}
+```
+
+### Get Cash Register
+```http
+GET /cash-register/{id}
+```
+
+---
+
+## 💸 Expense Management
+
+### List Expenses
+```http
+GET /expense
+```
+
+### Create Expense
+```http
+POST /expense
+```
+
+**Request Body:**
+```json
+{
+  "location_id": 1,
+  "expense_category_id": 1,
+  "ref_no": "EXP001",
+  "transaction_date": "2025-06-28",
+  "total_before_tax": 100.00,
+  "tax_amount": 10.00,
+  "final_total": 110.00,
+  "payment_status": "paid",
+  "expense_for": "1"
+}
+```
+
+### Get Expense
+```http
+GET /expense/{id}
+```
+
+### Update Expense
+```http
+PUT /expense/{id}
+```
+
+### List Expense Categories
+```http
+GET /expense-categories
+```
+
+---
+
+## 💱 Tax Management
+
+### List Taxes
+```http
+GET /tax
+```
+
+**Response:**
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "name": "VAT",
+      "amount": 10.00,
+      "is_tax_group": 0
+    }
+  ]
+}
+```
+
+### Get Tax
+```http
+GET /tax/{id}
+```
+
+---
+
+## 📏 Unit Management
+
+### List Units
+```http
+GET /unit
+```
+
+**Response:**
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "actual_name": "Pieces",
+      "short_name": "Pc",
+      "allow_decimal": 0
+    }
+  ]
+}
+```
+
+### Get Unit
+```http
+GET /unit/{id}
+```
+
+---
+
+## 📂 Taxonomy Management
+
+### List Categories
+```http
+GET /taxonomy?type=product
+```
+
+**Query Parameters:**
+- `type`: Type of taxonomy (product, customer_group, etc.)
+
+**Response:**
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "name": "Electronics",
+      "parent_id": 0,
+      "category_type": "product"
+    }
+  ]
+}
+```
+
+### Get Category
+```http
+GET /taxonomy/{id}
+```
+
+---
+
+## 🍽️ Table Management
+
+### List Tables
+```http
+GET /table
+```
+
+### Get Table
+```http
+GET /table/{id}
+```
+
+---
+
+## 🚶 Field Force Management
+
+### List Visits
+```http
+GET /field-force/visits
+```
+
+### Create Visit
+```http
+POST /field-force/visits
+```
+
+**Request Body:**
+```json
+{
+  "contact_id": 1,
+  "visited_on": "2025-06-28 14:30:00",
+  "visit_to": "customer",
+  "meet_with": "Manager",
+  "latitude": "40.7128",
+  "longitude": "-74.0060",
+  "comments": "Visited customer for product demo"
+}
+```
+
+### Update Visit Status
+```http
+PUT /field-force/visits/{id}
+```
+
+---
+
+## 📊 Reports & Analytics
+
+### Get Profit & Loss Report
+```http
+GET /profit-loss-report?start_date=2025-06-01&end_date=2025-06-30&location_id=1
+```
+
+**Query Parameters:**
+- `start_date`: Report start date (YYYY-MM-DD)
+- `end_date`: Report end date (YYYY-MM-DD)
+- `location_id`: Business location ID
+
+### Get Product Stock
+```http
+GET /product-stock?location_id=1
+```
+
+**Query Parameters:**
+- `location_id`: Business location ID
+
+---
+
+## 🔧 System & Utilities
+
+### Get Notifications
+```http
+GET /notifications
+```
+
+### Get Location from Coordinates
+```http
+GET /get-location?lat=40.7128&lng=-74.0060
+```
+
+**Query Parameters:**
+- `lat`: Latitude
+- `lng`: Longitude
+
+### List Payment Accounts
+```http
+GET /payment-account
+```
+
+### List Payment Methods
+```http
+GET /payment-methods
+```
+
+---
+
+## 🚨 Error Handling
+
+The API uses standard HTTP status codes and returns consistent error responses:
+
+### HTTP Status Codes
+
+| Code | Status | Description |
+|------|--------|-------------|
+| 200 | OK | Request successful |
+| 201 | Created | Resource created successfully |
+| 400 | Bad Request | Invalid request format or parameters |
+| 401 | Unauthorized | Invalid or missing authentication |
+| 403 | Forbidden | Access denied to resource |
+| 404 | Not Found | Resource not found |
+| 422 | Unprocessable Entity | Validation errors |
+| 429 | Too Many Requests | Rate limit exceeded |
+| 500 | Internal Server Error | Server error |
+
+### Error Response Format
+
+**Authentication Error (401):**
+```json
+{
+  "error": "invalid_client",
+  "error_description": "Client authentication failed",
+  "message": "Client authentication failed"
+}
+```
+
+**Validation Error (422):**
+```json
+{
+  "message": "The given data was invalid.",
   "errors": {
-    "field_name": ["Validation error message"]
+    "field_name": [
+      "This field is required."
+    ]
   }
 }
 ```
 
-### Common HTTP Status Codes
-- **200**: Success
-- **201**: Created
-- **400**: Bad Request (validation errors)
-- **401**: Unauthorized (token invalid/expired)
-- **403**: Forbidden (insufficient permissions)
-- **404**: Not Found
-- **422**: Unprocessable Entity (validation failed)
-- **429**: Too Many Requests (rate limited)
-- **500**: Internal Server Error
+**Not Found Error (404):**
+```json
+{
+  "message": "Resource not found"
+}
+```
 
 ### Rate Limiting
-- Most endpoints: 60 requests per minute
-- Authentication: 5 requests per minute
-- Heavy operations: 10 requests per minute
 
-### Offline Handling
-When offline, the application:
-1. Stores operations in local IndexedDB queue
-2. Processes queue when connection is restored
-3. Handles conflicts with server-side data
-4. Provides user feedback on sync status
+The API implements rate limiting with the following headers in responses:
 
-## Data Types
+```http
+X-Ratelimit-Limit: 60
+X-Ratelimit-Remaining: 59
+```
 
-### Common Field Types
-- **ID fields**: Integer
-- **Monetary values**: String (decimal with 4 decimal places)
-- **Dates**: String in "YYYY-MM-DD HH:mm:ss" format
-- **Boolean flags**: Integer (0 or 1)
-- **Status fields**: String (predefined values)
-
-### Business Rules
-- All monetary calculations use 4 decimal places
-- Dates are stored in business timezone
-- Stock quantities are tracked per location
-- Contact IDs follow format "CO####"
-- Invoice numbers follow format "YYYY-#####"
+- **Authentication endpoints**: 5 requests/minute
+- **Standard endpoints**: 60 requests/minute  
+- **Heavy operations**: 10 requests/minute
 
 ---
 
-*This documentation is updated to reflect the current API version. Contact the development team for any clarifications or updates.*
+## Testing with Postman
+
+### Environment Setup
+Create a Postman environment with these variables:
+- `baseUrl`: https://erp.sadiid.net/connector/api
+- `authUrl`: https://erp.sadiid.net/oauth/token
+- `accessToken`: (will be set automatically after login)
+- `username`: your_username
+- `password`: your_password
+- `clientId`: your_client_id
+- `clientSecret`: your_client_secret
+
+### Import Collection
+Import the `Sadiid_POS_API.postman_collection.json` file into Postman for complete API testing capabilities.
+
+---
+
+*Last Updated: June 28, 2025*
+*API Version: 1.0.0*
+*Status: Production Ready*

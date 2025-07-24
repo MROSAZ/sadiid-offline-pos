@@ -22,6 +22,7 @@ interface CartState {
   location_id: number | null;
   customer: any | null;
   editingSaleId: string | null;
+  editingServerId: number | null; // Server-side ID for synced sales
 }
 
 type CartAction =
@@ -34,7 +35,8 @@ type CartAction =
   | { type: 'SET_NOTE'; payload: string }
   | { type: 'SET_LOCATION'; payload: number }
   | { type: 'SET_CUSTOMER'; payload: any | null }
-  | { type: 'SET_EDITING_SALE'; payload: string | null };
+  | { type: 'SET_EDITING_SALE'; payload: string | null }
+  | { type: 'SET_EDITING_SERVER_ID'; payload: number | null };
 
 const initialState: CartState = {
   items: [],
@@ -44,6 +46,7 @@ const initialState: CartState = {
   location_id: null,
   customer: null,
   editingSaleId: null,
+  editingServerId: null,
 };
 
 const cartReducer = (state: CartState, action: CartAction): CartState => {
@@ -97,6 +100,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
         location_id: state.location_id,
         customer: null,
         editingSaleId: null,
+        editingServerId: null,
       };
     
     case 'SET_DISCOUNT':
@@ -117,6 +121,9 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
     case 'SET_EDITING_SALE':
       return { ...state, editingSaleId: action.payload };
 
+    case 'SET_EDITING_SERVER_ID':
+      return { ...state, editingServerId: action.payload };
+
     default:
       return state;
   }
@@ -134,6 +141,7 @@ interface CartContextType {
   setLocation: (id: number) => void;
   setCustomer: (customer: any | null) => void;
   setEditingSale: (id: string | null) => void;
+  setEditingServerId: (id: number | null) => void;
   getSubtotal: () => number;
   getTotal: () => number;
 }
@@ -152,11 +160,20 @@ interface CartProviderProps {
   children: ReactNode;
 }
 
+// Counter to ensure unique IDs even within the same millisecond
+// This needs to be outside the component to persist across re-renders
+let idCounter = 0;
+
+// Generate a unique ID for cart items
+const generateUniqueId = (): number => {
+  return Date.now() * 1000 + (idCounter++);
+};
+
 export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   const [cart, dispatch] = useReducer(cartReducer, initialState);
   
   const addItem = (item: Omit<CartItem, 'id'>) => {
-    const newItem = { ...item, id: Date.now() };
+    const newItem = { ...item, id: generateUniqueId() };
     dispatch({ type: 'ADD_ITEM', payload: newItem as CartItem });
   };
   
@@ -194,6 +211,10 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
 
   const setEditingSale = (id: string | null) => {
     dispatch({ type: 'SET_EDITING_SALE', payload: id });
+  };
+
+  const setEditingServerId = (id: number | null) => {
+    dispatch({ type: 'SET_EDITING_SERVER_ID', payload: id });
   };
 
   const getSubtotal = () => {
@@ -234,6 +255,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       setLocation,
       setCustomer,
       setEditingSale,
+      setEditingServerId,
       getSubtotal,
       getTotal
     }}>

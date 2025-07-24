@@ -2,77 +2,17 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
+/**
+ * 🎨 Sadiid Offline POS - Core Utilities
+ * 
+ * Essential utility functions for the application core.
+ * For formatting utilities, see @/utils/formatting
+ */
+
+/**
+ * Combine class names with conditional logic
+ * Uses clsx for conditional classes and tailwind-merge for deduplication
+ */
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
-}
-
-// Format currency based on business settings
-export function formatCurrency(
-  amount: number | string,
-  settings: {
-    currency?: {
-      symbol?: string;
-      thousand_separator?: string;
-      decimal_separator?: string;
-    };
-  } | null
-): string {
-  if (!settings || !settings.currency) {
-    return `${amount}`;
-  }
-  
-  const { symbol = '$', thousand_separator = ',', decimal_separator = '.' } = settings.currency;
-  
-  const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
-  
-  if (isNaN(numAmount)) {
-    return `${symbol}0.00`;
-  }
-  
-  const parts = numAmount.toFixed(2).split('.');
-  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, thousand_separator);
-  
-  return `${symbol}${parts.join(decimal_separator)}`;
-}
-
-// Format date for display
-export function formatDate(date: string | Date, includeTime = false): string {
-  const dateObj = typeof date === 'string' ? new Date(date) : date;
-  
-  if (isNaN(dateObj.getTime())) {
-    return 'Invalid date';
-  }
-  
-  const options: Intl.DateTimeFormatOptions = { 
-    year: 'numeric', 
-    month: 'short', 
-    day: 'numeric' 
-  };
-  
-  if (includeTime) {
-    options.hour = '2-digit';
-    options.minute = '2-digit';
-  }
-    return dateObj.toLocaleDateString(undefined, options);
-}
-
-// Parse API errors for user-friendly messages
-export function parseApiError(error: any): string {
-  if (typeof error === 'string') {
-    return error;
-  }
-  
-  if (error.response?.data?.message) {
-    return error.response.data.message;
-  }
-  
-  if (error.response?.data?.error) {
-    return error.response.data.error;
-  }
-  
-  if (error.message) {
-    return error.message;
-  }
-  
-  return 'An unknown error occurred';
 }

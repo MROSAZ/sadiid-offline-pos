@@ -8,7 +8,14 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "generate-types": "node scripts/generate-types.js",
+    "validate-openapi": "swagger-parser validate docs/openapi.yaml",
+    "serve-docs": "echo 'Swagger UI serve not available - use serve-docs:simple instead'",
+    "api:mock": "prism mock docs/openapi.yaml --port 3001",
+    "api:validate": "node scripts/validate-api.js",
+    "docs:build": "swagger-codegen generate -i docs/openapi.yaml -l html2 -o docs/generated",
+    "postinstall": "npm run generate-types"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -66,6 +73,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.9.0",
+    "@stoplight/prism-cli": "^5.8.0",
     "@tailwindcss/typography": "^0.5.15",
     "@types/node": "^22.5.5",
     "@types/react": "^18.3.3",
@@ -76,8 +84,11 @@
     "eslint-plugin-react-hooks": "^5.1.0-rc.0",
     "eslint-plugin-react-refresh": "^0.4.9",
     "globals": "^15.9.0",
+    "js-yaml": "^4.1.0",
     "lovable-tagger": "^1.1.7",
+    "openapi-typescript": "^7.0.0",
     "postcss": "^8.5.6",
+    "swagger-parser": "^10.0.3",
     "tailwindcss": "^3.4.17",
     "ts-prune": "^0.10.3",
     "typescript": "^5.5.3",

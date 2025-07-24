@@ -111,10 +111,19 @@ export const getDB = async () => {
 
 // Token management
 export const saveToken = async (tokenData: any) => {
-  localStorage.setItem('auth_token', JSON.stringify(tokenData));
-  const db = await getDB();
-  await db.put('token', tokenData, 'auth_token');
-  return true;
+  try {
+    console.log('💾 Storage: Saving token...', !!tokenData);
+    localStorage.setItem('auth_token', JSON.stringify(tokenData));
+    console.log('💾 Storage: Token saved to localStorage');
+    
+    const db = await getDB();
+    await db.put('token', tokenData, 'auth_token');
+    console.log('✅ Storage: Token saved to IndexedDB');
+    return true;
+  } catch (error) {
+    console.error('❌ Storage: Error saving token:', error);
+    throw error;
+  }
 };
 
 export const getToken = () => {
@@ -142,9 +151,16 @@ export const removeToken = () => {
 
 // User management
 export const saveUser = async (user: any) => {
-  const db = await getDB();
-  await db.put('user', user, 'current_user');
-  return true;
+  try {
+    console.log('💾 Storage: Saving user...', user?.name || user?.email || 'unknown');
+    const db = await getDB();
+    await db.put('user', user, 'current_user');
+    console.log('✅ Storage: User saved successfully');
+    return true;
+  } catch (error) {
+    console.error('❌ Storage: Error saving user:', error);
+    throw error;
+  }
 };
 
 export const getUser = async () => {
@@ -159,13 +175,36 @@ export const getUser = async () => {
 
 // Product management
 export const saveProducts = async (products: any[]) => {
-  const db = await getDB();
-  const tx = db.transaction('products', 'readwrite');
-  for (const product of products) {
-    await tx.store.put(product);
+  try {
+    console.log('💾 Storage: saveProducts called with:', products.length, 'products');
+    console.log('💾 Storage: Sample products:', products.slice(0, 2));
+    
+    const db = await getDB();
+    const tx = db.transaction('products', 'readwrite');
+    
+    // Clear existing products first
+    await tx.store.clear();
+    
+    for (const product of products) {
+      // Ensure each product has an id (keyPath requirement)
+      if (!product.id) {
+        product.id = product.product_id || `product_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      }
+      await tx.store.put(product);
+    }
+    
+    await tx.done;
+    console.log('✅ Storage: Products saved successfully to IndexedDB');
+    
+    // Verify data was saved
+    const savedProducts = await getProducts();
+    console.log('✅ Storage: Verification - Products in DB after save:', savedProducts.length);
+    
+    return true;
+  } catch (error) {
+    console.error('❌ Storage: Error saving products:', error);
+    throw error;
   }
-  await tx.done;
-  return true;
 };
 
 export const getProducts = async () => {
@@ -209,13 +248,36 @@ export const getProductsByCategory = async (categoryId: number): Promise<any[]> 
 
 // Contact management
 export const saveContacts = async (contacts: any[]) => {
-  const db = await getDB();
-  const tx = db.transaction('contacts', 'readwrite');
-  for (const contact of contacts) {
-    await tx.store.put(contact);
+  try {
+    console.log('💾 Storage: saveContacts called with:', contacts.length, 'contacts');
+    console.log('💾 Storage: Sample contacts:', contacts.slice(0, 2));
+    
+    const db = await getDB();
+    const tx = db.transaction('contacts', 'readwrite');
+    
+    // Clear existing contacts first
+    await tx.store.clear();
+    
+    for (const contact of contacts) {
+      // Ensure each contact has an id (keyPath requirement)
+      if (!contact.id) {
+        contact.id = contact.contact_id || `contact_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      }
+      await tx.store.put(contact);
+    }
+    
+    await tx.done;
+    console.log('✅ Storage: Contacts saved successfully to IndexedDB');
+    
+    // Verify data was saved
+    const savedContacts = await getContacts();
+    console.log('✅ Storage: Verification - Contacts in DB after save:', savedContacts.length);
+    
+    return true;
+  } catch (error) {
+    console.error('❌ Storage: Error saving contacts:', error);
+    throw error;
   }
-  await tx.done;
-  return true;
 };
 
 export const getContacts = async () => {
@@ -390,11 +452,21 @@ export const updateSale = async (saleId: string | number, updatedData: any): Pro
     );
     
     if (sale) {
-      // Update the sale with new data
-      const updated = { ...sale, ...updatedData, is_synced: 0, sync_error: null };
+      // Update the sale with new data and mark as edited
+      // Preserve the original server ID for API operations
+      const updated = { 
+        ...sale, 
+        ...updatedData, 
+        is_synced: 0, 
+        sync_error: null,
+        is_edited: true, // Tag as edited for sync service
+        edited_at: new Date().toISOString(),
+        // Preserve original server ID if it exists
+        id: sale.id // Keep the original server ID
+      };
       await tx.store.put(updated);
       await tx.done;
-      console.log(`Sale ${saleId} updated successfully`);
+      console.log(`Sale ${saleId} updated successfully and marked as edited`);
       return true;
     } else {
       console.warn(`Sale with ID ${saleId} not found for updating`);

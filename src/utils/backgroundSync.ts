@@ -40,27 +40,6 @@ export const queueBackgroundTask = (
 };
 
 /**
- * Check if a background task is currently queued
- */
-export const isTaskQueued = (taskId: string): boolean => {
-  return queuedTasks.has(taskId);
-};
-
-/**
- * Get count of currently queued background tasks
- */
-export const getQueuedTaskCount = (): number => {
-  return queuedTasks.size;
-};
-
-/**
- * Clear all queued tasks (use with caution)
- */
-export const clearQueuedTasks = (): void => {
-  queuedTasks.clear();
-};
-
-/**
  * Common background task types for the application
  */
 export const BackgroundTasks = {
@@ -83,23 +62,4 @@ export const performWhenOnline = (task: BackgroundTask): BackgroundTask => {
     }
     await task();
   };
-};
-
-/**
- * Debounced background task execution
- * Prevents rapid repeated execution of the same task
- */
-export const debouncedBackgroundTask = (
-  taskId: string,
-  task: BackgroundTask,
-  debounceMs: number = 1000
-): void => {
-  const debouncedTaskId = `debounced-${taskId}`;
-  
-  // Clear existing debounced task if any
-  if (queuedTasks.has(debouncedTaskId)) {
-    queuedTasks.delete(debouncedTaskId);
-  }
-
-  queueBackgroundTask(debouncedTaskId, task, debounceMs);
 };

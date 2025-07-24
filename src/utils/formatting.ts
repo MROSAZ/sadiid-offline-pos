@@ -1,22 +1,21 @@
-import { BusinessSettings, CurrencyInfo } from '@/lib/businessSettings';
+import { BusinessSettings, CurrencyInfo, getLocalBusinessSettings } from '@/lib/businessSettings';
 
 /**
- * Format a number as currency based on business settings
- * @param value - Number or string to format
- * @param settings - Business settings with currency configuration
+ * 🎨 Sadiid Offline POS - Formatting Utilities
+ * 
+ * Single source of truth for all formatting functions used throughout the application.
+ * This module provides consistent, business-aware formatting for currency, dates, and data.
+ * 
+ * Features:
+ * - 💰 Currency formatting with business settings
+ * - 📅 Date formatting in business timezone
+ * - 🔢 Number formatting with precision control
+ * - 🚨 Error message formatting for user display
  */
-export const formatCurrency = async (
-  value: number | string,
-  businessSettings?: BusinessSettings | null
-): Promise<string> => {
-  if (!businessSettings) {
-    // Dynamic import to avoid circular dependencies
-    const { getBusinessSettings } = await import('@/lib/businessSettings');
-    businessSettings = await getBusinessSettings();
-  }
-  
-  return formatCurrencySync(value, businessSettings);
-};
+
+// ============================================================================
+// 💰 CURRENCY FORMATTING
+// ============================================================================
 
 /**
  * Format a number as currency synchronously (no async operations)
@@ -85,128 +84,156 @@ export const formatNumberWithPrecision = (
   return parts.join(decimalSeparator);
 };
 
+// ============================================================================
+// 📅 DATE FORMATTING
+// ============================================================================
+
 /**
- * Format a date as a string in the locale format
- * @param date - Date to format or date string
- * @param format - Optional format string ('short', 'medium', 'long', or Intl.DateTimeFormatOptions)
- * @param locale - Optional locale string (default: 'en-US')
+ * Format a date for display in business timezone
+ * @param date Date to format
+ * @param format Display format options
  * @returns Formatted date string
  */
-export const formatDate = (
-  date: Date | string | number,
-  format: 'short' | 'medium' | 'long' | Intl.DateTimeFormatOptions = 'medium',
-  locale: string = 'en-US'
+export const formatBusinessDate = (
+  date: Date | string, 
+  format: Intl.DateTimeFormatOptions = {}
 ): string => {
-  // Convert to Date object if string
-  const dateObj = typeof date === 'string' || typeof date === 'number' ? new Date(date) : date;
-  
-  // Check for invalid date
-  if (isNaN(dateObj.getTime())) {
-    return 'Invalid Date';
+  try {
+    const settings = getLocalBusinessSettings();
+    const timezone = settings?.timezone || 'UTC';
+    
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    
+    const defaultFormat: Intl.DateTimeFormatOptions = {
+      timeZone: timezone,
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      ...format
+    };
+    
+    return new Intl.DateTimeFormat('en-US', defaultFormat).format(dateObj);
+    
+  } catch (error) {
+    console.error('Error formatting business date:', error);
+    return new Date(date).toLocaleString();
   }
-  
-  // Format based on the requested format
-  let formatOptions: Intl.DateTimeFormatOptions;
-  
-  if (typeof format === 'string') {
-    switch (format) {
-      case 'short':
-        formatOptions = { 
-          year: 'numeric', 
-          month: 'numeric', 
-          day: 'numeric' 
-        };
-        break;
-      case 'medium':
-        formatOptions = { 
-          year: 'numeric', 
-          month: 'short', 
-          day: 'numeric' 
-        };
-        break;
-      case 'long':
-        formatOptions = { 
-          year: 'numeric', 
-          month: 'long', 
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
-        };
-        break;
-      default:
-        formatOptions = { 
-          year: 'numeric', 
-          month: 'short', 
-          day: 'numeric' 
-        };
-    }
-  } else {
-    formatOptions = format;
-  }
-  
-  return new Intl.DateTimeFormat(locale, formatOptions).format(dateObj);
 };
 
 /**
- * Format a number as a quantity with specified precision
- * @param quantity - Number to format
- * @param settings - Business settings containing quantity precision
- * @returns Formatted quantity string
+ * Get current date/time in business timezone as ISO string
+ * @returns ISO string in business timezone (or UTC if timezone not available)
  */
-export const formatQuantity = (
-  quantity: number | string,
-  settings: BusinessSettings
-): string => {
-  // Handle non-number inputs
-  const numericQuantity = typeof quantity === 'string' ? parseFloat(quantity) : quantity;
-  
-  if (isNaN(numericQuantity)) {
-    return 'N/A';
+export const getBusinessTimestamp = (): string => {
+  try {
+    const settings = getLocalBusinessSettings();
+    const timezone = settings?.timezone || 'UTC';
+    
+    // Create date in business timezone
+    const now = new Date();
+    
+    // If timezone is UTC, return standard ISO string
+    if (timezone === 'UTC') {
+      return now.toISOString();
+    }
+    
+    // For other timezones, create localized ISO string
+    const options: Intl.DateTimeFormatOptions = {
+      timeZone: timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    };
+    
+    const formatter = new Intl.DateTimeFormat('en-CA', options);
+    const parts = formatter.formatToParts(now);
+    
+    // Build ISO-like string: YYYY-MM-DDTHH:mm:ss
+    const year = parts.find(part => part.type === 'year')?.value;
+    const month = parts.find(part => part.type === 'month')?.value;
+    const day = parts.find(part => part.type === 'day')?.value;
+    const hour = parts.find(part => part.type === 'hour')?.value;
+    const minute = parts.find(part => part.type === 'minute')?.value;
+    const second = parts.find(part => part.type === 'second')?.value;
+    
+    return `${year}-${month}-${day}T${hour}:${minute}:${second}`;
+    
+  } catch (error) {
+    console.error('Error getting business timestamp:', error);
+    // Fallback to UTC
+    return new Date().toISOString();
+  }
+};
+
+// ============================================================================
+// 🚨 ERROR FORMATTING
+// ============================================================================
+
+/**
+ * Parse API errors for user-friendly messages
+ * @param error - Error object from API calls
+ * @returns User-friendly error message
+ */
+export const parseApiError = (error: any): string => {
+  if (typeof error === 'string') {
+    return error;
   }
   
-  const { quantity_precision } = settings;
+  if (error.response?.data?.message) {
+    return error.response.data.message;
+  }
   
-  // Format the quantity with proper decimal places
-  return formatNumberWithPrecision(
-    numericQuantity,
-    quantity_precision,
-    '.',
-    ','
-  );
+  if (error.response?.data?.error) {
+    return error.response.data.error;
+  }
+  
+  if (error.message) {
+    return error.message;
+  }
+  
+  return 'An unknown error occurred';
+};
+
+// ============================================================================
+// 📋 UTILITY FUNCTIONS
+// ============================================================================
+
+/**
+ * Truncate text to specified length with ellipsis
+ * @param text - Text to truncate
+ * @param maxLength - Maximum length before truncation
+ * @returns Truncated text with ellipsis if needed
+ */
+export const truncateText = (text: string, maxLength: number = 50): string => {
+  if (!text) return '';
+  return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
 };
 
 /**
- * Format a phone number according to common patterns
- * @param phone - Phone number to format
+ * Format phone number for display
+ * @param phone - Phone number string
  * @returns Formatted phone number
  */
 export const formatPhoneNumber = (phone: string): string => {
   if (!phone) return '';
   
-  // Remove all non-numeric characters
+  // Remove non-digits
   const cleaned = phone.replace(/\D/g, '');
   
-  // Format based on length
+  // Apply common phone number formatting
   if (cleaned.length === 10) {
-    // US format: (XXX) XXX-XXXX
-    return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
-  } else if (cleaned.length === 11 && cleaned[0] === '1') {
-    // US with country code: 1 (XXX) XXX-XXXX
-    return `1 (${cleaned.slice(1, 4)}) ${cleaned.slice(4, 7)}-${cleaned.slice(7)}`;
-  } else {
-    // For other formats, just add spaces for readability
-    // Group in chunks of 3 or 4 digits
-    return cleaned.replace(/(\d{3,4})(?=\d)/g, '$1 ');
+    return `(${cleaned.substring(0, 3)}) ${cleaned.substring(3, 6)}-${cleaned.substring(6)}`;
+  } else if (cleaned.length === 8) {
+    // Tunisia landline format
+    return `${cleaned.substring(0, 2)} ${cleaned.substring(2, 5)} ${cleaned.substring(5)}`;
   }
-};
-
-/**
- * Truncate text with ellipsis
- * @param text - Text to truncate
- * @param maxLength - Maximum length before truncation
- * @returns Truncated text with ellipsis if necessary
- */
-export const truncateText = (text: string, maxLength: number = 30): string => {
-  if (!text || text.length <= maxLength) return text;
-  return text.slice(0, maxLength) + '...';
+  
+  // Return as-is if doesn't match common patterns
+  return phone;
 };
